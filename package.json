@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@10.x",
+  "packageManager": "pnpm@10.30.2",
   "scripts": {
     "build": "next build",
     "dev": "next dev",
