@@ -1,0 +1,15 @@
+{
+  "title": "Pay.com Concepts",
+  "root": true,
+  "pages": [
+    "index",
+    "payment-lifecycle-overview",
+    "sessions-vs-transactions",
+    "charges",
+    "holds-and-captures",
+    "refunds",
+    "payouts",
+    "3d-secure",
+    "workspaces-and-settlement-accounts"
+  ]
+}

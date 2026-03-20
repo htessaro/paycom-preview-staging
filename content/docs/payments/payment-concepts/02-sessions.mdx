@@ -1,0 +1,31 @@
+---
+title: Sessions
+description: Manage payment and setup flows securely
+---
+
+Sessions are the primary mechanism used by Pay.com to manage the lifecycle of a secure interaction between a customer and the payment platform.
+They provide a secure environment to collect sensitive data and execute transaction logic without requiring the merchant to handle raw card details directly.
+
+### Session types
+Pay.com utilizes three distinct session types depending on the merchant's specific business goal:
+***Payment Session**: Used when the primary objective is to process a transaction for a specific amount and currency. It is the most common session type for standard checkouts.
+***Setup Session**: Designed to verify and save a payment method to a customer profile without processing an immediate charge. This is ideal for "free trial" flows or adding a new card to a user's wallet for future usage.
+***Tokenization Session**: A simplified session used solely to securely capture and exchange card details for a reusable token. This session type does not verify if a card is valid or has funds; it simply stores the data for future server-to-server calls.
+
+## Session lifecycle and statuses
+A session progresses through several states from the moment it is created until it reaches a final resolution.
+
+These are the possible operational statuses:
+
+| Status | Description |
+| :--- | :--- |
+| **Open** |The session has been successfully created via the API, but no customer action has occurred yet. |
+| **Displayed** |The Pay.com SDK has successfully rendered the payment UI on the customer's device. This status helps merchants verify that the integration works from a client perspective. |
+| **Completed** |The customer has finished the interaction, and a successful transaction (Charge or Hold) or Payment Method has been created. |
+| **Failed** |The session has reached a terminal failure state and can no longer be used. |
+
+A session typically moves to the **Failed** status for two specific reasons:
+
+***Maximum Attempts Reached**: Pay.com allows for multiple payment attempts within a single session—the default is five. If a customer fails all allowed attempts, the session fails.
+***Time Expired**: Sessions have a configurable Time-To-Live (TTL).If a customer does not complete the transaction within the specified window (e.g., 15 minutes to an hour), the session is marked as failed.
+

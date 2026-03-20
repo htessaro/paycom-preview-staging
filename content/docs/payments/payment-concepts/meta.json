@@ -1,0 +1,13 @@
+{
+  "title": "Payment Concepts",
+  "pages": [
+    "payment-lifecycle-overview",
+    "sessions-vs-transactions",
+    "charges",
+    "holds-and-captures",
+    "3d-secure",
+    "refunds",
+    "payouts",
+    "workspaces-and-settlement-accounts"
+  ]
+}

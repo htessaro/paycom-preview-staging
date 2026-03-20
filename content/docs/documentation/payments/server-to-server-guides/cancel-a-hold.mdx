@@ -1,0 +1,104 @@
+---
+title: Cancel a hold
+description: Release reserved funds back to the customer.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+The [cancel a hold](/docs/api-reference/holds/hold-cancel) method lets you release funds that were previously reserved but not yet captured.
+Use this when you decide not to proceed with a transaction before any funds move from the customer to the merchant account. This is a step in the broader [hold and capture flow](/payments/server-to-server-guides/hold-and-capture-funds).
+
+## Requirements
+
+Before canceling a hold, ensure the following:
+
+* The hold has `status: requires_capture`.
+* You have the `hold_id` returned when you created the hold.
+* The hold has not been fully captured or already canceled.
+
+<Steps>
+<Step>
+## Send the cancellation request
+
+To release the reserved funds, send a `POST` request to the [`/v1/holds/{hold_id}/cancel`](/docs/api-reference/holds/hold-cancel) endpoint.
+
+Keep the following rules in mind before calling this endpoint:
+
+* Cancellation always releases the **full** remaining `amount_capturable`. Partial releases are not supported.
+* If you want to release only part of the reserved funds, perform a partial capture first to settle what you need, then call this endpoint to release whatever remains.
+* Once canceled, the hold is permanently closed and cannot be used for future captures.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+
+`POST /v1/holds/{hold_id}/cancel`
+
+```json
+{}
+```
+  </Tab>
+  <Tab value="Response">
+```json
+{
+  "id": "hld_686178331611104256",
+  "resource": "hold",
+  "amount": 10000,
+  "amount_human_readable": "100.00",
+  "amount_capturable": 0,
+  "billing_details": {
+    "address": null,
+    "email": "john.smith@example.com",
+    "name": "John Smith",
+    "phone": null
+  },
+  "created": "2026-03-09T08:00:00.000Z",
+  "currency": "usd",
+  "customer": null,
+  "customer_reference_id": null,
+  "description": "Hold for Order #12350",
+  "failure_code": null,
+  "failure_message": null,
+  "metadata": {},
+  "payment_method": "pm_card_686178340000000000",
+  "reference": "order-12350",
+  "status": "canceled",
+  "test_mode": true
+}
+```
+  </Tab>
+</Tabs>
+
+</Step>
+<Step>
+## Handle the response
+
+When the request succeeds, the hold status changes from `requires_capture` to `canceled` and `amount_capturable` drops to `0`. Unlike a refund, which can take several days, a canceled hold typically restores the customer's available balance almost instantly.
+
+</Step>
+<Step>
+## Listen for webhooks
+
+Use webhooks to update your internal order management system after a cancellation.
+
+* `hold.canceled`: Sent when the cancellation is successful or when a hold expires naturally.
+* `hold.captured`: Sent every time a partial capture is performed. In multi-capture scenarios, this event fires for every individual capture.
+* `hold.succeeded`: Sent only on the first capture of a hold.
+
+<Callout type="warn">
+Once a hold is canceled, it cannot be reopened or captured. If you need to charge the customer again, create a new [hold](/docs/api-reference/holds/create-hold) or [charge](/docs/api-reference/charges/create-charge).
+</Callout>
+
+<Callout type="warn">
+Always verify webhook signatures using the `Pay-Signature` header and your endpoint's secret key (via HMAC SHA-256) to ensure the event is legitimate.
+</Callout>
+
+</Step>
+</Steps>
+
+## Next steps
+
+* Read [Hold and capture funds](/payments/server-to-server-guides/hold-and-capture-funds) to understand the full lifecycle of a hold, including how to create one and capture funds in full or in partial installments.
+* Read [Refund a charge](/payments/server-to-server-guides/refund-a-charge) to learn how to return funds if a capture has already settled.
+* Read [Create a charge](/payments/server-to-server-guides/create-a-charge) to create a new charge after canceling a hold.

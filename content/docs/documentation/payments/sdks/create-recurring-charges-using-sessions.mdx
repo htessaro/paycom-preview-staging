@@ -1,0 +1,131 @@
+---
+title: Create recurring charges using sessions
+description: Set up payment subscriptions that store a customer's payment method and automatically charge them on a recurring schedule.
+---
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Recurring charges in Pay.com are built around three objects that work together:
+
+- A **subscription package** defines the billing rules: how much to charge, how often, and for how long.
+- A **payment method** is the customer's stored card, saved for future charges without the customer needing to be present.
+- A **subscription** links a customer, their stored payment method, and a subscription package together into a billing plan.
+
+## Requirements
+
+Before creating a subscription, you need a stored payment method (`pm_card_xxx`). Get one using one of these flows:
+
+- **Payment session or setup session**: Complete a checkout flow and retrieve the payment method ID from the `onSuccess` callback. See [save a payment method](/docs/payments/sdks/save-a-payment-method).
+- **Tokenized card**: Collect and tokenize the card using `checkout.headless()`, then call `POST /v1/payment_methods`. See [tokenize a card](/docs/payments/sdks/tokenize-a-card).
+
+<Steps>
+  <Step>
+    ## Create a subscription package
+
+    A subscription package is a reusable billing template you create once and reuse across multiple subscriptions for different customers.
+
+    Send a `POST` request to the `/v1/subscriptions/packages` endpoint. See the [subscription package API reference](/docs/api-reference/subscriptionpackages/create-subscription-package) for the complete list of supported parameters.
+
+    | Field | Description |
+    |---|---|
+    | `settings.amount.amount` | The amount charged on each billing cycle, in minor units (for example, `1000` for $10.00). |
+    | `settings.currency` | A three-letter ISO currency code in lowercase (for example, `usd` or `eur`). |
+    | `reference` | A unique identifier for the package in your system. |
+    | `settings.schedule.interval` + `interval_count` | The billing frequency. For example, `interval: "month"` with `interval_count: 1` charges the customer once every month. |
+
+    The example below creates a package that charges $10.00 (1000 in minor units) once every month:
+
+    ```javascript
+    const response = await fetch("https://api.staging.pay.com/v1/subscriptions/packages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-paycom-api-key": "<YOUR_API_KEY>"
+      },
+      body: JSON.stringify({
+        reference: "dcaaac01-b61b-41c0-80eb-3d9ea4094c2d",
+        settings: {
+          amount: {
+            amount: 1000
+          },
+          currency: "usd",
+          schedule: {
+            interval: "month",
+            interval_count: 1
+          }
+        }
+      })
+    })
+    ```
+
+    A successful response returns the subscription package `id` you need in the next step:
+
+    ```json
+    {
+      "id": "subpkg_684787299547876352",
+      "resource": "subscription_package",
+      "active": true,
+      "reference": "dcaaac01-b61b-41c0-80eb-3d9ea4094c2d",
+      "settings": {
+        "amount": {
+          "amount": 1000
+        },
+        "currency": "usd",
+        "schedule": {
+          "interval": "month",
+          "interval_count": 1
+        }
+      }
+    }
+    ```
+  </Step>
+
+  <Step>
+    ## Initialize a subscription
+
+    Send a `POST` request to `/v1/subscriptions` using the subscription package `id` from step 1 and the payment method ID from the prerequisite step above.
+
+    | Field | Description |
+    |---|---|
+    | `customer_reference_id` | The customer ID used when storing the payment method. |
+    | `payment_method` | The payment method ID (`pm_card_xxx`) from the customer's checkout. |
+    | `subscription_package` | The subscription package `id` (`subpkg_xxx`). |
+    | `reference` | A unique ID for this subscription in your system. |
+
+    ```javascript
+    const response = await fetch("https://api.staging.pay.com/v1/subscriptions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-paycom-api-key": "<YOUR_API_KEY>"
+      },
+      body: JSON.stringify({
+        customer_reference_id: "927071e4-464c-4f5d-a079-4aa097f922ca",
+        payment_method: "pm_card_684790996696828928",
+        subscription_package: "subpkg_684787299547876352",
+        reference: "test-subscription-001"
+      })
+    })
+    ```
+
+    By default, Pay.com does not charge the customer when the subscription is created. This assumes the customer was already charged during the [payment session](/docs/payments/payment-concepts/02-sessions) used to store the payment method. If the payment method was stored using a [setup session](/docs/payments/payment-concepts/02-sessions) or a previously saved card, set `charge_at_creation: true` to charge the customer immediately on subscription creation.
+  </Step>
+</Steps>
+
+## Initial term extension (optional)
+
+Use `initial_term_extension` to extend the first billing cycle of a subscription. This is useful when you want the customer's first billing period to be longer than the regular schedule. For example, with a monthly package, adding a one-month extension means the customer is first charged after two months, then monthly from that point on.
+
+Add `initial_term_extension` to the `settings` object in the subscription package request:
+
+```json
+"initial_term_extension": {
+  "interval": "month",
+  "interval_count": 1
+}
+```
+
+## Next steps
+
+Manage renewals, failed charges, retries, and cancellations in the [manage the subscription lifecycle](/docs/payments/sdks/manage-subscription-lifecycle) guide.

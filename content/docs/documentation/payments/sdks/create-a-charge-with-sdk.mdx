@@ -1,0 +1,333 @@
+---
+title: Create a charge with SDK
+description: Process card payments using the Pay.com SDK. Use the Universal SDK for a hosted checkout form or the Headless SDK to build your own payment UI.
+---
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom'
+import universalUI from './universal-ui.png'
+import headlessUI from './headless-ui.jpeg'
+
+In this guide, you’ll learn how to create a checkout and process a payment using the Universal SDK and Headless SDK integrations.
+The Universal SDK renders Pay.com’s hosted checkout form inside your page. The Headless SDK lets you build your own checkout UI while the SDK handles payment processing.
+
+## Requirements
+
+Before you begin, make sure you have:
+
+- A `client_secret` from your payment session
+- An initialized `pay` instance
+
+If you haven't completed these steps yet, see the [get started with the Pay.com SDK](/docs/payments/sdks/integrate-the-pay-com-sdk) guide to create a payment session and initialize the SDK.
+
+
+## Create the `pay` and `checkout` instances
+To render the checkout, you need two SDK instances — a `pay` instance and a `checkout` instance.
+
+-  `pay` is a variable that holds an instance of the SDK, returned by calling `Pay.com()` with your session `id`.  
+The `live: true` flag tells the SDK to use the production environment. Omit it when testing in sandbox.
+```js
+const pay =  Pay.com({
+  identifier: '{id}',
+  live: true
+})
+```
+
+- `checkout` is a variable that holds a checkout instance, returned by calling `pay.checkout()` on the `pay` instance. It takes your `client_secret` and uses it to tie a specific checkout to the payment session you created on your server.
+
+    This is also where you register `onSuccess` and `onFailure`, the two callbacks that fire when the payment completes or fails.
+```js
+const checkout = pay.checkout({
+  clientSecret: '{client_secret}',
+  onSuccess: (payment) => { ... },
+  onFailure: (error) => { ... },
+})
+```
+
+## Render the payment form
+
+The example below shows a React component where both instances are initialized inside `useEffect` so they run once when the component mounts. `useState` tracks whether the payment is complete so the UI can swap to a confirmation screen when `onSuccess` fires. In the Headless example, `useRef` is also used to store the `checkout` instance so it can be accessed inside `handleSubmit` outside of `useEffect`.
+
+<Tabs items={['Universal', 'Headless', 'CDN']}>
+  <Tab value="Universal">
+    Call `checkout.universal()` with a selector pointing to your container element. The SDK renders a fully hosted payment form, including card fields, wallet buttons, and a submit button inside that element.
+
+    ```jsx
+    import { useEffect, useState } from 'react'
+    import Pay from '@pay-com/js'
+
+    function CheckoutPage() {
+      const [paymentDone, setPaymentDone] = useState(false)
+      const [errorMessage, setErrorMessage] = useState(null)
+
+      useEffect(() => {
+        async function initCheckout() {
+          const pay = await Pay.com({
+            identifier: '{id}',
+            live: true
+          })
+
+          const checkout = pay.checkout({
+            clientSecret: '{client_secret}',
+            onSuccess: (payment) => {
+              // The payment completed successfully in the browser.
+              setPaymentDone(true)
+            },
+            onFailure: (error) => {
+              // The payment failed.
+              setErrorMessage(error.message)
+            },
+          })
+          checkout.universal({
+            container: '#paycom_checkout'
+          })
+        }
+
+        initCheckout()
+      }, [])
+
+      if (paymentDone) {
+        return <p>Payment complete. Thank you for your order.</p>
+      }
+
+      return (
+        <div>
+          <div id="paycom_checkout"></div>
+          {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+        </div>
+      )
+    }
+
+    export default CheckoutPage
+    ```
+    Once rendered, the Universal Component displays a fully hosted payment form inside your container element, including card fields, wallet buttons where available, and a submit button.
+
+    <ImageZoom 
+    src= {universalUI}
+    alt="Universal Component rendered in the browser"
+    width={800}
+    height={600}
+    />
+  
+
+   ### Custom submit button (optional)
+
+    By default, Pay.com renders a submit button inside the form. To use your own button instead, pass `submitButton: false` to `checkout.universal()`:
+
+    ```js
+    checkout.universal({
+      container: '#paycom_checkout',
+      toggles: { submitButton: false }
+    })
+    ```
+
+    Then use `checkout.validate()` to check the form fields before calling `checkout.submit()` to trigger the payment:
+
+    ```js
+    async function handleSubmit() {
+      const { valid, invalidFields } = await checkout.validate()
+
+      if (valid) {
+        try {
+          await checkout.submit()
+        } catch (e) {
+          console.log('Authorization failed:', e.message)
+        }
+      } else {
+        console.log('Fix these fields:', invalidFields)
+      }
+    }
+    ```
+
+    Wire it up to your button:
+
+    ```jsx
+    <div id="paycom_checkout"></div>
+    <button onClick={handleSubmit}>Pay Now</button>
+    ```
+
+  </Tab>
+
+  <Tab value="Headless">
+    With the Headless method, you build and own the UI. The SDK does not render anything, you collect the card data from your own form and pass it to `checkout.headless()` to trigger the payment.
+
+    `useRef` is used here to store the `checkout` instance so `handleSubmit` can access it outside of `useEffect`. Without it, `handleSubmit` would not have access to the `checkout` instance when the button is clicked.
+
+    ```jsx
+    import { useEffect, useState, useRef } from 'react'
+    import Pay from '@pay-com/js'
+
+    function CheckoutPage() {
+      const checkoutRef = useRef(null)
+      const [paymentDone, setPaymentDone] = useState(false)
+      const [errorMessage, setErrorMessage] = useState(null)
+      const [cardData, setCardData] = useState({
+        number: '',
+        cvv: '',
+        expirationMonth: '',
+        expirationYear: '',
+        name: '',
+      })
+
+      useEffect(() => {
+        async function initCheckout() {
+          const pay = await Pay.com({
+            identifier: '{id}',
+            live: true
+          })
+
+          const checkout = pay.checkout({
+            clientSecret: '{client_secret}',
+            onSuccess: (payment) => {
+              // The payment completed successfully in the browser.
+              setPaymentDone(true)
+            },
+            onFailure: (error) => {
+              // The payment failed.
+              setErrorMessage(error.message)
+            },
+          })
+          checkoutRef.current = checkout
+        }
+        initCheckout()
+      }, [])
+
+      async function handleSubmit() {
+        const checkout = checkoutRef.current
+        if (!checkout) return
+
+        await checkout.headless('card', {
+          number: cardData.number,
+          cvv: cardData.cvv,
+          expirationMonth: cardData.expirationMonth,
+          expirationYear: cardData.expirationYear,
+          name: cardData.name,
+        })
+      }
+
+      if (paymentDone) {
+        return <p>Payment complete. Thank you for your order.</p>
+      }
+
+      return (
+        <div>
+          <input
+            placeholder="Card number"
+            onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
+          />
+          <input
+            placeholder="CVV"
+            onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
+          />
+          <input
+            placeholder="Expiry month"
+            onChange={(e) => setCardData({ ...cardData, expirationMonth: e.target.value })}
+          />
+          <input
+            placeholder="Expiry year"
+            onChange={(e) => setCardData({ ...cardData, expirationYear: e.target.value })}
+          />
+          <input
+            placeholder="Cardholder name"
+            onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
+          />
+          <button onClick={handleSubmit}>Pay Now</button>
+          {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+        </div>
+      )
+    }
+
+    export default CheckoutPage
+    ```
+
+    <Callout type="info">
+    The inputs above are unstyled placeholders. Replace them with your own designed components. The SDK captures the data you pass to `checkout.headless()` — it does not render any UI itself.
+  </Callout>
+
+  The example below shows what a styled version of this form could look like.
+
+  <ImageZoom 
+    src= {headlessUI}
+    alt="Universal Component rendered in the browser"
+    width={800}
+    height={600}
+    />
+  
+
+  </Tab>
+
+  <Tab value="CDN">
+    When using the CDN, the SDK is loaded from a script tag and is available globally on the `window` object. Use `window.onload` to ensure the SDK is fully loaded before initializing.
+     The checkout UI rendered here is the same payment form used in the Universal SDK, which includes the card fields, wallet buttons, and the submit button. No additional UI needs to be built.
+   
+    ```html
+    <div id="paycom_checkout"></div>
+    <div id="error-message" style="color: red;"></div>
+
+    <script>
+      window.onload = async function () {
+        const { Pay } = window
+
+        const pay = Pay.com({ identifier: '{id}' })
+
+        const checkout = pay.checkout({
+          clientSecret: '{client_secret}',
+          onSuccess: (payment) => {
+            // The payment completed successfully in the browser.
+            // Use this to update the UI — redirect the customer,
+            // show a confirmation screen, or clear the cart.
+            document.getElementById('paycom_checkout').innerHTML =
+              '<p>Payment complete. Thank you for your order.</p>'
+          },
+          onFailure: (error) => {
+            // The payment failed, was declined, or the customer cancelled.
+            // Use error.message to show the customer a meaningful reason.
+            document.getElementById('error-message').innerText = error.message
+          },
+        })
+
+        checkout.universal({ container: '#paycom_checkout' })
+      }
+    </script>
+    ```
+
+    <Callout type="warn">
+      `window.onload` is required when using the CDN. Without it, the SDK may not be ready when your script runs, causing the checkout to fail to initialize.
+    </Callout>
+
+  </Tab>
+</Tabs>
+ <Callout type="info">
+  For Apple Pay, Google Pay, iDEAL, and GiroPay, see the [create a wallet charge](/docs/payments/sdks/create-a-wallet-charge) guide.
+</Callout>
+
+## Handling payments
+The SDK provides frontend events that let you handle the result of a checkout attempt. Use these events to respond when a payment succeeds or when an error occurs.
+
+### onSuccess
+
+`onSuccess` is a frontend-only event, it fires when the checkout flow completes successfully in the browser. This is your opportunity to give the customer a clear signal that their payment went through. Common things to do here include:
+
+- Redirecting the customer to an order confirmation page
+- Showing a success message or updating the UI
+
+
+### onFailure
+`onFailure` fires when the checkout flow encounters an error in the browser.This is your opportunity to guide the customer on what to do next. Common things to do here include:
+
+- Displaying error.message to show a clear, actionable reason for the failure
+
+- Redirecting the customer to another page or updating the UI
+
+## Webhooks
+`onSuccess` handles the frontend confirmation, meaning that a customer could close the browser before it fires, or a network issue could prevent it from running. Always use webhooks for backend confirmation. Pay.com sends a `POST` request directly to your backend whenever a `payment_session.completed` event fires, independent of what happens in the browser. 
+You can use it to mark an order as paid, and send a confirmation email, or update your inventory.
+
+If you are not yet ready to set up a backend endpoint, use [webhook.site](https://webhook.site) to inspect the payload a live payment sends.
+
+See the [webhook setup guide](/docs/webhooks/setup) for details on how to setup webhooks on your dashboard.
+
+## Next steps
+
+Now that you can process card payments with the SDK, you can expand your checkout to support additional payment methods such as Apple Pay and Google Pay. See [create a wallet charge](/docs/payments/sdks/create-a-wallet-charge) guide to learn how to integrate them using the Headless SDK.

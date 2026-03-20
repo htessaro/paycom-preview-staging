@@ -1,0 +1,362 @@
+---
+title: Verify a payment method
+description: Validate and vault a customer's card for future off-session charges.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Verifying a payment method lets you validate and vault a customer's card without processing an immediate charge. The system performs a zero-amount transaction to confirm the card with the issuer and stores it for future use.
+
+Use this flow when a customer adds a card to their profile, or when you need to vault a card before the first recurring charge in a subscription flow.
+
+<Callout type="warn">
+Raw card data passes through your servers. This flow requires PCI Level 1 or SAQ-D compliance.
+</Callout>
+
+## Requirements
+
+* Access to your [API credentials](/docs/api-reference/authentication).
+* A `customer_reference_id` to associate the card with a customer record.
+* Browser metadata (IP address, user agent, screen dimensions) if the issuer requires a 3DS challenge.
+
+<Steps>
+<Step>
+## Create the payment method
+
+Call the [`POST /v1/payment_methods`](/docs/api-reference/paymentmethods/create-payment-method) endpoint with the card details and `setup_future_usage: "off_session"` to vault the card for future off-session charges.
+
+The API returns one of three outcomes:
+
+* `created` — the card was verified and vaulted immediately. No further steps needed.
+* `requires_authentication` — the issuer requires a 3DS challenge. Continue to the next step.
+* error — card verification failed.
+
+<Tabs items={['No 3DS (immediate)', 'With 3DS challenge']}>
+  <Tab value="No 3DS (immediate)">
+
+For cards that do not require a 3DS challenge, pass the card details and billing information. The card is verified and vaulted in a single step.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+```json
+{
+  "type": "card",
+  "customer_reference_id": "cust-john-smith-001",
+  "card": {
+    "number": "4242424242424242",
+    "expiry_month": "12",
+    "expiry_year": "2028",
+    "cvv": "123",
+    "name": "John Smith"
+  },
+  "billing_details": {
+    "name": "John Smith",
+    "email": "john.smith@example.com",
+    "phone": "+14155551234",
+    "address": {
+      "line1": "123 Main Street",
+      "city": "San Francisco",
+      "state": "CA",
+      "postal_code": "94102",
+      "country": "US"
+    }
+  },
+  "setup_future_usage": "off_session"
+}
+```
+      </Tab>
+      <Tab value="Response">
+```json
+{
+  "id": "pm_card_685217824846643200",
+  "resource": "payment_method",
+  "billing_details": {
+    "address": {
+      "city": "San Francisco",
+      "country": "US",
+      "line1": "123 Main Street",
+      "line2": "Suite 400",
+      "postal_code": "94102",
+      "state": "CA"
+    },
+    "email": "john.smith@example.com",
+    "name": "John Smith",
+    "phone": "+14155551234"
+  },
+  "card": {
+    "bin": "424242",
+    "brand": "visa",
+    "cardholder_currency": "usd",
+    "country": "US",
+    "exp_month": "12",
+    "exp_year": "2028",
+    "fingerprint": "bb29cee2a1d61d551ea40c8479c83710eee71d1c28417af075827f51869c6e1d",
+    "funding": "debit",
+    "last4": "4242",
+    "network": "visa",
+    "three_d_secure": null,
+    "token": "tok_card_685104577720095744",
+    "wallet": null
+  },
+  "created": "2026-03-06T20:11:00.175Z",
+  "customer": "cust_685217819876392961",
+  "customer_reference_id": "cust-john-smith-001",
+  "flow_directions": {
+    "payment": true,
+    "payout": true
+  },
+  "metadata": {},
+  "off_session": true,
+  "status": "created",
+  "test_mode": true,
+  "type": "card",
+  "underlying_network_id": "9f3fc3b5-6317-4b93-88f8-5a5f9a281e26"
+}
+```
+      </Tab>
+    </Tabs>
+
+`status: "created"` confirms the card is verified and vaulted. Store the `id` (`pm_card_...`) to use in future charges.
+
+  </Tab>
+  <Tab value="With 3DS challenge">
+
+To force a 3DS challenge, include `authentication_context` inside the `card` object and set `payment_method_options.card.request_threed_secure` to `"challenge"`. All `browser_details` fields are required.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+```json
+{
+  "type": "card",
+  "customer_reference_id": "cust-john-smith-001",
+  "card": {
+    "number": "5200000000001096",
+    "expiry_month": "12",
+    "expiry_year": "2028",
+    "cvv": "123",
+    "name": "John Smith",
+    "authentication_context": {
+      "customer_ip_address": "192.168.1.1",
+      "browser_details": {
+        "accept_header": "*/*",
+        "javascript_enabled": true,
+        "language": "en-US",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "screen_width": 1920,
+        "screen_height": 1080,
+        "timezone_offset": "-300",
+        "java_enabled": false,
+        "color_depth": 24
+      }
+    }
+  },
+  "billing_details": {
+    "name": "John Smith",
+    "email": "john.smith@example.com"
+  },
+  "setup_future_usage": "off_session",
+  "payment_method_options": {
+    "card": {
+      "request_threed_secure": "challenge"
+    }
+  }
+}
+```
+      </Tab>
+      <Tab value="Response">
+```json
+{
+  "id": "pm_card_686169133447908352",
+  "resource": "payment_method",
+  "billing_details": {
+    "address": null,
+    "email": "john.smith@example.com",
+    "name": "John Smith",
+    "phone": null
+  },
+  "card": {
+    "bin": "520000",
+    "brand": "mastercard",
+    "country": "GB",
+    "exp_month": "12",
+    "exp_year": "2028",
+    "fingerprint": "563e891845b330d3cdc752bb14352364adfec830c12a9e3a9a6b2f6139519c1c",
+    "funding": "debit",
+    "last4": "1096",
+    "network": "mastercard",
+    "three_d_secure": null,
+    "token": "tok_card_686169006146589696",
+    "wallet": null
+  },
+  "created": "2026-03-09T11:11:09.820Z",
+  "customer": "cust_685217819876392961",
+  "customer_reference_id": "cust-john-smith-001",
+  "flow_directions": {
+    "payment": true,
+    "payout": true
+  },
+  "metadata": {},
+  "off_session": true,
+  "status": "requires_authentication",
+  "test_mode": true,
+  "type": "card",
+  "underlying_network_id": null
+}
+```
+      </Tab>
+    </Tabs>
+
+`status: "requires_authentication"` means the card needs a 3DS challenge before it can be vaulted. Store the `id` and continue to the next step.
+
+  </Tab>
+</Tabs>
+
+</Step>
+<Step>
+## Create an authentication session
+
+This step is only needed if step 1 returned `status: "requires_authentication"`.
+
+Call the [`POST /v1/sessions/authentication/linked`](/docs/api-reference/authenticationsessions/create-linked-authentication-session) endpoint with the payment method ID in the `resource` field. You must set `confirm` to `false` — there is no auto-confirm option for the payment method flow.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+```json
+{
+  "resource": "pm_card_686169133447908352",
+  "confirm": false,
+  "return_url": "https://your-site.com/payment-method/complete"
+}
+```
+  </Tab>
+  <Tab value="Response">
+```json
+{
+  "id": "sca_687278801096279040",
+  "resource": "authentication_session",
+  "amount": 0,
+  "amount_human_readable": "0.00",
+  "billing_details": {
+    "address": {
+      "city": "San Francisco",
+      "country": "US",
+      "line1": "123 Main Street",
+      "line2": null,
+      "postal_code": "94102",
+      "state": "CA"
+    },
+    "email": "john.smith@example.com",
+    "name": "John Smith",
+    "phone": "+14155551234"
+  },
+  "charge": null,
+  "created": "2026-03-12T12:40:35.212Z",
+  "currency": "usd",
+  "customer": "cust_685217819876392961",
+  "customer_reference_id": "cust-john-smith-001",
+  "hold": null,
+  "metadata": {},
+  "payment_method": "pm_card_686169133447908352",
+  "reference": null,
+  "return_url": "https://your-site.com/payment-method/complete",
+  "status": "open",
+  "test_mode": true,
+  "url": "https://sca.dev.pay.com/authenticate?client_secret=eyJhbGciOiJIUzUxMiJ9..."
+}
+```
+  </Tab>
+</Tabs>
+
+The `amount: 0` in the response confirms this is a zero-amount card verification, not a charge. Redirect the customer to the `url` in the response to complete the bank challenge. Pay.com redirects the customer back to your `return_url` after the challenge is done.
+
+</Step>
+<Step>
+## Confirm the payment method
+
+After the customer completes the challenge and is redirected to your `return_url`, call the [`POST /v1/payment_methods/{payment_method_id}/confirm`](/docs/api-reference/paymentmethods/confirm-payment-method) endpoint. Use the payment method `id` from step 1.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+
+`POST /v1/payment_methods/pm_card_686169133447908352/confirm`
+
+```json
+{}
+```
+  </Tab>
+  <Tab value="Response">
+```json
+{
+  "id": "pm_card_686169133447908352",
+  "resource": "payment_method",
+  "billing_details": {
+    "address": null,
+    "email": "john.smith@example.com",
+    "name": "John Smith",
+    "phone": null
+  },
+  "card": {
+    "bin": "520000",
+    "brand": "mastercard",
+    "country": "GB",
+    "exp_month": "12",
+    "exp_year": "2028",
+    "fingerprint": "563e891845b330d3cdc752bb14352364adfec830c12a9e3a9a6b2f6139519c1c",
+    "funding": "debit",
+    "last4": "1096",
+    "network": "mastercard",
+    "three_d_secure": null,
+    "token": "tok_card_686169006146589696",
+    "wallet": null
+  },
+  "created": "2026-03-09T11:11:09.820Z",
+  "customer": "cust_685217819876392961",
+  "customer_reference_id": "cust-john-smith-001",
+  "flow_directions": {
+    "payment": true,
+    "payout": true
+  },
+  "metadata": {},
+  "off_session": true,
+  "status": "created",
+  "test_mode": true,
+  "type": "card",
+  "underlying_network_id": "9f3fc3b5-6317-4b93-88f8-5a5f9a281e26"
+}
+```
+  </Tab>
+</Tabs>
+
+`status: "created"` confirms the card is verified and vaulted. The `id` is now ready to use in future charges.
+
+<Callout type="warn">
+Calling this endpoint before the customer completes the bank challenge returns `{ "code": "card_declined", "decline_code": "authentication_failure" }`. This is expected — wait for the customer to be redirected to your `return_url` first.
+</Callout>
+
+</Step>
+<Step>
+## Listen for webhooks
+
+Subscribe to these events to track the outcome of each verification:
+
+* `payment_method.created`: The card was verified and vaulted successfully.
+* `payment_method.failed_authentication`: The verification was declined.
+
+<Callout type="warn">
+Always verify webhook signatures using the `Pay-Signature` header and your endpoint's secret key (via HMAC SHA-256) to ensure the event is legitimate.
+</Callout>
+
+</Step>
+</Steps>
+
+<Callout type="info">
+Payment method tokens are interchangeable across all Pay.com flows, including the API, SDK, and orchestration layers.
+</Callout>
+
+## Next steps
+
+* Read [Create recurring charges](/payments/server-to-server-guides/create-recurring-charges) to learn how to use a vaulted payment method for future off-session billing.
+* Read [Create a charge with 3DS](/payments/server-to-server-guides/create-a-charge-with-3ds) to understand how the 3DS challenge flow works when charging rather than vaulting a card.
+* Read the [Webhooks overview](/docs/api-reference/webhooks) to learn how to verify signatures and handle payment method events reliably.

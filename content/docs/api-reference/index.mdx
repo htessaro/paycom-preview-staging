@@ -1,0 +1,135 @@
+---
+title: API reference
+description: Complete reference for the Pay.com REST API, including authentication, endpoints, and error handling.
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Callout } from 'fumadocs-ui/components/callout';
+import {
+  Globe,
+  KeyRound,
+  RefreshCw,
+  Hash,
+  CreditCard,
+  PauseCircle,
+  RotateCcw,
+  Send,
+  Layers,
+  Zap,
+  ShieldCheck,
+} from 'lucide-react';
+
+The Pay.com API is a REST API organized around predictable, resource-oriented
+URLs. It accepts JSON-encoded request bodies, returns JSON-encoded responses,
+and uses standard HTTP response codes, authentication, and verbs.
+
+Use the test environment to develop and validate your integration before
+connecting to live banking networks. All test requests return `test_mode: true`
+in the response body.
+
+## Before you start
+
+Read these pages before making your first request.
+
+<Cards>
+  <Card
+    icon={<Globe />}
+    title="Environments"
+    description="Find the correct base URL for test and live modes"
+    href="/docs/api-reference/environments"
+  />
+  <Card
+    icon={<KeyRound />}
+    title="Authentication"
+    description="Authenticate requests using your API key"
+    href="/docs/api-reference/authentication"
+  />
+  <Card
+    icon={<RefreshCw />}
+    title="Idempotency"
+    description="Safely retry API calls without risking duplicate charges"
+    href="/docs/api-reference/idempotency-key"
+  />
+  <Card
+    icon={<Hash />}
+    title="HTTP response codes"
+    description="Understand success and error responses"
+    href="/docs/api-reference/http-response-codes"
+  />
+</Cards>
+
+<Callout type="info">
+Want to explore the API without writing code? Use the
+[Postman collection](/docs/api-reference/postman-collections) to send
+requests directly from your browser or desktop app.
+</Callout>
+
+
+## Core resources
+
+The Pay.com API is built around these core objects.
+
+<Cards>
+  <Card
+    icon={<CreditCard />}
+    title="Charges"
+    description="Capture funds from a customer immediately."
+    href="/docs/payments/payment-concepts/03-charges"
+  />
+  <Card
+    icon={<PauseCircle />}
+    title="Holds"
+    description="Reserve funds via pre-authorization for later capture or release."
+    href="/docs/payments/payment-concepts/04-holds"
+  />
+  <Card
+    icon={<RotateCcw />}
+    title="Refunds"
+    description="Return settled funds to the customer's original payment method."
+    href="/docs/payments/payment-concepts/06-refunds"
+  />
+  <Card
+    icon={<Send />}
+    title="Payouts"
+    description="Distribute funds from a merchant account to a bank or wallet."
+    href="/docs/payments/payment-concepts/07-payouts"
+  />
+  <Card
+    icon={<Layers />}
+    title="Sessions"
+    description="Tokenize and save payment methods securely for future use."
+    href="/docs/payments/payment-concepts/02-sessions"
+  />
+</Cards>
+
+## Guides
+
+If you're looking for step-by-step integration instructions rather than endpoint
+details, start with the server-to-server guides.
+
+<Cards>
+  <Card
+    icon={<Zap />}
+    title="Create a charge"
+    description="Move funds from a customer to your merchant account via API."
+    href="/docs/payments/server-to-server-guides/create-a-charge"
+  />
+  <Card
+    icon={<PauseCircle />}
+    title="Hold and capture funds"
+    description="Reserve funds first, then capture after fulfillment."
+    href="/docs/payments/server-to-server-guides/hold-and-capture-funds"
+  />
+  <Card
+    icon={<ShieldCheck />}
+    title="Verify a payment method"
+    description="Validate and vault a card without charging it."
+    href="/docs/payments/server-to-server-guides/verify-a-payment-method"
+  />
+  <Card
+    icon={<Send />}
+    title="Create a payout"
+    description="Send funds from your account to a customer's bank or wallet."
+    href="/docs/payments/server-to-server-guides/create-a-payout"
+  />
+</Cards>

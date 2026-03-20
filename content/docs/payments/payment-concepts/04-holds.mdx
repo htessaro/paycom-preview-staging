@@ -1,0 +1,36 @@
+---
+title: Holds
+description: Reserve funds before capture
+---
+
+A **Hold** (also known as a pre-authorization) allows you to reserve funds on a customer’s payment method without immediately transferring them. This is a common practice for businesses that need to verify stock or perform risk checks before finalizing a transaction.
+
+## The hold lifecycle
+
+When a hold is initiated and approved by the bank, the transaction enters a `requires_capture` status. At this stage, the funds are blocked on the customer's account but are not yet settled.
+
+From this state, you have two primary actions:
+
+* **Capture:** This completes the transaction and starts the actual movement of funds. Once captured, the hold transitions into a successful **Charge**.
+* **Cancel:** This releases all reserved funds immediately back to the customer. Currently, Pay.com only supports full cancellations; partial cancellations are not available.
+
+## Technical implementation
+
+Depending on your integration path, a hold is triggered by setting the `capture` parameter to `false` during session or charge creation.
+
+If your business logic requires it, Pay.com supports flexible capture scenarios:
+
+* **Partial capture:** You can capture an amount smaller than the original hold.
+* **Multiple captures:** You can perform several captures against a single hold until the total reserved amount is used, as long as the sub-acquirer supports this flow.
+
+The transaction object tracks the `amount_capturable`, which allows you to monitor exactly how much remains available for settlement.
+
+<Callout title="Note">
+Holds are not permanent. Each payment method and acquirer has specific time limits (usually a few days) before a hold automatically expires if it is not captured. You should make sure your capture logic accounts for these windows to avoid failed settlements.
+</Callout>
+
+## Hold operations
+Use these endpoints to manage your transactions:
+
+[Capture a Hold](docs/content/docs/api-reference/holds/create-capture)
+

@@ -1,0 +1,28 @@
+---
+title: Workspace and settlement accounts
+description: Understand how transactions are organized through workspaces and how funds are routed to settlement accounts
+---
+
+The Pay.com architecture has a hierarchy of entities that allow you to separate operational management from the physical movement of funds. This structure provides the flexibility to manage multiple brands or regions under a single integration.
+
+To understand how funds are organized, you must distinguish between the three primary layers of the platform:
+
+* **Workspace:** Also referred to as a "Merchant Workspace," this is your central orchestration environment. It acts as a dashboard where you manage transaction logic, routing rules, and configurations.
+* **Settlement account:** These represent the actual technical connections to acquirers. A settlement account is the specific endpoint where processed funds are eventually received.
+* **Legal entity:** A background entity tied to your onboarding and compliance process. Every settlement account is linked to an entity for regulatory purposes.
+
+## Workspace management
+
+A workspace is a logical grouping that helps you organize data and permissions. The system is designed to be flexible, allowing your setup to be as simple or as complex as your business requires:
+
+* You can use a single workspace to see all payments across all brands, entities, and providers in one dashboard.
+* You can split workspaces based on geography, such as having a dedicated workspace for US customers and another for European markets.
+* You can define workspaces based on what is most comfortable for your operations, whether that is separation by URL, brand, or country.
+
+## Routing to settlement accounts
+
+The power of the orchestration engine lies in how workspaces interact with settlement accounts. Because these entities are decoupled, you can integrate once and then dynamically route your traffic:
+
+* A single workspace can share multiple settlement accounts, and a settlement account can be reused across different workspaces.
+* You can add or change your acquirer connections through the dashboard without needing to update your frontend integration or API calls.
+* Once a provider is configured, it creates a settlement account that can be used for routing rules immediately.

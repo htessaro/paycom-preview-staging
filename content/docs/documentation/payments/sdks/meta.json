@@ -1,0 +1,14 @@
+{
+  "title": "SDKs",
+  "pages": [
+    "pay-com-sdks-overview",
+    "integrate-the-pay-com-sdk",
+    "create-a-charge-with-sdk",
+    "create-a-wallet-charge",
+    "save-a-payment-method",
+    "tokenize-a-card",
+    "3ds-auth",
+    "create-recurring-charges-using-sessions",
+    "manage-subscription-lifecycle"
+  ]
+}

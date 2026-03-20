@@ -1,0 +1,43 @@
+---
+title: Postman collection
+description: Use the Pay.com Postman collection to explore and test API endpoints without writing code.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+[Postman](https://www.postman.com/) is a widely-used API development tool. Pay.com provides an official
+Postman collection with all API endpoints pre-configured so you can explore and
+test your integration without writing any code.
+
+## Import the collection
+
+You can use either the Postman desktop app or the browser version.
+
+1. Open Postman and click **Import**.
+2. Paste the [Pay.com collection link](POSTMAN_COLLECTION_URL_HERE) and confirm.
+3. The collection appears under **Collections** in the left panel.
+
+## Configure your API key
+
+Before making requests, set your API key as a collection variable.
+
+1. Open the collection and go to the **Variables** tab.
+2. Paste your `staging_` API key into the **Initial Value** field of the
+   `api_key` variable.
+3. Click **Save**.
+
+You can get your API key from **Developers > API Keys** in your Pay.com
+dashboard.
+
+<Callout type="warn">
+Use a `staging_` key while testing. Never paste a `live_` key into shared
+Postman workspaces or version-controlled environments.
+</Callout>
+
+## Make requests
+
+Select any endpoint from the collection and click **Send**. The collection
+includes pre-request and post-request scripts that automatically save
+resource IDs from responses. For example, after creating a charge, the
+charge ID is stored as a variable and used automatically in subsequent
+requests like refunds or confirmations.

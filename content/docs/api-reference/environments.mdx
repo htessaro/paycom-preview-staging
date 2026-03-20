@@ -1,0 +1,58 @@
+---
+title: Environments
+description: API base URLs for test and live modes, and how to go live.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+Pay.com provides two dedicated environments so you can develop and test your
+integration safely before processing real payments.
+
+## Base URLs
+
+Send your API requests to the base URL that matches your target environment.
+
+| Environment | Base URL |
+| :--- | :--- |
+| **Live (Production)** | `https://api.pay.com` |
+| **Test (Staging)** | `https://api.staging.pay.com` |
+
+Your API key must match the environment you are targeting. A `staging_`
+key only works with the staging URL, and a `live_` key only works with the
+production URL. See [Authentication](/docs/api-reference/authentication)
+for details.
+
+## Test environment
+
+The test environment is a full-featured copy of the production environment.
+Use it to build and validate your integration without processing real money.
+
+* All API responses include `"test_mode": true`.
+* Test card numbers and payment method identifiers are available to
+  simulate different payment outcomes. See the
+  [test cards reference](/docs/api-reference/postman-collections) for the
+  full list.
+* Simulated clearing and reconciliation endpoints are available to test
+  settlement logic.
+
+<Callout type="info">
+Transactions processed in the test environment never interact with real
+banking networks and never move real funds.
+</Callout>
+
+## Going live
+
+Access to the production environment is enabled by Pay.com after your
+account setup is complete. To go live, contact your account manager or
+reach out to [support@pay.com](mailto:support@pay.com).
+
+Your account team will verify your integration, confirm compliance
+requirements are met, and issue your `live_` API key. Once you receive
+your live key, update the base URL in your code from
+`https://api.staging.pay.com` to `https://api.pay.com`.
+
+<Callout type="warn">
+Live API keys trigger real transactions on banking networks. Keep them
+private, rotate them if compromised, and never use them in test or
+development environments.
+</Callout>

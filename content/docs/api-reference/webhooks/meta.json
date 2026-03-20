@@ -1,0 +1,9 @@
+{
+  "title": "Webhooks",
+  "pages": [
+    "index",
+    "configure-webhooks",
+    "verify-webhook-signatures",
+    "webhook-events"
+  ]
+}

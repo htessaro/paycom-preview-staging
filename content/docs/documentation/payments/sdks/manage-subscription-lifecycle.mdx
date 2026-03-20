@@ -1,0 +1,153 @@
+---
+title: Manage the subscription lifecycle
+description: Handle subscription renewals, failed charges, retries, payment method updates, and cancellations using the Pay.com Subscriptions API.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Once a subscription is created, Pay.com's Billing Engine automatically manages all future charges. This guide explains how to monitor subscription activity and manage the subscription lifecycle, including handling failed charges, updating payment methods, and cancelling subscriptions.
+
+## Requirements
+
+* You need a subscription ID (`sub_xxx`). Get one by following the [create recurring charges](/docs/payments/sdks/create-recurring-charges-using-sessions) guide.
+
+## Subscription statuses
+A subscription moves through different statuses during its lifecycle. The status reflects the current state of the subscription and determines whether charges are being processed successfully.
+
+| Status | Description |
+|---|---|
+| `active` | The subscription is active and charges are processed according to the billing schedule set in the subscription package |
+| `unpaid` | A charge failed and the subscription has entered a retry sequence |
+| `cancelled` | The subscription has ended.|
+
+
+
+## Query a subscription
+
+To get the current status of a subscription, send a `GET` request to `/v1/subscriptions/{subscription_id}`:
+
+```javascript
+const response = await fetch("https://api.staging.pay.com/v1/subscriptions/{subscription_id}", {
+  method: "GET",
+  headers: {
+    "x-paycom-api-key": "<YOUR_API_KEY>"
+  }
+})
+```
+This endpoint returns the latest subscription status and charge information
+
+To check whether a specific customer has an active subscription to a given package, use the customer reference and subscription package ID. This is useful for gating access to paid features without tracking subscription status yourself.
+
+```javascript
+const response = await fetch("https://api.staging.pay.com/v1/customers/{customer_reference_id}/subscriptions/{subscription_package_id}", {
+  method: "GET",
+  headers: {
+    "x-paycom-api-key": "<YOUR_API_KEY>"
+  }
+})
+```
+
+<Callout type="info">
+  Pay.com caches subscription status to provide low-latency queries. Use this endpoint to gate access to features behind an active subscription without needing to track status yourself.
+</Callout>
+
+## Listen to subscription events
+
+While statuses represent the current state of a subscription, webhook events notify your system when changes occur during the subscription lifecycle.
+Pay.com sends webhook events whenever important subscription actions happen, such as successful renewals, failed charges, retries, or cancellations. Use these events to trigger backend logic and notify customers.
+
+| Event | Description |
+|---|---|
+| `subscription.active` | Fires when a subscription becomes active, either on initial creation or after a successful retry following an `unpaid` status |
+| `subscription.charged` | Fires when a recurring charge succeeds at the end of a billing period |
+| `subscription.unpaid` | Fires when a charge fails and the subscription enters a retry sequence |
+| `subscription.attempted` | Fires on each failed retry attempt until the subscription is cancelled |
+| `subscription.canceled` | Fires when a subscription is cancelled. The `cancellation_reason` field can be one of: `ended`, `cancellation_requested`, `charge_disputed`, `charge_failed`, or `payment_method_expired` |
+| `subscription.upcoming_renewal` | Fires a configured number of days before the end of the billing term to notify of an upcoming charge |
+| `subscription.payment_method.upcoming_expiry` | Fires one month before the stored payment method expires |
+
+{/* See the [webhook setup guide](/docs/webhooks/setup) for instructions on how to register your endpoint and verify webhook payloads. */}
+
+## Handle failed charges
+
+When a charge fails, the subscription moves to the `unpaid` status and Pay.com automatically retries based on the retry settings defined in the subscription package.
+Each failed retry triggers a `subscription.attempted` event. If all retry attempts fail, the subscription is cancelled and a `subscription.canceled` event is sent.
+
+You can also trigger manual retries using the same stored payment method or a different one saved for `off_session` usage.
+
+<Tabs items={['Retry with existing card', 'Retry with new card']}>
+  <Tab value="Retry with existing card">
+    To retry with the payment method currently stored on the subscription send a `PATCH` request to `/v1/subscriptions/{subscription_id}/retry` without a request body. 
+
+    ```javascript
+    const response = await fetch("https://api.staging.pay.com/v1/subscriptions/{subscription_id}/retry", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-paycom-api-key": "<YOUR_API_KEY>"
+      }
+    })
+    ```
+  </Tab>
+
+  <Tab value="Retry with new card">
+    To retry with a different payment method, include the new `pm_card_xxx` ID in the request body. 
+
+    ```javascript
+    const response = await fetch("https://api.staging.pay.com/v1/subscriptions/{subscription_id}/retry", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-paycom-api-key": "<YOUR_API_KEY>"
+      },
+      body: JSON.stringify({
+        payment_method: "pm_card_xxx",
+        update_payment_method: true // Set to false to use the new payment method only for this specific retry
+      })
+    })
+    ```
+    If the retry succeeds, the subscription automatically updates to use the new payment method for future charges.
+    To use the new card only for this specific retry, set `update_payment_method: false`, and the subscription will revert to using the previous payment method. 
+  </Tab>
+</Tabs>
+
+A successful retry returns a subscription with `status: active` and a failed retry returns `status: unpaid`.
+
+## Update a payment method
+
+To change the payment method used for future subscription charges, send a `PATCH` request to `/v1/subscriptions/{subscription_id}` with the new payment method ID:
+
+```javascript
+const response = await fetch("https://api.staging.pay.com/v1/subscriptions/{subscription_id}", {
+  method: "PATCH",
+  headers: {
+    "Content-Type": "application/json",
+    "x-paycom-api-key": "<YOUR_API_KEY>"
+  },
+  body: JSON.stringify({
+    payment_method: "pm_card_xxx"
+  })
+})
+```
+The new card must have been previously stored for `off_session` usage. See [save a payment method](/docs/payments/sdks/save-a-payment-method) for how to store a card.
+
+## Cancel a subscription
+Canceling a subscription does not immediately stop access. Instead, the subscription remains active until the end of the current billing cycle.
+To cancel a subscription, send a `POST` request to `/v1/subscriptions/{subscription_id}/cancel`:
+
+```javascript
+const response = await fetch("https://api.staging.pay.com/v1/subscriptions/{subscription_id}/cancel", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-paycom-api-key": "<YOUR_API_KEY>"
+  }
+})
+```
+
+## Next steps
+
+* To update the payment method on a subscription, you first need to save the new card for off-session use. See [save a payment method](/docs/payments/sdks/save-a-payment-method).
+* For the complete list of subscription and subscription package parameters, refer to the [subscriptions API reference](/docs/api-reference/subscriptions/create-subscription) and [subscription packages API reference](/docs/api-reference/subscriptionpackages/create-subscription-package).
+

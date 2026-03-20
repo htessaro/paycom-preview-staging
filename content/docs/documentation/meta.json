@@ -1,0 +1,13 @@
+{
+  "title": "Documentation",
+  "root": true,
+  "pages": [
+    "introduction",
+    "paycom-concepts",
+    "payments",
+    "payment-methods",
+    "orchestration",
+    "risk-disputes-fraud",
+    "reporting-reconciliation"
+  ]
+}

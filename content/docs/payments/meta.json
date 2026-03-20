@@ -1,0 +1,12 @@
+{
+  "title": "Payments",
+  "root": true,
+  "icon": "CreditCard",
+  "pages": [
+    "index",
+    "get-started",
+    "payment-concepts",
+    "05-server-to-server-guides",
+    "06-sdks"
+  ]
+}

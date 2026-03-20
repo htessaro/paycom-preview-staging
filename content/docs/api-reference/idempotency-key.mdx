@@ -1,0 +1,66 @@
+---
+title: Idempotency key
+description: How to safely retry API requests without creating duplicate charges or refunds.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+The Pay.com API supports idempotency so you can safely retry requests without
+accidentally performing the same operation twice. This is useful when a
+request fails in transit and you don't receive a response. For example, if a
+request to create a charge fails due to a network error, you can retry it
+with the same idempotency key and be sure that no more than one charge is
+created.
+
+## How it works
+
+When you make a request with an idempotency key, Pay.com saves the response
+(status code and body) the first time that key is used. Any subsequent
+requests with the same key return the cached response, regardless of whether
+the original request succeeded or failed.
+
+* Use idempotency keys on all `POST` requests.
+* Don't use idempotency keys on `GET` or `DELETE` requests. Those methods
+  are already idempotent by definition.
+* Cached responses expire after 24 hours.
+
+## Sending an idempotency key
+
+Pass a unique value in the `idempotency-key` HTTP header.
+
+```bash
+curl -X POST https://api.pay.com/v1/charges \
+  --header 'x-paycom-api-key: YOUR_API_KEY' \
+  --header 'idempotency-key: a0e4c2f1-8b3d-4f7a-9c1e-2d5b6a7f8e9c' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "amount": 8000,
+    "currency": "usd",
+    "source": "pm_card_685125127054035968"
+  }'
+```
+
+<Callout type="info">
+Generate a unique value on your client side for each new request. We
+recommend V4 UUIDs.
+</Callout>
+
+## Retry behavior
+
+Pay.com caches the result of every request, including errors.
+
+| Original response | Retry behavior |
+| :--- | :--- |
+| `2xx` (success) | Returns the same successful response. |
+| `4xx` (client error) | Returns the same error. Retrying with the same key won't fix a validation failure. |
+| `5xx` (server error) | Returns the same server error. |
+
+If you retry a request with a key that was already used but send different
+parameters, Pay.com returns an `idempotency_error` to alert you that the
+key is already bound to a different request.
+
+## Key expiry
+
+Idempotency keys are stored for 24 hours. After that, using the same key
+starts a new request rather than returning the cached response. Make sure
+your retry logic sends retries within 24 hours of the original request.

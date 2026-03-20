@@ -1,0 +1,147 @@
+---
+title: HTTP response codes
+description: HTTP status codes and error response structure for the Pay.com API.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+Pay.com uses conventional HTTP response codes to indicate the success or
+failure of an API request.
+
+* **2xx:** The request was accepted and processed successfully.
+* **4xx:** The request failed due to a problem on the client side, such
+  as invalid parameters or a declined card.
+* **5xx:** An error occurred on Pay.com's servers. These are rare.
+
+## HTTP status codes
+
+| Code | Meaning |
+| :--- | :--- |
+| `200 OK` | The request was successful. |
+| `400 Bad Request` | The request was malformed or missing required fields. |
+| `401 Unauthorized` | The API key is missing, invalid, or mismatched with the environment. |
+| `403 Forbidden` | The API key does not have permission to perform the requested action. |
+| `404 Not Found` | The requested resource does not exist. |
+| `422 Unprocessable Content` | The request body was valid but the operation could not be completed (for example, a card in the wrong state). |
+| `500 Internal Server Error` | An unexpected error occurred on Pay.com's servers. |
+
+## Error response format
+
+When a request fails (4xx or 5xx), Pay.com returns a JSON payload with an
+`error` object. All error responses follow this structure:
+
+```json
+{
+  "error": {
+    "type": "invalid_request_error",
+    "code": "invalid_parameters",
+    "message": "ValidationError: \"amount\" is required, \"currency\" is required"
+  }
+}
+```
+
+### Error object fields
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `type` | string | The category of error. One of `api_error`, `payment_method_error`, `idempotency_error`, or `invalid_request_error`. |
+| `code` | string | A short string identifying the specific error, for example `card_declined` or `resource_missing`. |
+| `message` | string | A human-readable description of the error. For `payment_method_error`, this message can be shown to the customer. |
+| `decline_code` | string | Present on `payment_method_error` when the card issuer provides a reason for the decline, for example `insufficient_funds`. |
+| `params` | array | Present on validation errors. Each item has a `path` and `message` describing which field failed and why. |
+| `charge` | string | The ID of the charge involved, when the error relates to a charge. |
+| `hold` | string | The ID of the hold involved, when the error relates to a hold. |
+| `payment_method` | string | The ID of the payment method involved. |
+| `payment_method_details` | object | Full details of the payment method involved, when applicable. |
+
+### Error types
+
+| Type | Description |
+| :--- | :--- |
+| `invalid_request_error` | The request has invalid or missing parameters. This is the most common error type. |
+| `payment_method_error` | The payment method was declined or could not be used. Includes a `decline_code` when the issuer provides a reason. |
+| `idempotency_error` | An idempotency key was reused on a request that does not match the original request's endpoint or parameters. |
+| `api_error` | An unexpected problem occurred on Pay.com's servers. These are rare. |
+
+## Error examples
+
+**Validation error (missing required fields)**
+
+```json
+{
+  "error": {
+    "type": "invalid_request_error",
+    "code": "invalid_parameters",
+    "message": "ValidationError: \"amount\" is required, \"currency\" is required",
+    "params": [
+      {
+        "path": "amount",
+        "message": "\"amount\" is required"
+      },
+      {
+        "path": "currency",
+        "message": "\"currency\" is required"
+      }
+    ]
+  }
+}
+```
+
+**Card declined**
+
+```json
+{
+  "error": {
+    "type": "payment_method_error",
+    "code": "card_declined",
+    "decline_code": "insufficient_funds",
+    "message": "Insufficient Funds",
+    "charge": "chrg_685125114794084352",
+    "payment_method": "pm_card_685125127054035968",
+    "payment_method_details": {
+      "type": "card",
+      "card": {
+        "brand": "visa",
+        "last4": "4242",
+        "exp_month": "12",
+        "exp_year": "2028",
+        "funding": "credit"
+      }
+    }
+  }
+}
+```
+
+**Resource not found**
+
+```json
+{
+  "error": {
+    "type": "invalid_request_error",
+    "code": "resource_missing",
+    "message": "Unable to find resource with provided id"
+  }
+}
+```
+
+## Transaction statuses
+
+HTTP response codes reflect whether the API accepted the request. The
+`status` field in the response body reflects the state of the transaction
+itself. The following values are possible:
+
+| Status | Description |
+| :--- | :--- |
+| `succeeded` | The charge was approved and funds were captured. |
+| `failed` | The transaction was declined, often due to a payment method error. |
+| `pending` | Used for async payment methods (such as ACH or SEPA) waiting for bank confirmation. |
+| `requires_authentication` | The customer must complete a 3DS challenge or bank login before funds can be captured. |
+| `requires_capture` | Funds are authorized and reserved. The merchant must call the capture endpoint to settle the transaction. |
+| `requires_confirmation` | The 3DS challenge is complete but the merchant is using `confirm: false` and must call the confirm endpoint. |
+| `canceled` | The hold was released and funds are returned to the customer. |
+
+<Callout type="info">
+A `200 OK` response does not always mean the payment succeeded. Always
+check the `status` field in the response body to confirm the transaction
+outcome.
+</Callout>

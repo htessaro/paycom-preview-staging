@@ -1,0 +1,91 @@
+---
+title: Payments overview
+description: Build your payment infrastructure with Pay.com. Create charges, manage pre-authorization holds, and automate settlement via our SDKs or direct APIs.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { PiggyBank, Repeat, ShieldCheck, Zap, Undo2, BellRing, ArrowRightLeft, CreditCard, Lock, Shield, Building2 } from 'lucide-react';
+
+Welcome to the Pay.com payment engine. Our infrastructure handles the complexity of global routing and 3DS compliance so you can focus on building your product.
+
+Understand the fundamentals of our payment system and how transactions move through their lifecycle:
+
+<Cards>
+  <Card
+    icon={<Zap />}
+    title="Payment lifecycle"
+    href="/docs/paycom-concepts/payment-lifecycle-overview"
+    description="Deep dive into session states, charge transitions, and how holds work."
+  />
+  <Card
+    icon={<ShieldCheck />}
+    title="Integration paths"
+    href="/docs/payments/get-started"
+    description="Choose between Universal SDK, Headless, or API-only flows based on your PCI needs."
+  />
+</Cards>
+
+Learn the core building blocks of the Pay.com payment model:
+
+<Cards>
+  <Card
+    icon={<ArrowRightLeft />}
+    title="Sessions and transactions"
+    href="/docs/paycom-concepts/sessions-vs-transactions"
+    description="Understand how payment sessions relate to charges and the overall transaction model."
+  />
+  <Card
+    icon={<CreditCard />}
+    title="Charges"
+    href="/docs/paycom-concepts/charges"
+    description="Learn how charges represent captured funds and what states they move through."
+  />
+  <Card
+    icon={<Lock />}
+    title="Holds and captures"
+    href="/docs/paycom-concepts/holds-and-captures"
+    description="Reserve funds at authorization and capture them later when you fulfill an order."
+  />
+  <Card
+    icon={<Shield />}
+    title="3D Secure"
+    href="/docs/paycom-concepts/3d-secure"
+    description="How Pay.com handles cardholder authentication and when 3DS is triggered."
+  />
+  <Card
+    icon={<Building2 />}
+    title="Workspaces and settlement accounts"
+    href="/docs/paycom-concepts/workspaces-and-settlement-accounts"
+    description="Organize your business structure and configure accounts for each provider or acquirer."
+  />
+</Cards>
+
+Once you've integrated, use these tools to manage the post-payment experience and financial reconciliation:
+
+<Cards>
+  <Card
+    icon={<PiggyBank />}
+    title="Hold and capture funds"
+    href="/docs/payments/server-to-server-guides/hold-and-capture-funds"
+    description="Master payments by reserving funds during checkout and capturing them upon fulfillment."
+  />
+  <Card
+    icon={<Undo2 />}
+    title="Manage refunds"
+    href="/docs/api-reference/refunds/create-refund"
+    description="Process full or partial returns for successfully authorized charges."
+  />
+  <Card
+    icon={<BellRing />}
+    title="Webhooks and events"
+    href="/docs/api-reference/webhooks/index"
+    description="Set up listeners for real-time notifications on payment successes, failures, and 3DS authentications."
+  />
+  <Card
+    icon={<Repeat />}
+    title="Reporting and reconciliation"
+    href="/docs/reporting-reconciliation/index"
+    description="Track your payouts, analyze fee breakdowns, and download financial reports for your back-office."
+  />
+</Cards>

@@ -1,0 +1,83 @@
+---
+title: Pay.com concepts
+description: Core concepts and terminology for the Pay.com platform.
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import {
+  Zap,
+  ArrowRightLeft,
+  CreditCard,
+  Lock,
+  Undo2,
+  Send,
+  ShieldCheck,
+  Building2,
+} from 'lucide-react';
+
+Pay.com is a unified payment gateway and processor. These concept pages explain the
+building blocks of the platform so you can make informed decisions when designing
+your integration.
+
+Start here to understand how a payment moves from creation to settlement:
+
+<Cards>
+  <Card
+    icon={<Zap />}
+    title="Payment lifecycle overview"
+    href="/docs/paycom-concepts/payment-lifecycle-overview"
+    description="A complete map of how payments flow through Pay.com, from session creation to settlement."
+  />
+  <Card
+    icon={<ArrowRightLeft />}
+    title="Sessions vs. transactions"
+    href="/docs/paycom-concepts/sessions-vs-transactions"
+    description="Understand the difference between SDK-driven sessions and API-driven transactions."
+  />
+</Cards>
+
+Learn the core objects that represent money movement in Pay.com:
+
+<Cards>
+  <Card
+    icon={<CreditCard />}
+    title="Charges"
+    href="/docs/paycom-concepts/charges"
+    description="How charges work as the core transaction type for capturing funds from a customer."
+  />
+  <Card
+    icon={<Lock />}
+    title="Holds and captures"
+    href="/docs/paycom-concepts/holds-and-captures"
+    description="Reserve funds at authorization and capture or cancel them later."
+  />
+  <Card
+    icon={<Undo2 />}
+    title="Refunds"
+    href="/docs/paycom-concepts/refunds"
+    description="Return funds to customers with full, partial, and multiple refunds on a single charge."
+  />
+  <Card
+    icon={<Send />}
+    title="Payouts"
+    href="/docs/paycom-concepts/payouts"
+    description="Send funds from your merchant account to a customer's payment method."
+  />
+</Cards>
+
+Understand the infrastructure that sits beneath every transaction:
+
+<Cards>
+  <Card
+    icon={<ShieldCheck />}
+    title="3D Secure"
+    href="/docs/paycom-concepts/3d-secure"
+    description="How Pay.com's agnostic 3DS layer handles authentication for SDK and server-to-server integrations."
+  />
+  <Card
+    icon={<Building2 />}
+    title="Workspaces and settlement accounts"
+    href="/docs/paycom-concepts/workspaces-and-settlement-accounts"
+    description="Organize your business structure and configure accounts for each provider or acquirer."
+  />
+</Cards>

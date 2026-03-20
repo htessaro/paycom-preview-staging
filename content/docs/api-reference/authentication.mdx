@@ -1,0 +1,64 @@
+---
+title: Authentication
+description: How to authenticate your API requests using API keys.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+The Pay.com API uses API keys to authenticate requests. You can view and
+manage your API keys in the **Developers > API Keys** section of your
+dashboard.
+
+Pay.com uses key prefixes to prevent accidental use of live data in the
+staging environment. Use the prefix that matches your current stage:
+
+* `staging_`: Interacts with the staging environment only. No real
+  transactions are processed.
+* `live_`: Interacts with the live environment. Triggers real transactions
+  on banking networks.
+
+## Making authenticated requests
+
+Include your API key in the `x-paycom-api-key` HTTP header on every
+request. All requests must use HTTPS.
+
+```bash
+curl -X POST https://api.pay.com/v1/charges \
+  --header 'x-paycom-api-key: YOUR_API_KEY' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "amount": 8000,
+    "currency": "usd",
+    "source_data": {
+      "type": "card",
+      "card": {
+        "number": "4242424242424242",
+        "expiry_month": "12",
+        "expiry_year": "2028",
+        "cvv": "123",
+        "name": "John Smith"
+      }
+    }
+  }'
+```
+
+<Callout type="warn">
+Never hardcode API keys in client-side code or commit them to version
+control. Keys must only be used in your backend.
+</Callout>
+
+<Callout type="info">
+A **Merchant ID** is required for specific external wallet configurations
+(such as a direct Google Pay integration), but it is not used in the
+`x-paycom-api-key` header for standard backend API calls.
+</Callout>
+
+## Verify key and environment match
+
+Each API key is bound to a single environment. A `staging_` key only works
+against `https://api.staging.pay.com`, and a `live_` key only works
+against `https://api.pay.com`. Sending a `staging_` key to the live URL,
+or a `live_` key to the staging URL, returns a `401 Unauthorized` error.
+
+See [Environments](/docs/api-reference/environments) for the full list of
+base URLs.
