@@ -9,7 +9,6 @@
     "http-response-codes",
     "idempotency-key",
     "postman-collections",
-    "webhooks",
     "adjustments",
     "applepaysessions",
     "authenticationsessions",

@@ -387,7 +387,7 @@ Redirect the customer to the `url`. Once Pay.com redirects them back to your `re
 
 <Step>
 ## Listen for webhooks
-Because status updates can happen asynchronously, use [webhooks](/docs/api-reference/webhooks) to trigger your fulfillment logic.
+Because status updates can happen asynchronously, use [webhooks](/documentation/payments/webhooks) to trigger your fulfillment logic.
 Subscribe to the following events:
 * `charge.succeeded`: The funds are successfully captured.
 * `charge.failed`: The transaction could not be completed.
@@ -400,7 +400,7 @@ Always verify webhook signatures using the `Pay-Signature` header and your endpo
 
 ## Next steps
 
-* Read the [Webhooks overview](/docs/api-reference/webhooks) to learn how to verify signatures using your endpoint's secret key, ensuring your logic only triggers for legitimate events.
+* Read the [Webhooks overview](/documentation/payments/webhooks) to learn how to verify signatures using your endpoint's secret key, ensuring your logic only triggers for legitimate events.
 * Read the [Holds overview](/payments/payment-concepts/holds) to learn how to reserve funds for inventory verification and perform partial or multiple captures.
 * Read the [Refunds guide](/payments/payment-concepts/refunds) to understand how to process full or partial returns for settled charges.
 * Read [Create a charge with 3DS](/payments/server-to-server-guides/create-a-charge-with-3ds) to add fraud prevention and regional compliance to your integration.

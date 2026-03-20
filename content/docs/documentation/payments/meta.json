@@ -6,6 +6,7 @@
     "index",
     "get-started",
     "server-to-server-guides",
+    "webhooks",
     "sdks"
   ]
 }

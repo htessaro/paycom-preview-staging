@@ -1,0 +1,318 @@
+---
+title: Webhook events
+description: A complete reference of all webhook event types that Pay.com
+  sends, organized by resource.
+---
+
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+
+Pay.com sends webhook events across the full lifecycle of every resource in
+your account. Each event has a `type` field that identifies what happened.
+The `data` field contains the full resource object at the time of the event.
+
+A webhook payload has the following shape:
+
+```json
+{
+  "id": "evt_191439662182903690",
+  "resource": "event",
+  "type": "charge.succeeded",
+  "created": "2022-09-07T13:40:41.751Z",
+  "data": { ... }
+}
+```
+
+Expand a resource below to see the events it can send.
+
+<Accordions type="multiple">
+
+<Accordion title="Authentication sessions" id="authentication-sessions">
+
+| Event type | Description |
+| :--- | :--- |
+| `authentication_session.open` | A new authentication session was created. |
+| `authentication_session.authenticated` | The authentication session succeeded. |
+| `authentication_session.failed` | The authentication session failed. |
+
+</Accordion>
+
+<Accordion title="Batch" id="batch">
+
+| Event type | Description |
+| :--- | :--- |
+| `batch.created` | A requests batch was created. |
+| `batch.progress_update` | Progress was updated on the requests batch. |
+| `batch.completed` | The requests batch completed. |
+
+</Accordion>
+
+<Accordion title="Cashflow transactions" id="cashflow-transactions">
+
+| Event type | Description |
+| :--- | :--- |
+| `cashflow_transaction.created` | A transaction cleared and cashflow data is available. |
+
+</Accordion>
+
+<Accordion title="Charges" id="charges">
+
+| Event type | Description |
+| :--- | :--- |
+| `charge.succeeded` | The charge is approved and funds are captured. |
+| `charge.failed` | The payment method declined the request and the charge has failed. |
+| `charge.refunded` | A refund for the charge was created (full or partial). |
+| `charge.requires_confirmation` | The charge was authenticated and needs confirmation via the API to execute. |
+| `charge.pending` | The charge was created. |
+| `charge.accepted` | A charge was created on an external platform and was accepted by Pay.com. |
+| `charge.updated` | The charge was updated. |
+
+</Accordion>
+
+<Accordion title="Checkout sessions" id="checkout-sessions">
+
+| Event type | Description |
+| :--- | :--- |
+| `checkout_session.open` | The checkout session was created but no action has been taken yet. |
+| `checkout_session.completed` | The checkout session was completed and approved. |
+| `checkout_session.failed` | The checkout session has failed. |
+
+</Accordion>
+
+<Accordion title="Collaborations" id="collaborations">
+
+| Event type | Description |
+| :--- | :--- |
+| `collaboration.open` | The collaboration was opened. |
+| `collaboration.resolved` | The collaboration was resolved. |
+| `collaboration.escalated` | The collaboration was escalated. |
+
+</Accordion>
+
+<Accordion title="Customer block reviews" id="customer-block-reviews">
+
+| Event type | Description |
+| :--- | :--- |
+| `customer_block_review.created` | A customer block review was created. |
+
+</Accordion>
+
+<Accordion title="Customers" id="customers">
+
+| Event type | Description |
+| :--- | :--- |
+| `customer.created` | A new customer was created. |
+| `customer.updated` | A customer's details were updated. |
+| `customer.deleted` | The customer was deleted. |
+| `customer.default_source.changed` | A customer's default payment method changed. |
+
+</Accordion>
+
+<Accordion title="Disputes" id="disputes">
+
+| Event type | Description |
+| :--- | :--- |
+| `dispute.open` | The customer initiated a chargeback. |
+| `dispute.evidence_under_review` | The submitted defense is under review. |
+| `dispute.evidence_under_review_auto_defend` | The defense was submitted automatically and is under review. |
+| `dispute.evidence_rejected` | The submitted evidence was rejected. |
+| `dispute.chargeback_accepted` | The merchant agreed with the chargeback. |
+| `dispute.chargeback_canceled` | The customer canceled the chargeback. |
+| `dispute.resolved` | The dispute was resolved automatically. |
+| `dispute.resolved_rapid_dispute_resolution` | The dispute was pre-resolved through the Visa RDR program. |
+| `dispute.expired` | The merchant did not respond to the dispute on time. |
+| `dispute.lost` | The issuing bank rejected the defense. |
+| `dispute.won` | The issuing bank accepted the defense. |
+| `dispute.pre_arbitration` | The customer initiated a second chargeback. |
+| `dispute.arbitration_under_review` | The merchant proceeded to card network arbitration. |
+| `dispute.arbitration_lost` | The arbitration process was lost. |
+| `dispute.arbitration_won` | The arbitration process was won. |
+
+</Accordion>
+
+<Accordion title="Documents" id="documents">
+
+| Event type | Description |
+| :--- | :--- |
+| `document.created` | A document was created. |
+| `document.pending` | The document was uploaded and is pending review. |
+| `document.active` | The document was accepted and is now active. |
+| `document.rejected` | The document was rejected. |
+
+</Accordion>
+
+<Accordion title="Exchange rates" id="exchange-rates">
+
+| Event type | Description |
+| :--- | :--- |
+| `exchange_rates.update` | Exchange rates were updated. |
+
+</Accordion>
+
+<Accordion title="Fraud warnings" id="fraud-warnings">
+
+| Event type | Description |
+| :--- | :--- |
+| `fraud_warning.created` | A transaction was officially reported as fraud via TC40 or SAFE files. This event lets you proactively refund the charge before it becomes a dispute. |
+
+</Accordion>
+
+<Accordion title="Holds" id="holds">
+
+| Event type | Description |
+| :--- | :--- |
+| `hold.requires_capture` | The hold is approved and funds are waiting to be captured. |
+| `hold.succeeded` | The hold is captured. Sent only for the first capture in a multi-capture scenario. |
+| `hold.captured` | The hold is captured. Sent for every capture in a multi-capture scenario. |
+| `hold.failed` | The payment method declined the request and the hold has failed. |
+| `hold.canceled` | The hold on the funds expired or was canceled by the merchant. |
+| `hold.requires_confirmation` | The hold was authenticated and needs confirmation to process. |
+| `hold.funds_about_to_expire` | The hold on the funds is about to expire. |
+
+</Accordion>
+
+<Accordion title="Payment attempts" id="payment-attempts">
+
+| Event type | Description |
+| :--- | :--- |
+| `payment_attempt.succeeded` | An individual attempt within a payment session succeeded. |
+| `payment_attempt.failed` | An individual attempt within a payment session failed. |
+
+</Accordion>
+
+<Accordion title="Payment methods" id="payment-methods">
+
+| Event type | Description |
+| :--- | :--- |
+| `payment_method.created` | The payment method was verified and created in the system. |
+| `payment_method.requires_confirmation` | The payment method was authenticated and needs confirmation to complete verification. |
+| `payment_method.failed_authentication` | The additional authentication failed and the payment method cannot be used. |
+| `payment_method.updated` | The payment method was updated. |
+| `payment_method.deleted` | The payment method was deleted. |
+| `payment_method.network_token.provisioned` | A network token was provisioned for the payment method. |
+| `payment_method.network_token.deleted` | A network token for the payment method was deleted. |
+| `payment_method.third_party_token.created` | A third-party token was created for the payment method. |
+
+</Accordion>
+
+<Accordion title="Payment sessions" id="payment-sessions">
+
+| Event type | Description |
+| :--- | :--- |
+| `payment_session.open` | The payment session was created but no action has been taken yet. |
+| `payment_session.displayed` | The payment session was displayed to the customer with all provided details. |
+| `payment_session.completed` | The payment session was completed and approved. A payment method was attached and a charge or hold was created based on the session parameters. |
+| `payment_session.failed` | The payment session failed without a successful charge. A failed session may have multiple declined payment attempts. |
+
+</Accordion>
+
+<Accordion title="Payouts" id="payouts">
+
+| Event type | Description |
+| :--- | :--- |
+| `payout.succeeded` | The payout is approved and funds have been sent to the customer. |
+| `payout.failed` | The payout request has failed. |
+| `payout.pending` | The payout request was created. A follow-up webhook will be sent with the final outcome. |
+
+</Accordion>
+
+<Accordion title="Reconciliation" id="reconciliation">
+
+| Event type | Description |
+| :--- | :--- |
+| `reconciliation.update` | The reconciliation was updated. |
+
+</Accordion>
+
+<Accordion title="Refunds" id="refunds">
+
+| Event type | Description |
+| :--- | :--- |
+| `refund.succeeded` | A refund for a charge was successfully created. |
+| `refund.failed` | The refund request has failed. |
+| `refund.pending` | The refund request was created. |
+| `refund.updated` | The refund was updated. |
+
+</Accordion>
+
+<Accordion title="Reports" id="reports">
+
+| Event type | Description |
+| :--- | :--- |
+| `report.uploaded` | The report was generated and uploaded. |
+
+</Accordion>
+
+<Accordion title="Retried attempts" id="retried-attempts">
+
+| Event type | Description |
+| :--- | :--- |
+| `retried_attempt.created` | A provider retry attempt was created. |
+
+</Accordion>
+
+<Accordion title="Reviews" id="reviews">
+
+| Event type | Description |
+| :--- | :--- |
+| `review.customer.created` | A customer review was created. |
+| `review.customer.expired` | A customer review has expired. |
+| `review.customer.reviewed` | A customer review was reviewed. |
+| `review.transaction.created` | A transaction review was created. |
+| `review.transaction.expired` | A transaction review has expired. |
+| `review.transaction.reviewed` | A transaction review was reviewed. |
+
+</Accordion>
+
+<Accordion title="Risk rules" id="risk-rules">
+
+| Event type | Description |
+| :--- | :--- |
+| `rule.created` | A risk rule was created. |
+| `rule.updated` | A risk rule was updated. |
+| `rule.deleted` | A risk rule was deleted. |
+
+</Accordion>
+
+<Accordion title="Settlements" id="settlements">
+
+| Event type | Description |
+| :--- | :--- |
+| `settlement.paid` | The settlement was paid. |
+
+</Accordion>
+
+<Accordion title="Setup attempts" id="setup-attempts">
+
+| Event type | Description |
+| :--- | :--- |
+| `setup_attempt.succeeded` | An individual attempt within a setup session succeeded. |
+| `setup_attempt.failed` | An individual attempt within a setup session failed. |
+
+</Accordion>
+
+<Accordion title="Setup sessions" id="setup-sessions">
+
+| Event type | Description |
+| :--- | :--- |
+| `setup_session.open` | The setup session was created but no action has been taken yet. |
+| `setup_session.completed` | The setup session was completed and a payment method was successfully saved. |
+| `setup_session.failed` | The setup session failed without a successful payment method attachment. |
+
+</Accordion>
+
+<Accordion title="Subscriptions" id="subscriptions">
+
+| Event type | Description |
+| :--- | :--- |
+| `subscription.active` | The subscription is active, either after initial creation or after a failed charge that succeeded on retry. |
+| `subscription.charged` | The subscription charge succeeded at the end of a billing term. |
+| `subscription.unpaid` | The subscription charge failed and the subscription entered a retry sequence. |
+| `subscription.attempted` | A retry attempt to charge the subscription failed. Sent for each failed retry until the subscription is canceled. |
+| `subscription.canceled` | The subscription was canceled. The `cancellation_reason` field indicates why: `ended`, `cancellation_requested`, `charge_disputed`, `charge_failed`, or `payment_method_expired`. |
+| `subscription.upcoming_renewal` | Sent before the end of the billing term, based on the configured advance notice period. |
+| `subscription.payment_method.upcoming_expiry` | The stored payment method is expiring within one month. |
+| `subscription.failed` | The subscription has failed. |
+
+</Accordion>
+
+</Accordions>
