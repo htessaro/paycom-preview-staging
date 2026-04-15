@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/mdx-components';
 import type { Metadata } from 'next';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
+import { MarkdownCopyButton, ViewOptionsPopover } from '@/components/ai/page-actions';
 
 export default async function Page(props: { params: Promise<{ slug: string[] }> }) {
   const params = await props.params;
@@ -11,11 +12,16 @@ export default async function Page(props: { params: Promise<{ slug: string[] }> 
   if (!page) notFound();
 
   const MDX = page.data.body;
+  const markdownUrl = `${page.url}.md`;
 
   return (
     <DocsPage toc={page.data.toc} full={page.data.full} tableOfContent={{ style: 'clerk' }}>
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
+      <div className="flex flex-row gap-2 items-center border-b pt-2 pb-6">
+        <MarkdownCopyButton markdownUrl={markdownUrl} />
+        <ViewOptionsPopover markdownUrl={markdownUrl} />
+      </div>
       <DocsBody>
         <MDX
           components={getMDXComponents({

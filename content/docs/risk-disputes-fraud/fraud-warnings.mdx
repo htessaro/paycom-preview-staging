@@ -1,0 +1,62 @@
+---
+title: Fraud warnings
+description: Understand TC40 and SAFE reports, and how use them to proactively prevent formal disputes.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+A fraud warning (also known as a TC40 report for Visa or a SAFE report for Mastercard) is a notification from a card scheme that a transaction has been reported as fraudulent by the cardholder or their issuing bank.
+
+## What is a fraud warning?
+
+Fraud warnings differ from formal disputes in one critical way: they are **non-financial** messages.
+
+<Callout type="info">
+When you receive a fraud warning, no funds are withdrawn from your account. The warning is simply an information message from the card network indicating that the cardholder has flagged the transaction as unauthorized.
+</Callout>
+
+## Why they matter
+
+While fraud warnings don't cost you money immediately, they are highly accurate predictors of future formal disputes. Approximately **80% or more** of transactions flagged in TC40 or SAFE reports eventually turn into formal chargebacks.
+
+Monitoring these warnings allows you to:
+
+*   **Identitfy High-Risk Patterns:** Spot fraud rings or specific product vulnerabilities early.
+*   **Avoid Dispute Fees:** By refunding the transaction before it becomes a chargeback, you save on the administrative fees charged for a formal bank challenge.
+*   **Protect Your Merchant Account:** High chargeback rates can lead to fines or account suspension. Proactive refunds keep your ratios healthy.
+
+## Merchant actions
+
+When a fraud warning appears in your **Fraud Warnings** dashboard or arrives via a webhook:
+
+1.  **Review the Transaction:** Check the customer's history and shipping status. If the product hasn't shipped yet, cancel the order immediately.
+2.  **Issue a Proactive Refund:** If the transaction looks suspicious, the safest action is to refund the transaction amount.
+3.  **Update Blocklists:** Add the customer's email or device fingerprint to your [Risk Rules](/docs/risk-disputes-fraud/risk-rules) to prevent future attempts.
+
+## API integration
+
+You can automate your fraud prevention logic by listening for the `fraud_warning.created` webhook. Learn more about how to set up and manage [Webhooks](/docs/payments/webhooks).
+
+```json
+{
+  "id": "fw_456...",
+  "type": "fraud_warning.created",
+  "data": {
+    "object": "fraud_warning",
+    "charge": "ch_123...",
+    "fraud_type": "stolen_card",
+    "reported_at": "2024-03-24T14:45:00Z"
+  }
+}
+```
+
+<Callout type="warn">
+Once you refund a transaction flagged by a fraud warning, the cardholder's bank can no longer file a formal chargeback for that transaction. This is the most effective way to protect your account.
+</Callout>
+
+## Next steps
+
+* **[Collaborations](/docs/risk-disputes-fraud/collaborations):** Use pre-dispute alerts (Ethoca/RDR) to catch fraud even earlier in the process.
+* **[Risk Rules](/docs/risk-disputes-fraud/risk-rules):** Configure velocity limits and blocklists to stop fraud before it's reported.
+* **[Disputes](/docs/risk-disputes-fraud/disputes):** Understand the formal chargeback process if a fraud warning is not handled in time.
+* **Fraud Warnings API:** View the technical documentation for the [Fraud Warnings API](/api-reference/fraudwarnings).

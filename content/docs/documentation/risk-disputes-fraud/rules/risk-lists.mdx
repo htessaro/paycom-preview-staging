@@ -1,0 +1,129 @@
+---
+title: Risk lists
+description: Create named collections of values to reference across
+  multiple rules without repeating individual conditions.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+A risk list is a named collection of values that you reference in rule
+conditions. Instead of adding each value as a separate condition or
+creating one rule per value, you maintain a single list and reference it
+in any rule using the **is in list** operator.
+
+For example, if you want to block charges from 50 email domains, you can
+add all 50 domains to one list and reference it in a single block rule.
+When the list changes, you update the list only, and the rule stays the same.
+
+## When to use risk lists
+
+Use a risk list when:
+
+- A condition has many possible values (for example, a set of blocked
+  email domains, BIN ranges, or customer IDs).
+- The same set of values is referenced by more than one rule.
+- You want to update the values without editing the rules that reference
+  them.
+
+For single-value conditions, you can set the value directly on the rule
+using the **equals** operator without creating a list.
+
+## List types
+
+When creating a list, you select a type that defines what kind of values
+it holds:
+
+| Type | What to add |
+| :--- | :--- |
+| Billing addresses | Physical billing addresses |
+| BINs | Bank Identification Numbers (first six digits of a card number) |
+| Cardholder names | Names as they appear on the card |
+| Custom | Free-form values for any use case |
+| Customer reference IDs | Customer identifiers from your system |
+| Emails | Full email addresses |
+| Email domains | Domains only (for example, `example.com`) |
+| IP addresses | IPv4 or IPv6 addresses |
+| Issuer countries | Two-letter country codes (for example, `US`, `BR`) |
+| Phones | Phone numbers |
+
+## Create a risk list
+
+<Steps>
+<Step>
+### Open the risk lists page
+
+Go to **Rules → Risk Lists** in the Pay.com dashboard and click
+**Create List**.
+</Step>
+
+<Step>
+### Name the list and choose a type
+
+Give the list a descriptive name (for example, "Blocked email domains").
+Then select the **Type** that matches the values you want to add.
+
+The type you select determines which condition fields the list can be
+used with in a rule.
+</Step>
+
+<Step>
+### Add values to the list
+
+After saving the list, add the values it contains. You have two options:
+
+- **Add manually**: enter values one at a time directly in the dashboard.
+- **Upload a file**: upload a `.txt` file with all values on a single
+  line, separated by commas (for example, `value1, value2, value3`).
+
+<Callout type="warn">
+Make sure all values are on a single line separated by commas. Uploads
+that don't follow this format may fail or import incorrectly.
+</Callout>
+</Step>
+</Steps>
+
+<Callout type="info">
+A risk list has no effect until it's referenced in at least one enabled rule.
+</Callout>
+
+## Use a list in a rule
+
+After creating a list, reference it in a payment or review rule condition:
+
+<Steps>
+<Step>
+### Open or create a rule
+
+Go to **Rules → Payment** or **Rules → Review** and open the rule you want
+to edit, or click **+ Create new rule**.
+</Step>
+
+<Step>
+### Add a condition with the list operator
+
+For the condition field, choose the field you want to match (for example,
+**Email domain**). For the operator, choose **is in list**. For the value,
+select the list you created.
+</Step>
+
+<Step>
+### Save the rule
+
+Click **Confirm & Save Rule**. Pay.com now evaluates incoming charges
+against the list values.
+</Step>
+</Steps>
+
+## Manage list values
+
+You can add or remove values from a list at any time from **Rules → Risk
+Lists**. Changes take effect immediately for all rules that reference the
+list. You don't need to edit or republish the rules.
+
+## Next steps
+
+- [Payment rules](/docs/risk-disputes-fraud/rules/payment-rules): use lists
+  in pre-authorization rules to block charges or enforce 3DS.
+- [Review rules](/docs/risk-disputes-fraud/rules/review-rules): use lists in
+  post-authorization rules to flag transactions or customers for review.

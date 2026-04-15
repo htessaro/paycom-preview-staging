@@ -1,8 +1,42 @@
 ---
-title: Risk, Disputes, & Fraud
-description: Manage chargebacks and configure fraud rules.
+title: Overview
+description: Block fraud, act on early warnings, and manage the full chargeback lifecycle with Pay.com's risk tools.
 ---
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import {
+  Gavel,
+  Handshake,
+  AlertTriangle,
+  ShieldCheck,
+} from 'lucide-react';
 
-# Risk, Disputes, & Fraud
+Pay.com provides a full set of tools for managing payment risk. Use them to block
+suspicious transactions before they happen, act on early fraud signals before they
+escalate, and manage the formal chargeback process when disputes do arise.
 
-Configure velocity checks, integrate 3D Secure, and manage chargebacks and disputes effectively.
+<Cards>
+  <Card
+    icon={<ShieldCheck />}
+    title="Rules"
+    href="/docs/risk-disputes-fraud/rules"
+    description="Configure payment and review rules to block, flag, or authenticate charges based on conditions you define."
+  />
+  <Card
+    icon={<AlertTriangle />}
+    title="Fraud warnings"
+    href="/docs/risk-disputes-fraud/fraud-warnings"
+    description="Monitor card network fraud reports and act on them before they escalate into formal chargebacks."
+  />
+  <Card
+    icon={<Handshake />}
+    title="Collaborations"
+    href="/docs/risk-disputes-fraud/collaborations"
+    description="Resolve potential disputes before they become formal chargebacks."
+  />
+  <Card
+    icon={<Gavel />}
+    title="Disputes"
+    href="/docs/risk-disputes-fraud/disputes"
+    description="Manage the formal chargeback lifecycle, from initial notification to representment and final decision."
+  />
+</Cards>

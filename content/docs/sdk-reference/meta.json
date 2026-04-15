@@ -1,5 +1,10 @@
 {
   "title": "SDK Reference",
   "root": true,
-  "icon": "TerminalSquare"
+  "icon": "TerminalSquare",
+  "pages": [
+    "index",
+    "sdk-customization",
+    "sdk-style-reference"
+  ]
 }

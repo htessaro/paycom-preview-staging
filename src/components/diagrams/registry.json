@@ -1,0 +1,6 @@
+{
+  "3ds-auth-flow": {
+    "title": "3DS Authentication Flow",
+    "description": "3DS Authentication Flow for Pay.com transactions. The flow begins by initiating a transaction via POST /v1/charges or /v1/holds, which includes an authentication_context. The status is then checked: if the result is succeeded or failed, the transaction is immediately finalized. If the status is requires_authentication, an authentication session is created via POST /v1/sessions/authentication/linked, and the customer is redirected to their bank URL to complete the 3DS challenge. After the bank challenge, the flow branches based on the confirm parameter: if confirm is true, Pay.com auto-authorizes the payment and notifies the merchant via webhooks, then the transaction is finalized; if confirm is false, the merchant waits for the customer to be redirected back to their site, then manually triggers confirmation via POST /v1/charges/{charge_id}/confirm or POST /v1/holds/{hold_id}/confirm, after which the transaction is finalized."
+  }
+}

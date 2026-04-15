@@ -1,0 +1,119 @@
+---
+title: Disputes
+description: Learn how disputes work, when to accept or defend them, and how to integrate dispute events into your workflow.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+A dispute (also known as a chargeback) occurs when a cardholder contacts their issuing bank
+to challenge a transaction. The bank initiates the dispute through the card network, which
+notifies Pay.com. Pay.com then delivers a `dispute.open` webhook event to your endpoint and
+updates the **Disputes** page in the dashboard. From that point, you have a fixed window of
+time to accept or defend the dispute, either through the dashboard or the
+[Disputes API](/api-reference/disputes).
+
+## Dispute lifecycle
+
+When a dispute is initiated, it moves through a series of stages defined by the card 
+network (Visa, Mastercard, and so on).
+
+<Steps>
+<Step>
+### Dispute initiated
+The cardholder challenges the transaction with their bank. The bank opens the dispute
+through the card network, and Pay.com notifies you by delivering a `dispute.open` webhook
+event to your endpoint and updating the **Disputes** page in the dashboard. You can also
+retrieve disputes programmatically via the
+[List disputes](/api-reference/disputes/list-disputes) endpoint.
+
+Depending on the card network and dispute type, funds are either temporarily held or
+immediately reversed at this point. This determines when you lose access to the disputed
+amount.
+</Step>
+<Step>
+### Evidence required
+You have a fixed window to decide how to respond, as defined by the card network. This 
+deadline is shown as **Expires in** on the **Disputes** page. If you do not respond 
+before this deadline, the dispute is automatically resolved in favor of the cardholder.
+</Step>
+<Step>
+### Representment
+If you choose to defend, you submit evidence through the dashboard or via the 
+[Update dispute evidence](/api-reference/disputes/update-dispute-evidence) endpoint. 
+Pay.com forwards your evidence to the issuing bank to re-present the original charge.
+
+<Callout type="info">
+You can submit evidence for multiple disputes in a single request using the 
+[Bulk defend disputes](/api-reference/disputes/bulk-defend-disputes) endpoint.
+</Callout>
+</Step>
+<Step>
+### Decision
+The issuing bank reviews the evidence and issues a final ruling. If the ruling is in 
+your favor, the held funds are returned to you. If not, the dispute closes in favor of 
+the cardholder.
+</Step>
+</Steps>
+
+## Accepting or defending
+
+When you receive a dispute, you have two options:
+
+| Action | What it means | When to use it |
+|---|---|---|
+| **Accept** | You concede the dispute and the funds are returned to the cardholder. | The transaction was erroneous, the customer is entitled to a refund, or you lack sufficient evidence to defend. |
+| **Defend** | You submit evidence to challenge the dispute through the card network. | You have proof of delivery, service usage, customer communication, or agreement to your terms. |
+
+Accepting a dispute is final and cannot be undone. It is functionally similar to a refund 
+but typically carries additional fees from the card network.
+
+## Evidence for disputes
+
+To successfully defend a dispute, submit as much relevant documentation as possible. The 
+table below shows the most common evidence types accepted by card networks:
+
+| Evidence type | Examples |
+|---|---|
+| **Proof of delivery** | Tracking numbers, carrier confirmations, signed delivery receipts |
+| **Proof of service** | Service logs, login history, digital download timestamps |
+| **Customer communication** | Emails or chat logs referencing the purchase or delivery |
+| **Terms acceptance** | Signed agreements or checkout confirmation showing the customer accepted your refund policy |
+
+## Webhook events
+
+Pay.com sends events as a dispute moves through its lifecycle. The key events to
+subscribe to are:
+
+| Event | When it fires |
+|---|---|
+| `dispute.open` | A new dispute has been opened. |
+| `dispute.expired` | The response deadline passed without action and the dispute was automatically resolved in favor of the cardholder. |
+| `dispute.chargeback_accepted` | The merchant accepted the dispute. |
+| `dispute.won` | The issuing bank accepted the defense and the funds were returned. |
+| `dispute.lost` | The issuing bank rejected the defense. |
+
+For the full list of dispute events, see [Webhook events](/docs/payments/webhooks/webhook-events).
+
+The dispute object includes an `expires_at` timestamp showing the date by which you must
+respond. If you miss this deadline, the dispute is automatically resolved in favor of the
+cardholder, even if you have valid evidence to submit.
+
+<Callout type="info">
+To test dispute handling in sandbox, use the simulate endpoint to trigger a `dispute.open`
+event against a test charge. See
+[Test risk events in sandbox](/docs/risk-disputes-fraud/test-risk-events).
+</Callout>
+
+## Next steps
+
+The best dispute is one that never gets filed. Explore how to get ahead of 
+them earlier in the process:
+
+- [Collaborations](/docs/risk-disputes-fraud/collaborations): use early resolution 
+  services like Ethoca and RDR to resolve transactions before they become formal disputes.
+- [Fraud warnings](/docs/risk-disputes-fraud/fraud-warnings): monitor fraud signals early 
+  to act before a dispute is filed.
+- [Risk rules](/docs/risk-disputes-fraud/risk-rules): configure custom rules to block 
+  suspicious transactions automatically.
+- [Disputes API](/api-reference/disputes): view the full technical reference.

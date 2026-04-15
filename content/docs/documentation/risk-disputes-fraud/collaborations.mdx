@@ -1,0 +1,105 @@
+---
+title: Collaborations
+description: Resolve potential disputes before they become formal chargebacks using early warning services like Ethoca and Rapid Dispute Resolution (RDR).
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+Collaborations (also known as pre-dispute alerts) are early warning services provided by
+card networks and third-party vendors. When a cardholder disputes a transaction at a
+participating bank, an alert is sent to Pay.com before a formal chargeback is filed.
+Pay.com delivers a `collaboration.open` webhook event to your endpoint and updates the
+**Collaborations** tab in the dashboard, giving you a short window to refund the
+transaction and close the case without it counting against your dispute ratios. You can
+respond to the alert through the dashboard or the
+[Collaborations API](/api-reference/collaborations).
+
+## How collaborations work
+
+When a participating bank receives a cardholder challenge, it sends an alert to Pay.com 
+instead of immediately opening a dispute. The response window varies, but you typically 
+have 24–72 hours to act. Your deadline is shown in the **Collaborations** tab under the 
+**Refundable Until** column.
+
+<Steps>
+<Step>
+### Alert received
+Pay.com receives the alert from the card network or vendor and notifies you via the
+dashboard or a `collaboration.open` webhook event.
+</Step>
+<Step>
+### Resolution decision
+You decide whether to refund the transaction or let it escalate to a formal dispute.
+</Step>
+<Step>
+### Outcome
+If you refund, the case is closed and no chargeback is recorded against your account. 
+If you escalate or do nothing, the dispute proceeds through the standard chargeback 
+process.
+</Step>
+</Steps>
+
+Alerts that are resolved with a refund do not count toward your dispute-to-transaction 
+ratio in card network monitoring programs. This makes collaborations one of the most 
+effective tools for merchants who are approaching or managing threshold limits.
+
+## Supported services
+
+Pay.com integrates with the leading collaboration services across major card networks:
+
+| Service | Networks covered | How it works |
+|---|---|---|
+| **Visa (RDR)** | Visa | Visa's automated pre-dispute service. You define refund rules and Pay.com resolves matching alerts automatically, without manual review. |
+| **Mastercard Collaboration** | Mastercard | Mastercard's native pre-chargeback resolution service for manual or automated responses. |
+| **Ethoca** | Visa, Mastercard, Amex, Discover, and others | A third-party service owned by Mastercard that provides alerts across multiple networks, giving you the broadest possible coverage. |
+
+## Resolution modes
+
+You can handle collaboration alerts in two ways depending on your setup:
+
+| Mode | How it works | Best for |
+|---|---|---|
+| **Automated** | You define rules, for example always refund if the amount is below $50, and Pay.com resolves matching alerts automatically. Available for Visa transactions via RDR. | High alert volumes where manual review isn't scalable. |
+| **Manual review** | You review individual alerts in the Collaborations section of the dashboard and decide case by case. | Lower volumes or situations requiring human judgment on each transaction. |
+
+To enroll in collaboration services or configure your automated refund rules, contact 
+Pay.com Support. Our risk team will help you set up the right configuration for your 
+business.
+
+<Callout type="warn">
+Collaboration alerts have strict response windows, typically 24–72 hours. If you do
+not act before the window closes, the alert escalates to a formal dispute automatically.
+</Callout>
+
+## Webhook events
+
+Pay.com sends the following events as a collaboration alert moves through its lifecycle:
+
+| Event | When it fires |
+|---|---|
+| `collaboration.open` | A new collaboration alert has been received. |
+| `collaboration.resolved` | The alert was resolved with a refund. |
+| `collaboration.escalated` | The alert was not resolved in time and escalated to a formal dispute. |
+
+For instructions on configuring endpoints and verifying payloads, see
+[Webhook events](/docs/payments/webhooks/webhook-events).
+
+<Callout type="info">
+To test collaboration handling in sandbox, use the simulate endpoint to trigger a
+`collaboration.open` event against a test charge. See
+[Test risk events in sandbox](/docs/risk-disputes-fraud/test-risk-events).
+</Callout>
+
+## Next steps
+
+Collaborations work best alongside Pay.com's other risk tools. Explore the 
+full prevention layer:
+
+- [Disputes](/docs/risk-disputes-fraud/disputes): understand what happens if an alert 
+  escalates or if you are not enrolled in a collaboration service.
+- [Fraud warnings](/docs/risk-disputes-fraud/fraud-warnings): learn about TC40 and SAFE 
+  reports, another type of early fraud signal.
+- [Risk rules](/docs/risk-disputes-fraud/risk-rules): configure rules to block suspicious 
+  transactions before they trigger an alert.
+- [Collaborations API](/api-reference/collaborations): view the full technical reference.

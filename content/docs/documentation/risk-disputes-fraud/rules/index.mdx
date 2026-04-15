@@ -1,0 +1,48 @@
+---
+title: Rules overview
+description: Configure pre- and post-authorization rules to block, flag,
+  or authenticate charges based on conditions you define.
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import { ShieldBan, Eye, ListChecks, BookOpen, Beaker } from 'lucide-react';
+
+Pay.com's rules engine evaluates each charge against conditions you define
+and applies a configured action automatically. Rules run either before
+authorization (payment rules) or after authorization (review rules). You
+configure and manage all rules in the Pay.com dashboard.
+
+Explore the guides below to set up and manage rules based on your workflow:
+
+<Cards>
+  <Card
+    icon={<ShieldBan />}
+    title="Payment rules"
+    href="/docs/risk-disputes-fraud/rules/payment-rules"
+    description="Block charges or enforce 3D Secure before a transaction reaches the card network."
+  />
+  <Card
+    icon={<Eye />}
+    title="Review rules"
+    href="/docs/risk-disputes-fraud/rules/review-rules"
+    description="Flag transactions or customers for manual review after authorization without blocking the payment."
+  />
+  <Card
+    icon={<ListChecks />}
+    title="Risk lists"
+    href="/docs/risk-disputes-fraud/rules/risk-lists"
+    description="Create named collections of values to reference across multiple rules."
+  />
+  <Card
+    icon={<BookOpen />}
+    title="Rule conditions and operators"
+    href="/docs/risk-disputes-fraud/rules/rule-conditions"
+    description="Reference for all available condition fields and operators."
+  />
+  <Card
+    icon={<Beaker />}
+    title="Test your rules"
+    href="/docs/risk-disputes-fraud/rules/test-rules"
+    description="Verify that payment and review rules fire correctly using test charges."
+  />
+</Cards>

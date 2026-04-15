@@ -1,0 +1,634 @@
+---
+title: Transactions
+description: Learn how charges, holds, refunds, payouts, and 3D Secure authentication work in Pay.com.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { StatusFlow } from '@/components/mdx/status-flow';
+import { SequenceFlow } from '@/components/mdx/sequence-flow';
+
+Every movement of money in Pay.com is represented as a transaction object. Pay.com distinguishes between money-in transactions (charges, holds) and money-out transactions (payouts and refunds), each with its own lifecycle and status model.
+
+The table below summarizes the available types:
+
+| Transaction type | Use case |
+|------|-------------|
+| [**Charges**](#charges) | Immediate payment capture |
+| [**Holds**](#holds-and-captures) | Reserve funds before capture |
+| [**3D Secure**](#3d-secure) | Authenticate customers during a charge or a hold |
+| [**Refunds**](#refunds) | Return funds from completed charges |
+| [**Payouts**](#payouts) | Send funds to customers |
+
+3D Secure is not a standalone transaction type. It is an authentication layer that can apply
+to charges and holds, and appears here because it directly affects how those transactions are
+created and completed.
+
+<Callout type="info">
+If you're using the SDK, start with the Charges and 3D Secure sections. The SDK handles
+authentication automatically. If you're building a server-to-server integration, read all
+sections in order.
+</Callout>
+
+The sections below cover how each of these transaction types works in detail:
+
+## Charges
+
+A charge is the main transaction type in Pay.com for capturing a payment. When a charge
+succeeds, funds are moved from the customer's payment method to your account.
+
+### Creating a charge
+
+There are two ways to create a charge, depending on your integration path:
+
+<Tabs items={['SDK', 'API']}>
+  <Tab value="SDK">
+  Create a payment session with `capture: true` (the default) via `POST /v1/payment_sessions`.
+  The SDK handles payment method collection, 3D Secure, and processing, and creates the charge
+  automatically on success. 
+  
+  See the [Create a charge with the SDK](/docs/payments/sdks/create-a-charge-with-sdk)
+  guide for step-by-step instructions, or [Create a charge with a wallet (SDK)](/docs/payments/sdks/create-a-wallet-charge)
+  for wallet payments.
+  </Tab>
+  <Tab value="API">
+  Create a charge directly by calling `POST /v1/charges`. You can provide a stored payment
+  method, a token, or raw card details (PCI Level 1 required for raw card data). 
+  
+  See the [Create a charge](/docs/payments/server-to-server-guides/create-a-charge) guide for the
+  server-to-server flow, [Create a charge with 3DS](/docs/payments/server-to-server-guides/create-a-charge-with-3ds)
+  if your integration requires 3D Secure authentication, or
+  [Create a charge with a wallet (API)](/docs/payments/server-to-server-guides/create-a-charge-with-a-wallet)
+  for wallet payments.
+  </Tab>
+</Tabs>
+
+### Charge statuses
+A Charge can resolve immediately or pass through authentication and confirmation steps depending
+on your 3D Secure configuration:
+
+<SequenceFlow
+  actors={[
+    { id: 'server', label: 'Your Server', color: 'blue' },
+    { id: 'api', label: 'Pay.com API', color: 'purple' },
+    { id: 'bank', label: 'Bank (3DS)', color: 'orange' },
+  ]}
+  messages={[
+    { from: 'server', to: 'api', label: 'POST /v1/charges' },
+
+    // Path 1: Frictionless Flow (Immediate Success/Failure)
+    { from: 'api', to: 'server', label: 'status: succeeded', style: 'dashed', group: 'flow: frictionless' },
+    { from: 'api', to: 'server', label: 'status: failed', style: 'dashed', group: 'flow: frictionless' },
+
+    // Path 2: Authentication Required (3DS Flow)
+    { from: 'api', to: 'server', label: 'status: requires_authentication', style: 'dashed', group: 'flow: 3ds' },
+    { from: 'server', to: 'bank', label: 'Customer completes 3DS challenge', group: 'flow: 3ds' },
+    { from: 'bank', to: 'api', label: 'Authentication result', style: 'dashed', group: 'flow: 3ds' },
+
+    // Path 3: Confirmation Logic (Branching after Auth)
+    { from: 'api', to: 'server', label: 'status: succeeded', style: 'dashed', group: 'confirm: true' },
+    { from: 'api', to: 'server', label: 'status: requires_confirmation', style: 'dashed', group: 'confirm: false' },
+    { from: 'server', to: 'api', label: 'POST /v1/charges/{id}/confirm', group: 'confirm: false' },
+    { from: 'api', to: 'server', label: 'status: succeeded / failed', style: 'dashed', group: 'confirm: false' },
+  ]}
+/>
+
+A charge can be in one of the following statuses during its lifecycle:
+
+<Accordions type="multiple">
+  <Accordion title="Charge statuses" id="charge-status-reference">
+  | Status | Meaning |
+  |---|---|
+  | `succeeded` | The charge was approved and funds have been captured. |
+  | `failed` | The charge was declined by the issuer or blocked by a payment rule. |
+  | `requires_authentication` | The charge needs 3D Secure authentication before it can be completed. |
+  | `requires_confirmation` | Authentication is complete, but the merchant must explicitly confirm the charge (when using `confirm: false`). |
+
+  When the API returns `requires_authentication`, you need to create a linked authentication
+  session to complete the 3D Secure challenge. See the
+  [Create a linked authentication session](/docs/api-reference/authenticationsessions/create-linked)
+  endpoint for details.
+
+  <Callout type="info">
+When using the SDK, 3D Secure is handled automatically. The SDK manages the challenge UI and
+redirections, so no additional code is needed.
+</Callout>
+  </Accordion>
+</Accordions>
+When you retrieve a charge via `GET /v1/charges/{charge_id}`, the response includes these
+important fields:
+<Accordions type="multiple">
+  <Accordion title="Charge object fields" id="key-fields-charge">
+  | Field | Description |
+  |---|---|
+  | `amount` | The charge amount in the smallest currency unit (for example, cents). |
+  | `amount_refunded` | The total amount that has been refunded from this charge. |
+  | `status` | The current status of the charge. |
+  | `payment_method` | The ID of the payment method used. |
+  | `hold` | If this charge was created by capturing a hold, the hold ID. |
+  | `payment_session` | If this charge was created from a payment session, the session ID. |
+  | `refunds` | A list of refund objects linked to this charge. |
+  | `metadata` | Custom key-value pairs attached to the charge. |
+
+  A charge can also be created by capturing a hold. When you capture a hold (fully or partially),
+  a charge object is created and linked to the original hold via the `hold` field. See the
+  [Holds and Captures](#holds-and-captures) section below for details.
+  </Accordion>
+</Accordions>
+
+<Callout type="info">
+For a complete list of charge webhook events, see the [Webhook events](/docs/payments/webhooks/webhook-events) reference.
+</Callout>
+
+## Holds and Captures
+
+A hold (also called an authorization) reserves funds on a customer's payment method without
+capturing them. This is useful when you need to confirm an order, verify inventory, or wait for
+fulfillment before taking the money. Once a hold is approved, you decide when to capture the
+funds or cancel the hold to release them back to the customer.
+
+### Creating a hold
+
+There are two ways to create a hold, depending on your integration path:
+
+<Tabs items={['SDK', 'API']}>
+  <Tab value="SDK">
+  Create a payment session with `capture: false` via `POST /v1/payment_sessions`. The SDK
+  handles the rest, and on success Pay.com creates a hold instead of a charge.
+  </Tab>
+  <Tab value="API">
+  Create a hold directly via `POST /v1/holds`. Holds accept stored payment methods, tokens,
+  or raw card details (PCI Level 1 required for raw data). 
+  
+  See the
+  [Hold and capture funds](/docs/payments/server-to-server-guides/hold-and-capture-funds)
+  guide for a step-by-step walkthrough of the server-to-server flow.
+  </Tab>
+</Tabs>
+
+### The hold lifecycle
+
+The following diagram shows how a hold moves from creation through authorization to its final
+state, whether captured or canceled:
+
+<SequenceFlow
+  actors={[
+    { id: 'server', label: 'Your Server', color: 'blue' },
+    { id: 'api', label: 'Pay.com API', color: 'purple' },
+    { id: 'bank', label: 'Bank (3DS)', color: 'orange' },
+  ]}
+  messages={[
+    // --- Phase 1: Authorization ---
+    { from: 'server', to: 'api', label: 'POST /v1/holds', note: 'Initial hold request' },
+    
+    { from: 'api', to: 'server', label: 'status: failed', style: 'dashed', group: 'auth: declined' },
+    
+    { from: 'api', to: 'server', label: 'status: requires_authentication', style: 'dashed', group: 'auth: 3ds' },
+    { from: 'server', to: 'bank', label: 'Customer auth challenge', group: 'auth: 3ds' },
+    { from: 'bank', to: 'api', label: 'Success / Failure', style: 'dashed', group: 'auth: 3ds' },
+
+    { from: 'api', to: 'server', label: 'status: requires_capture', style: 'dashed', note: 'Funds are now frozen' },
+
+    // --- Phase 2: Settlement ---
+    { from: 'server', to: 'api', label: 'POST /v1/holds/{id}/capture', note: 'Full or Partial amount', group: 'settle: capture' },
+    { from: 'api', to: 'server', label: 'status: succeeded', style: 'dashed', group: 'settle: capture' },
+
+    { from: 'server', to: 'api', label: 'POST /v1/holds/{id}/cancel', note: 'Release all funds', group: 'settle: cancel' },
+    { from: 'api', to: 'server', label: 'status: canceled', style: 'dashed', group: 'settle: cancel' },
+  ]}
+/>
+
+### Hold statuses
+
+A hold can be in one of the following statuses during its lifecycle:
+
+<Accordions type="multiple">
+  <Accordion title="Hold statuses" id="hold-status-reference">
+  | Status | Meaning |
+  |---|---|
+  | `requires_capture` | The hold was approved. Funds are reserved and waiting for you to capture or cancel. |
+  | `succeeded` | The hold has been fully captured. One or more charges were created. |
+  | `canceled` | The hold was canceled. All reserved funds have been released to the customer. |
+  | `failed` | The hold was declined by the issuer or blocked by a payment rule. |
+  | `requires_authentication` | 3D Secure is needed to complete the authorization. |
+  | `requires_confirmation` | Authentication succeeded; awaiting merchant confirmation (when using `confirm: false`). |
+  </Accordion>
+</Accordions>
+
+### Capturing a hold
+
+Once a hold is in `requires_capture` status, you capture it via
+`POST /v1/holds/{hold_id}/capture` to move the funds. Pay.com supports three capture
+strategies:
+
+- **Full capture:** Omit the `amount` parameter (or set it to the full hold amount) to capture
+  the entire authorized amount.
+- **Partial capture:** Specify a smaller `amount` to capture only part of the authorized funds.
+  The remaining amount is released back to the customer automatically.
+- **Multiple captures:** You can capture a hold in multiple steps, as long as the total
+  captured amount doesn't exceed the original authorization. Each capture creates a separate
+  charge object linked to the hold.
+
+The hold object includes an `amount_capturable` field that tells you how much is still
+available to capture. This value decreases with each capture you make.
+
+<Callout type="info">
+Not all payment providers support multiple captures. Pay.com handles this transparently, if
+the downstream provider doesn't support it, the API will return an appropriate error.
+</Callout>
+
+For detailed instructions, see the
+[Hold and capture funds](/docs/payments/server-to-server-guides/hold-and-capture-funds) guide.
+
+### Canceling a hold
+
+If you no longer need to capture the funds, cancel the hold via
+`POST /v1/holds/{hold_id}/cancel` to release the reservation. Cancellation releases the funds
+back to the customer immediately.
+
+<Callout type="warn">
+Cancellation is **full only**, you cannot partially cancel a hold. If you need to release only
+part of the funds, use a partial capture instead. The uncaptured amount will be released
+automatically.
+</Callout>
+
+For detailed instructions, see the
+[Cancel a hold](/docs/payments/server-to-server-guides/cancel-a-hold) guide.
+
+When you retrieve a hold via `GET /v1/holds/{hold_id}`, the response includes these important
+fields:
+<Accordions type="multiple">
+  <Accordion title="Hold object fields" id="key-fields-hold">
+  | Field | Description |
+  |---|---|
+  | `amount` | The original authorized amount. |
+  | `amount_capturable` | The remaining amount available to capture. Decreases as you make captures. |
+  | `charges.data` | An array of charge objects created from this hold (via capture). |
+  | `canceled` | Whether the hold has been canceled. |
+  | `cancellation_reason` | The reason for cancellation, if provided. |
+  | `payment_session` | If this hold was created from a payment session, the session ID. |
+  </Accordion>
+</Accordions>
+### Common patterns
+Holds are commonly used across a range of business scenarios:
+
+  - **Pre-authorization in e-commerce:** Place a hold at checkout, capture when the order ships,
+    and cancel if the order is canceled before shipment.
+  - **Partial fulfillment:** Ship an order in multiple packages and use multiple partial captures
+    so the customer is only charged for what has shipped.
+  - **Tip adjustment in hospitality:** Place a hold for the base amount, then capture for the
+    adjusted total including the tip.
+<Callout type="info">
+For a complete list of hold webhook events, see the [Webhook events](/docs/payments/webhooks/webhook-events) reference.
+</Callout>
+
+## 3D Secure
+
+3D Secure is a standard authentication protocol used to verify a customer's identity during a transaction. Pay.com provides an **Agnostic 3DS** layer, which means the authentication is handled at the gateway level independently of the specific bank or processor. This lets you authenticate a customer once and route the authorized transaction to any processor for execution.
+
+The system is designed to handle both frictionless flows and active challenges, where the user must verify the payment through their banking app or an SMS code.
+
+This is how 3D Secure works depending on your integration type:
+
+<Tabs items={['SDK', 'API']}>
+  <Tab value="SDK">
+  If you're using our SDKs, we handle the entire authentication flow for you. The SDK automatically detects if a card needs extra verification and manages the entire process in the background:
+
+  * The SDK automatically determines if a card requires 3DS based on your specific configuration and the bank's requirements.
+  * It handles the rendering of the challenge window and captures all user interaction events directly.
+  * It completes the authentication process and moves to the payment result without requiring you to manage manual redirections.
+  </Tab>
+  <Tab value="API">
+  If you prefer using our direct API, you have full control over the user experience, but you must manually guide the customer through the bank's verification steps:
+
+  <Steps>
+  <Step>
+  ### Start the transaction
+
+  Send a `POST` request to [`/v1/charges`](/docs/api-reference/charges/create-charge) or
+  [`/v1/holds`](/docs/api-reference/holds/create-hold). You must include the
+  `authentication_context` object, which includes browser details, user agents, and IP addresses.
+
+  <Callout title="Note">
+  We highly recommend passing the customer's email in the `billing_details` object to maximize
+  3DS approval rates.
+  </Callout>
+  </Step>
+
+  <Step>
+  ### Check the status
+
+  If the bank requires a challenge, the API will return a transaction status of
+  **`requires_authentication`**. If not, the transaction finalizes immediately as `succeeded`
+  or `failed`.
+  </Step>
+
+  <Step>
+  ### Create an authentication session
+
+  Send a `POST` request to [`/v1/sessions/authentication/linked`](/docs/api-reference/authenticationsessions/create-linked)
+  using the ID of the transaction from Step 1. This generates a `url`. Redirect the customer
+  there to complete the bank's verification challenge.
+  </Step>
+
+  <Step>
+  ### Confirm the payment
+
+  The `confirm` parameter dictates how Pay.com handles the final authorization:
+
+  - `confirm: true`: Pay.com automatically authorizes the payment once the challenge is
+    completed and notifies you via webhooks.
+  - `confirm: false`: Wait for the customer to redirect back to your site, then manually
+    trigger authorization via a `POST` request to
+    [`/v1/charges/{charge_id}/confirm`](/docs/api-reference/charges/confirm-charge) or
+    [`/v1/holds/{hold_id}/confirm`](/docs/api-reference/holds/confirm-hold).
+  </Step>
+  </Steps>
+  </Tab>
+</Tabs>
+
+ This diagram shows how the transaction moves from your server to the bank and back to finalize
+  the payment:
+
+<SequenceFlow
+  actors={[
+    { id: 'server', label: 'Your Server', color: 'blue' },
+    { id: 'api', label: 'Pay.com API', color: 'purple' },
+    { id: 'browser', label: 'Customer Browser', color: 'green' },
+    { id: 'bank', label: 'Bank', color: 'orange' },
+  ]}
+  messages={[
+    { from: 'server', to: 'api', label: 'POST /v1/charges or /v1/holds', note: 'Include authentication_context' },
+    { from: 'api', to: 'server', label: 'requires_authentication', style: 'dashed' },
+    { from: 'server', to: 'api', label: 'POST /v1/sessions/authentication/linked' },
+    { from: 'api', to: 'server', label: '{ url }', style: 'dashed' },
+    { from: 'server', to: 'browser', label: 'Redirect to bank URL' },
+    { from: 'browser', to: 'bank', label: 'Complete 3DS challenge' },
+    { from: 'bank', to: 'browser', label: 'Challenge result', style: 'dashed' },
+    { from: 'browser', to: 'api', label: 'Redirect to Pay.com', group: 'confirm: true' },
+    { from: 'api', to: 'server', label: 'Webhook: succeeded / failed', style: 'dashed', group: 'confirm: true' },
+    { from: 'browser', to: 'server', label: 'Redirect to merchant site', group: 'confirm: false' },
+    { from: 'server', to: 'api', label: 'POST /v1/charges/{id}/confirm', group: 'confirm: false' },
+    { from: 'api', to: 'server', label: 'succeeded / failed', style: 'dashed', group: 'confirm: false' },
+  ]}
+/>
+
+### External 3DS
+
+If you already perform 3DS authentication through third-party software, Pay.com supports an **External MPI (External 3DS)** flow. This lets you maintain your existing security setup while still using our orchestration engine.
+
+To use this flow, you can pass your pre-authenticated data (such as the `DS trans id`, CAVV, or ECI) directly to the `POST /v1/charges` API via the `3DS` object. Pay.com will then pass these details to the issuer to authorize the transaction without triggering a second challenge for the customer.
+
+### Benefits of agnostic authentication
+
+Using a gateway-level authentication layer offers several advantages for managing global payments effectively, such as:
+
+* You can retry a failed authorization with a different processor using the same 3DS credentials because authentication is not tied to a specific acquirer.
+* The system supports the latest 3DS2 standards to favor frictionless authentication whenever the bank allows it.
+* The SDK hides the complexity of device fingerprinting and challenge rendering, saving your team significant time and effort.
+
+## Refunds
+
+A refund returns funds from a completed charge back to the customer's original payment method.
+Pay.com supports full refunds, partial refunds, and multiple refunds on the same charge.
+
+### Creating a refund
+
+Refunds are API-only; there is no SDK component. You can create a refund via the API or the
+Pay.com dashboard.
+
+With the **API**, call `POST /v1/refunds` with the charge ID and optionally an amount. With
+the **dashboard**, navigate to the transaction and click **Refund**.
+
+To create a refund, include the following parameters:
+
+<Accordions type="multiple">
+  <Accordion title="Refund parameters" id="refund-parameters">
+  | Parameter | Required | Description |
+  |---|---|---|
+  | `charge` | Yes | The ID of the charge to refund. |
+  | `amount` | No | The amount to refund in the smallest currency unit. Omit for a full refund. |
+  | `reference` | No | Your custom reference string for this refund. |
+  | `metadata` | No | Custom key-value pairs to attach to the refund. |
+  </Accordion>
+</Accordions>
+
+For a step-by-step walkthrough, see the
+[Refund a charge](/docs/payments/server-to-server-guides/refund-a-charge) guide.
+
+### Full, partial, and multiple refunds
+
+Pay.com gives you three ways to return funds from a single charge. A **full refund** returns
+the entire charge amount, simply omit the `amount` parameter. A **partial refund** returns
+less than the full charge, specify a smaller `amount`. You can also issue **multiple refunds**
+against the same charge, as long as the total refunded amount doesn't exceed the original
+charge amount. Each refund creates a separate refund object.
+
+<Callout type="info">
+A [**refund**](#refunds) returns money from a completed charge to the customer. 
+A [**hold cancellation**](#holds-and-captures) releases a reserved authorization without 
+capturing it. In short: refunds happen after payment, cancellations 
+happen before. Refunds can be partial or multiple; cancellations 
+are full only. To release part of a hold, use a partial capture instead.
+</Callout>
+
+### Tracking refunded amounts
+
+The charge object provides two fields to help you track how much has been refunded. The
+`amount_refunded` field shows the total amount refunded so far (the sum of all refunds), and
+the `refunds.data` array contains all individual refund objects linked to the charge. To check
+how much is still available to refund, subtract `amount_refunded` from `amount`.
+
+<Callout type="info">
+The `refunded` field on the charge object is `true` only when the charge has been **fully**
+refunded, meaning `amount_refunded` equals `amount`.
+</Callout>
+
+### Refund statuses
+
+A refund can be in one of the following statuses:
+
+<SequenceFlow
+  actors={[
+    { id: 'server', label: 'Your Server', color: 'blue' },
+    { id: 'api', label: 'Pay.com API', color: 'purple' },
+    { id: 'bank', label: 'Customer Bank', color: 'orange' },
+  ]}
+  messages={[
+    // --- Step 1: Initiation ---
+    { from: 'server', to: 'api', label: 'POST /v1/refunds', note: 'Specify charge_id and amount' },
+    
+    // Path 1: Validation Failure (e.g., insufficient balance or invalid ID)
+    { from: 'api', to: 'server', label: 'error: 400/402', style: 'dashed', group: 'result: failed' },
+
+    // Path 2: Successful Initiation
+    { from: 'api', to: 'server', label: 'status: pending', style: 'dashed', group: 'result: success' },
+    
+    // --- Step 2: Processing (Asynchronous) ---
+    { from: 'api', to: 'bank', label: 'Transfer funds request', group: 'result: success' },
+    { from: 'bank', to: 'api', label: 'Funds cleared', style: 'dashed', group: 'result: success' },
+
+    // --- Step 3: Final Notification ---
+    { from: 'api', to: 'server', label: 'Webhook: refund.succeeded', style: 'dashed', group: 'result: success' },
+    { from: 'api', to: 'server', label: 'Webhook: refund.failed', style: 'dashed', note: 'e.g. Bank rejected transfer', group: 'result: failed_async' },
+  ]}
+/>
+
+<Accordions type="multiple">
+  <Accordion title="Refund statuses" id="refund-status-reference">
+  | Status | Meaning |
+  |---|---|
+  | `succeeded` | The refund was processed successfully. Funds are being returned to the customer. |
+  | `failed` | The refund could not be processed. |
+  </Accordion>
+</Accordions>
+When you retrieve a refund via `GET /v1/refunds/{refund_id}`, the response includes these
+  important fields:
+<Accordions type="multiple">
+  <Accordion title="Refund object fields" id="key-fields-refund">
+  | Field | Description |
+  |---|---|
+  | `amount` | The refund amount in the smallest currency unit. |
+  | `charge` | The ID of the charge this refund was issued against. |
+  | `status` | The current status of the refund (`succeeded` or `failed`). |
+  | `reference` | Your custom reference, if provided when creating the refund. |
+  | `metadata` | Custom key-value pairs attached to the refund. |
+  </Accordion>
+</Accordions>
+
+<Callout type="info">
+For a complete list of refund webhook events, see the [Webhook events](/docs/payments/webhooks/webhook-events) reference.
+</Callout>
+
+## Payouts
+
+A payout transfers funds from your merchant account to a customer's payment method. It is the
+reverse of a charge, instead of collecting money, you are sending it. Payouts are commonly
+used in verticals like online gambling (paying out winnings), forex and trading platforms, and
+gig economy marketplaces (paying drivers, freelancers, and so on).
+
+<Callout type="info">
+A **refund** returns funds from an existing charge back to the customer, it is always tied to
+a charge and cannot exceed the original charge amount. A **payout** sends new funds from your
+merchant account to a customer, it is an independent transaction with no inherent link to a
+previous charge. Use refunds when reversing a payment; use payouts when distributing winnings,
+commissions, or earnings.
+</Callout>
+
+### Creating a payout
+
+Payouts are API-only; there is no customer-facing SDK component. You can create a payout via
+the API or the Pay.com dashboard.
+
+With the **API**, call `POST /v1/payouts` with a destination (a stored payment method ID or
+raw payment details), amount, and currency. With the **dashboard**, navigate to a customer,
+click **Create payout**, enter the amount, and confirm.
+
+To create a payout, include the following parameters:
+
+<Accordions type="multiple">
+  <Accordion title="Payout parameters" id="payout-parameters">
+  | Parameter | Required | Description |
+  |---|---|---|
+  | `destination` | Yes (or `destination_data`) | The ID of a stored payment method to send funds to. |
+  | `destination_data` | Yes (or `destination`) | Raw payment details for the payout destination (card, bank account, and so on). |
+  | `amount` | Yes | The amount to send in the smallest currency unit. |
+  | `currency` | Yes | The three-letter currency code (for example, `usd`, `eur`). |
+  | `customer_reference_id` | No | Your internal customer identifier. |
+  | `reference` | No | Your custom reference string for this payout. |
+  | `metadata` | No | Custom key-value pairs to attach to the payout. |
+  </Accordion>
+</Accordions>
+
+For step-by-step instructions, see the
+[Create a payout](/docs/payments/server-to-server-guides/create-a-payout) guide.
+
+### Payout statuses
+
+A payout can be in one of the following statuses. Unlike charges, payouts may pass through an
+intermediate `pending` state depending on the payment method and acquirer:
+
+<SequenceFlow
+  actors={[
+    { id: 'server', label: 'Your Server', color: 'blue' },
+    { id: 'api', label: 'Payout API', color: 'purple' },
+    { id: 'provider', label: 'Payment Provider', color: 'orange' },
+  ]}
+  messages={[
+    { from: 'server', to: 'api', label: 'POST /v1/payouts', note: 'Initial creation' },
+    
+    // Path 1: Instant Results (Synchronous)
+    { from: 'api', to: 'server', label: 'Status: succeeded', style: 'dashed', group: 'type: instant' },
+    { from: 'api', to: 'server', label: 'Status: failed', style: 'dashed', group: 'type: instant' },
+    
+    // Path 2: Async Results (Pending Flow)
+    { from: 'api', to: 'server', label: 'Status: pending', style: 'dashed', group: 'type: async' },
+    { from: 'provider', to: 'api', label: 'Async processing complete', group: 'type: async' },
+    { from: 'api', to: 'server', label: 'Webhook: payout.succeeded', style: 'dashed', group: 'type: async' },
+    { from: 'api', to: 'server', label: 'Webhook: payout.failed', style: 'dashed', group: 'type: async' },
+  ]}
+/>
+
+<Accordions type="multiple">
+  <Accordion title="Payout statuses" id="payout-status-reference">
+  | Status | Meaning |
+  |---|---|
+  | `succeeded` | The payout was processed successfully. Funds are being sent to the customer. |
+  | `failed` | The payout was rejected. Funds were not sent. The `failure_code` and `failure_message` fields provide details. |
+  | `pending` | The payout has been submitted but the final result is not yet available. You will receive a webhook with the outcome. |
+  </Accordion>
+</Accordions>
+
+<Callout type="warn">
+When using payment methods that return `pending` (such as ACH bank transfers), you **must**
+register for webhooks to receive the final payout result. Do not treat `pending` as a success.
+</Callout>
+
+### Payment method compatibility
+
+Not all payment methods support payouts. When a payment method is created or stored, the
+`enabled_flows` field on the payment method object indicates whether it supports payouts (for
+example, `["charges", "payouts"]`). Supported payout methods include cards, Apple Pay, Google
+Pay, PayPal, Pix, and ACH bank transfers, among others. Availability depends on the payment
+method type and the acquirer configuration. Check the `enabled_flows` field before attempting a
+payout to confirm it is supported.
+
+### Enabling payouts
+
+Payouts need workspace-level enablement, which is configured by Pay.com during onboarding. This
+is not a self-service feature, contact your account manager or solutions engineer to enable
+payouts for your workspace. Once enabled, you can send payouts via the API or the dashboard
+without further configuration.
+
+When you retrieve a payout via `GET /v1/payouts/{payout_id}`, the response includes these
+important fields:
+<Accordions type="multiple">
+  <Accordion title="Payout object fields" id="key-fields-payout">
+ 
+
+  | Field | Description |
+  |---|---|
+  | `amount` | The payout amount in the smallest currency unit. |
+  | `payment_method` | The payment method funds were sent to. |
+  | `status` | The current payout status (`succeeded`, `failed`, or `pending`). |
+  | `failure_code` | A machine-readable code explaining the failure reason, if applicable. |
+  | `failure_message` | A human-readable description of the failure, if applicable. |
+  </Accordion>
+</Accordions>
+
+<Callout type="info">
+For a complete list of payout webhook events, see the [Webhook events](/docs/payments/webhooks/webhook-events) reference.
+</Callout>
+
+## Next steps
+
+Put what you've learned into practice with these guides:
+
+- [Create a charge](/docs/payments/server-to-server-guides/create-a-charge): step-by-step walkthrough for creating a charge via the API.
+- [Create a charge with 3DS](/docs/payments/server-to-server-guides/create-a-charge-with-3ds): handle 3D Secure authentication in a server-to-server flow.
+- [Hold and capture funds](/docs/payments/server-to-server-guides/hold-and-capture-funds): reserve funds and capture them when you're ready to fulfill.
+- [Refund a charge](/docs/payments/server-to-server-guides/refund-a-charge): issue full or partial refunds via the API.
+- [Create a payout](/docs/payments/server-to-server-guides/create-a-payout): send funds to a customer's payment method.
+- [Webhook events](/docs/payments/webhooks/webhook-events): full reference of events emitted for charges, holds, refunds, and payouts.

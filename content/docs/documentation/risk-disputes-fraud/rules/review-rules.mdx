@@ -1,0 +1,210 @@
+---
+title: Review rules
+description: Flag transactions or customers for manual review after
+  authorization without blocking the payment.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Review rules let you automatically flag transactions or customers for manual
+review after a payment goes through. When a charge matches a review rule's
+conditions, Pay.com applies the flag without blocking the payment. The
+charge returns `status: "succeeded"` as usual.
+
+## When to use review rules
+
+Some data is only available after the card network responds to the
+authorization request. Payment rules run before authorization, so they
+can't evaluate this post-authorization data. Review rules run after
+authorization and can use these fields as conditions, letting you flag
+suspicious transactions without refusing them at checkout.
+
+This is useful when you want to act on signals such as address verification
+results, name verification outcomes, or 3D Secure authentication results,
+without risking the refusal of legitimate payments.
+
+## Conditions
+
+Review rules can evaluate post-authorization fields including Address
+Verification Service (AVS) results, Account Name Inquiry (ANI) results,
+and 3D Secure outcomes. For the complete list of available fields and
+operators, see [Rule conditions and
+operators](/docs/risk-disputes-fraud/rules/rule-conditions).
+
+## Actions
+
+Each review rule applies one of two actions when its conditions are met:
+
+| Action | What happens |
+| :--- | :--- |
+| Create a review for Transaction | The charge is added to the **Transactions** queue in Risk Reviews. |
+| Create a review for Customer | The customer associated with the charge is added to the **Customers** queue in Risk Reviews. |
+
+Flagged items appear in **Risk Reviews** in the Pay.com dashboard. From
+there, you can inspect each flagged transaction or customer and decide
+whether to take further action, such as issuing a refund.
+
+## Review results are asynchronous
+
+Review rule evaluation happens after authorization completes.
+`risk_assessment_details` may be `null` in the immediate charge response.
+To see the populated result, retrieve the charge a few seconds later:
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```json
+GET /v1/charges/chrg_697560887862495232
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "id": "chrg_697560887862495232",
+  "status": "succeeded",
+  "risk_assessment_details": {
+    "outcome_source": "rule",
+    "rule_id": "rl_697532456877686784"
+  }
+}
+```
+</Tab>
+</Tabs>
+
+You can also subscribe to webhook events to be notified when a review flag
+is set, without polling.
+
+## Account Name Inquiry (ANI)
+
+<Callout type="info">
+Account Name Inquiry is a standalone risk product sold separately. To enable
+it, contact Pay.com Support or your account manager.
+</Callout>
+
+ANI verifies whether the cardholder name submitted at checkout matches the
+name on file with the issuing bank. Because the verification result is only
+available after authorization, ANI is used as a condition in review rules.
+
+ANI is supported for Visa cards only. For all other card types, ANI returns
+`not_supported` and the charge is never blocked on this result.
+
+You can enable ANI verification within the
+[Charge](/api-reference/charges/create-charge),
+[Hold](/api-reference/holds/create-hold),
+[Payment Session](/api-reference/paymentsessions/create-ps), and
+[Setup Session](/api-reference/setupsessions) flows. Pass `request_ani:
+true` and an `accepted_ani_results` array in `payment_method_options.card`:
+
+```json
+{
+  "payment_method_options": {
+    "card": {
+      "request_ani": true,
+      "accepted_ani_results": ["match", "partial_match"]
+    }
+  }
+}
+```
+
+If the ANI result is not in your `accepted_ani_results` array, the
+transaction is stopped with `status: "blocked"` and `failure_code:
+"name_mismatch"`. By default, all results are accepted and no transactions
+are blocked.
+
+The possible results are listed in the table below:
+
+| Result | Description |
+| :--- | :--- |
+| `match` | The name exactly matches the bank's records. |
+| `partial_match` | The name partially matches the bank's records. |
+| `no_match` | The name does not match the bank's records. |
+| `not_performed` | The check was not performed for this transaction. |
+| `not_supported` | The card network doesn't support ANI. Transactions are never blocked on this result. |
+
+### Partial match details
+
+When the result is `partial_match`, a full breakdown of the name fields is
+available under `underlying_network_details`:
+
+```json
+{
+  "underlying_network_details": {
+    "network": "visa",
+    "visa": {
+      "ani": {
+        "status": "01",
+        "full_name": "50",
+        "first_name": "01",
+        "middle_name": "01",
+        "last_name": "50"
+      }
+    }
+  }
+}
+```
+
+## The review rules page
+
+Go to **Rules → Review** in the Pay.com dashboard to access review rules.
+The page has two tabs:
+
+- **Rules**: lists all your review rules. Each rule shows its current state
+(**Enabled** or **Disabled**). From here you can toggle a rule on or off, or
+use the action menu to view, edit, duplicate, or delete it.
+
+- **Performance**: shows a table of all transactions that were flagged for
+review by an enabled rule.
+
+## Create a review rule
+
+<Steps>
+<Step>
+### Open the rule builder
+
+In **Rules → Review**, click **+ Create new rule**.
+
+Give the rule a descriptive name so you can identify it later.
+</Step>
+
+<Step>
+### Configure the logic
+
+Define the conditions the rule evaluates after each successful authorization.
+For each condition, choose a **Field**, an **Operator**, and a **Value**.
+
+You can combine multiple conditions using **AND** (all conditions must be
+true) or **OR** (any condition must be true).
+
+To match against a set of values, choose the **is in list** operator and
+select a [risk list](/docs/risk-disputes-fraud/rules/risk-lists) you've
+already created.
+</Step>
+
+<Step>
+### Choose an action
+
+Select whether to flag the transaction or the customer for review:
+
+- **Create a review for Transaction** adds this specific charge to the
+  **Transactions** queue in Risk Reviews.
+- **Create a review for Customer** adds the customer to the **Customers**
+  queue. All charges from that customer are then visible for review.
+</Step>
+
+<Step>
+### Save the rule
+
+Click **Confirm & Save Rule**. The rule is enabled immediately.
+</Step>
+</Steps>
+
+## Next steps
+
+- [Payment rules](/docs/risk-disputes-fraud/rules/payment-rules): block
+  charges or enforce 3DS before they reach the card network.
+- [Risk lists](/docs/risk-disputes-fraud/rules/risk-lists): create named
+  collections of values to use in rule conditions.
+- [Test your rules](/docs/risk-disputes-fraud/rules/test-rules): verify that
+  review rules fire correctly by creating test charges and retrieving the
+  result.

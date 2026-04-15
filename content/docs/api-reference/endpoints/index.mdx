@@ -1,0 +1,318 @@
+---
+title: Endpoints overview
+description: Browse all Pay.com REST API endpoints, organized by resource.
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import {
+  Activity,
+  AlertTriangle,
+  Apple,
+  ArrowLeftRight,
+  BadgeDollarSign,
+  Ban,
+  BookOpen,
+  Building2,
+  ClipboardCheck,
+  Coins,
+  CreditCard,
+  FileText,
+  Flag,
+  Globe,
+  Handshake,
+  KeyRound,
+  Landmark,
+  Layers,
+  Link2,
+  List,
+  Package,
+  PauseCircle,
+  Repeat,
+  RefreshCw,
+  RotateCcw,
+  Send,
+  Settings2,
+  ShieldAlert,
+  ShieldCheck,
+  ShoppingCart,
+  SlidersHorizontal,
+  TrendingUp,
+  Users,
+  Wallet,
+  Wifi,
+} from 'lucide-react';
+
+Browse all Pay.com API endpoints by resource. Select a resource below to
+see its available operations.
+
+## Payments
+
+<Cards className="grid-cols-3">
+  <Card
+    icon={<CreditCard />}
+    title="Charges"
+    description="Capture funds from a customer immediately."
+    href="/docs/api-reference/endpoints/charges/confirm-charge"
+  />
+  <Card
+    icon={<PauseCircle />}
+    title="Holds"
+    description="Reserve funds via pre-authorization for later capture or release."
+    href="/docs/api-reference/endpoints/holds/create-capture"
+  />
+  <Card
+    icon={<ShoppingCart />}
+    title="Checkout"
+    description="Create hosted checkout sessions for low-code payment collection."
+    href="/docs/api-reference/endpoints/checkout/create-checkout"
+  />
+  <Card
+    icon={<Link2 />}
+    title="Payment links"
+    description="Generate shareable payment links without writing code."
+    href="/docs/api-reference/endpoints/paymentlinks/create-payment-link"
+  />
+  <Card
+    icon={<Ban />}
+    title="Partial approval"
+    description="Cancel partial approval charges when the full amount can't be authorized."
+    href="/docs/api-reference/endpoints/partialapproval/cancel-partial-approval-charge"
+  />
+  <Card
+    icon={<Activity />}
+    title="Transaction status"
+    description="Retrieve the current status of a transaction."
+    href="/docs/api-reference/endpoints/transactionstatus/get-transaction-status"
+  />
+</Cards>
+
+## Sessions
+
+<Cards className="grid-cols-3">
+  <Card
+    icon={<Layers />}
+    title="Payment sessions"
+    description="Create and manage sessions for collecting payment details securely."
+    href="/docs/api-reference/endpoints/paymentsessions/create-ps"
+  />
+  <Card
+    icon={<Activity />}
+    title="Payment attempts"
+    description="List payment attempts associated with a payment session."
+    href="/docs/api-reference/endpoints/paymentattempts/get-payment-session-attempts"
+  />
+  <Card
+    icon={<Settings2 />}
+    title="Setup sessions"
+    description="Tokenize and save payment methods without charging them."
+    href="/docs/api-reference/endpoints/setupsessions/create-ss"
+  />
+  <Card
+    icon={<RefreshCw />}
+    title="Setup attempts"
+    description="List setup attempts associated with a setup session."
+    href="/docs/api-reference/endpoints/setupattempts/get-setup-session-attempts"
+  />
+  <Card
+    icon={<KeyRound />}
+    title="Authentication sessions"
+    description="Run linked 3DS authentication flows for charges and holds."
+    href="/docs/api-reference/endpoints/authenticationsessions/create-linked-authentication-session"
+  />
+  <Card
+    icon={<ShieldCheck />}
+    title="Independent authentication sessions"
+    description="Run standalone strong customer authentication (SCA) flows."
+    href="/docs/api-reference/endpoints/authenticationsessionsindependent/create-sca"
+  />
+  <Card
+    icon={<Coins />}
+    title="Tokenization sessions"
+    description="Securely tokenize raw card data for future use."
+    href="/docs/api-reference/endpoints/tokenizationsessions/create-tokenization-session"
+  />
+</Cards>
+
+## Payment methods
+
+<Cards className="grid-cols-3">
+  <Card
+    icon={<Wallet />}
+    title="Payment methods"
+    description="Create, confirm, and manage saved payment methods."
+    href="/docs/api-reference/endpoints/paymentmethods/confirm-payment-method"
+  />
+  <Card
+    icon={<Globe />}
+    title="Payment method domains"
+    description="Register and manage domains for web-based payment methods."
+    href="/docs/api-reference/endpoints/paymentmethoddomains/get-payment-method-domains"
+  />
+  <Card
+    icon={<Apple />}
+    title="Apple Pay sessions"
+    description="Create Apple Pay merchant validation sessions."
+    href="/docs/api-reference/endpoints/applepaysessions/create-applepay-session"
+  />
+  <Card
+    icon={<Wifi />}
+    title="Network tokens"
+    description="Retrieve network token cryptograms for card-on-file transactions."
+    href="/docs/api-reference/endpoints/networktokens/retrieve-payment-method-network-token-cryptogram"
+  />
+  <Card
+    icon={<Coins />}
+    title="Tokens"
+    description="Retrieve and manage tokenized payment method data."
+    href="/docs/api-reference/endpoints/tokens/get-token-by-id"
+  />
+</Cards>
+
+## Customers
+
+<Cards className="grid-cols-3">
+  <Card
+    icon={<Users />}
+    title="Customers"
+    description="Create and manage customer profiles."
+    href="/docs/api-reference/endpoints/customers/create-customer"
+  />
+</Cards>
+
+## Subscriptions
+
+<Cards className="grid-cols-3">
+  <Card
+    icon={<Package />}
+    title="Subscription packages"
+    description="Define subscription plans with pricing and billing intervals."
+    href="/docs/api-reference/endpoints/subscriptionpackages/create-subscription-package"
+  />
+  <Card
+    icon={<Repeat />}
+    title="Subscriptions"
+    description="Manage recurring billing agreements for customers."
+    href="/docs/api-reference/endpoints/subscriptions/cancel-subscription"
+  />
+</Cards>
+
+## Payouts & refunds
+
+<Cards className="grid-cols-3">
+  <Card
+    icon={<Send />}
+    title="Payouts"
+    description="Distribute funds from a merchant account to a bank or wallet."
+    href="/docs/api-reference/endpoints/payouts/create-payout"
+  />
+  <Card
+    icon={<RotateCcw />}
+    title="Refunds"
+    description="Return settled funds to the customer's original payment method."
+    href="/docs/api-reference/endpoints/refunds/create-refund"
+  />
+</Cards>
+
+## Risk & fraud
+
+<Cards className="grid-cols-3">
+  <Card
+    icon={<ShieldAlert />}
+    title="Risk assessment"
+    description="Assess fraud risk for a payment before processing."
+    href="/docs/api-reference/endpoints/riskassessment/assess-payment"
+  />
+  <Card
+    icon={<ClipboardCheck />}
+    title="Risk review"
+    description="Retrieve and manage payments flagged for manual review."
+    href="/docs/api-reference/endpoints/riskreview/get-risk-review-by-reference"
+  />
+  <Card
+    icon={<Flag />}
+    title="Fraud warnings"
+    description="Retrieve fraud warnings associated with payment methods."
+    href="/docs/api-reference/endpoints/fraudwarnings/get-fraud-warning-by-id"
+  />
+  <Card
+    icon={<List />}
+    title="Value lists"
+    description="Manage allow and block lists used in risk rules."
+    href="/docs/api-reference/endpoints/valuelists/create-value-list-item"
+  />
+</Cards>
+
+## Disputes
+
+<Cards className="grid-cols-3">
+  <Card
+    icon={<AlertTriangle />}
+    title="Disputes"
+    description="Manage chargebacks and dispute evidence submissions."
+    href="/docs/api-reference/endpoints/disputes/accept-dispute"
+  />
+  <Card
+    icon={<Handshake />}
+    title="Collaborations"
+    description="Manage collaboration relationships between merchant accounts."
+    href="/docs/api-reference/endpoints/collaborations/get-collaboration"
+  />
+  <Card
+    icon={<FileText />}
+    title="Documents"
+    description="Upload and manage compliance and verification documents."
+    href="/docs/api-reference/endpoints/documents/create-document"
+  />
+</Cards>
+
+## Reporting
+
+<Cards className="grid-cols-3">
+  <Card
+    icon={<Landmark />}
+    title="Settlements"
+    description="Retrieve settlement breakdowns for your merchant account."
+    href="/docs/api-reference/endpoints/settlements/get-settlement-breakdown"
+  />
+  <Card
+    icon={<SlidersHorizontal />}
+    title="Adjustments"
+    description="Retrieve manual adjustments applied to your account balance."
+    href="/docs/api-reference/endpoints/adjustments/get-adjustment-by-id"
+  />
+  <Card
+    icon={<BadgeDollarSign />}
+    title="Service fees"
+    description="Retrieve service fee details applied to transactions."
+    href="/docs/api-reference/endpoints/servicefees/get-service-fees-by-id"
+  />
+  <Card
+    icon={<BookOpen />}
+    title="Reconciliation"
+    description="List transactions for financial reconciliation reporting."
+    href="/docs/api-reference/endpoints/reconciliation/list-reconciliation-transactions"
+  />
+  <Card
+    icon={<ArrowLeftRight />}
+    title="Exchange rates"
+    description="Calculate real-time currency exchange rates."
+    href="/docs/api-reference/endpoints/exchangerates/calculate-exchange-rates"
+  />
+  <Card
+    icon={<TrendingUp />}
+    title="Cash flow"
+    description="Retrieve cash flow transactions across your accounts."
+    href="/docs/api-reference/endpoints/cashflow/get-cashflow-transaction"
+  />
+</Cards>
+
+## Configuration
+
+<Cards className="grid-cols-3">
+  <Card
+    icon={<Building2 />}
+    title="Merchants"
+    description="Retrieve merchant configuration and payment method options."
+    href="/docs/api-reference/endpoints/merchants/get-payment-method-options"
+  />
+</Cards>

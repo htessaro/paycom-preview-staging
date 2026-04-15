@@ -1,0 +1,285 @@
+---
+title: Hold and capture funds
+description: Authorize funds and settle them later
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+The hold and capture flow, also known as authorization and settlement, lets merchants reserve funds on a customer's card and settle them at a later time.
+This is an advanced flow typically used by businesses that only take money when a service is fulfilled, such as hotels, airlines, or e-commerce platforms that ship physical goods.
+
+## Requirements
+
+Before performing a hold and capture, ensure you have the following:
+
+* [Select your environment Base URL](/docs/api-reference/environments).
+* [Have access to your API credentials](/docs/api-reference/authentication).
+* A unique [`idempotency-key`](/docs/api-reference/idempotency-key) header for each request.
+
+<Steps>
+<Step>
+## Create a hold
+
+To reserve funds without capturing them, send a `POST` request to the [`/v1/holds`](/docs/api-reference/holds/create-hold) endpoint. A successful response returns a Hold object with `status: requires_capture`, indicating the funds are reserved on the customer's card but not yet settled. Amounts are in the smallest currency unit, so `10000` equals $100.00 USD.
+
+You can create a hold using raw card data or a stored payment method.
+
+<Tabs items={['Raw card data', 'Stored payment method']}>
+  <Tab value="Raw card data">
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+```json
+{
+  "amount": 10000,
+  "currency": "usd",
+  "source_data": {
+    "type": "card",
+    "card": {
+      "number": "4242424242424242",
+      "expiry_month": "12",
+      "expiry_year": "2028",
+      "cvv": "123",
+      "name": "John Smith"
+    },
+    "billing_details": {
+      "name": "John Smith",
+      "email": "john.smith@example.com"
+    }
+  },
+  "description": "Hold for Order #12350",
+  "reference": "order-12350"
+}
+```
+      </Tab>
+      <Tab value="Response">
+```json
+{
+  "id": "hld_686178331611104256",
+  "resource": "hold",
+  "amount": 10000,
+  "amount_human_readable": "100.00",
+  "amount_capturable": 10000,
+  "billing_details": {
+    "address": null,
+    "email": "john.smith@example.com",
+    "name": "John Smith",
+    "phone": null
+  },
+  "created": "2026-03-09T08:00:00.000Z",
+  "currency": "usd",
+  "customer": null,
+  "customer_reference_id": null,
+  "description": "Hold for Order #12350",
+  "failure_code": null,
+  "failure_message": null,
+  "metadata": {},
+  "payment_method": "pm_card_686178340000000000",
+  "reference": "order-12350",
+  "status": "requires_capture",
+  "test_mode": true
+}
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Stored payment method">
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+```json
+{
+  "amount": 10000,
+  "currency": "usd",
+  "source": "pm_card_REPLACE_WITH_PAYMENT_METHOD_ID",
+  "off_session": true,
+  "description": "Hold for Order #12351",
+  "reference": "order-12351"
+}
+```
+      </Tab>
+      <Tab value="Response">
+```json
+{
+  "id": "hld_686178331611104257",
+  "resource": "hold",
+  "amount": 10000,
+  "amount_human_readable": "100.00",
+  "amount_capturable": 10000,
+  "billing_details": null,
+  "created": "2026-03-09T08:01:00.000Z",
+  "currency": "usd",
+  "customer": null,
+  "customer_reference_id": null,
+  "description": "Hold for Order #12351",
+  "failure_code": null,
+  "failure_message": null,
+  "metadata": {},
+  "payment_method": "pm_card_REPLACE_WITH_PAYMENT_METHOD_ID",
+  "reference": "order-12351",
+  "status": "requires_capture",
+  "test_mode": true
+}
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+</Tabs>
+
+<Callout type="info">
+This hold remains active for a limited window determined by specific acquirer rules. You must capture or cancel before it expires.
+</Callout>
+</Step>
+<Step>
+## Capture funds
+
+When you are ready to settle the transaction, send a `POST` request to [`/v1/charges/{hold_id}/capture`](/docs/api-reference/holds/create-capture). Replace `{hold_id}` with the `id` returned when you created the hold.
+
+You can settle the full amount in one call, or capture in multiple partial installments.
+
+<Tabs items={['Full capture', 'Partial capture']}>
+  <Tab value="Full capture">
+
+To settle the entire reserved amount, omit the `amount` field. The hold transitions to `status: succeeded` and `amount_capturable` drops to `0`.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+
+`POST /v1/charges/{hold_id}/capture`
+
+```json
+{}
+```
+      </Tab>
+      <Tab value="Response">
+```json
+{
+  "id": "hld_686178331611104256",
+  "resource": "hold",
+  "amount": 10000,
+  "amount_human_readable": "100.00",
+  "amount_capturable": 0,
+  "created": "2026-03-09T08:00:00.000Z",
+  "currency": "usd",
+  "description": "Hold for Order #12350",
+  "metadata": {},
+  "reference": "order-12350",
+  "status": "succeeded",
+  "test_mode": true
+}
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+  <Tab value="Partial capture">
+
+To settle only part of the reserved amount, set `amount` to the value you want to settle in this capture, not the total or remaining balance. After a partial capture, the hold stays open with `status: requires_capture` and `amount_capturable` is reduced by the captured amount.
+
+To capture in multiple installments, repeat the following steps until `amount_capturable` reaches `0`:
+
+1. Call `GET /v1/holds/{hold_id}` to check the current `amount_capturable`.
+2. Send a `POST` to `/v1/charges/{hold_id}/capture` with the `amount` to settle in this installment.
+
+When the final partial capture brings `amount_capturable` to `0`, the hold transitions to `status: succeeded`.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+
+`POST /v1/charges/{hold_id}/capture`
+
+```json
+{
+  "amount": 5000
+}
+```
+      </Tab>
+      <Tab value="Response">
+```json
+{
+  "id": "hld_686178331611104256",
+  "resource": "hold",
+  "amount": 10000,
+  "amount_human_readable": "100.00",
+  "amount_capturable": 5000,
+  "created": "2026-03-09T08:00:00.000Z",
+  "currency": "usd",
+  "description": "Hold for Order #12350",
+  "metadata": {},
+  "reference": "order-12350",
+  "status": "requires_capture",
+  "test_mode": true
+}
+```
+      </Tab>
+    </Tabs>
+  </Tab>
+</Tabs>
+
+For tracking, the system triggers a `hold.captured` event for every capture (including multi-capture scenarios). The `hold.succeeded` event fires only on the first successful capture of that hold.
+
+</Step>
+<Step>
+## Cancel a hold
+
+If you decide not to proceed with a transaction, send a `POST` request to [`/v1/holds/{hold_id}/cancel`](/docs/api-reference/holds/hold-cancel) to release the reserved funds back to the customer.
+
+<Callout type="info">
+Cancellation always releases the full remaining `amount_capturable`. If you want to release only part of the reserved funds, perform a partial capture first to settle what you need, then call this endpoint to release whatever remains.
+</Callout>
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+
+`POST /v1/holds/{hold_id}/cancel`
+
+```json
+{}
+```
+  </Tab>
+  <Tab value="Response">
+```json
+{
+  "id": "hld_686178331611104256",
+  "resource": "hold",
+  "amount": 10000,
+  "amount_human_readable": "100.00",
+  "amount_capturable": 0,
+  "created": "2026-03-09T08:00:00.000Z",
+  "currency": "usd",
+  "description": "Hold for Order #12350",
+  "metadata": {},
+  "reference": "order-12350",
+  "status": "canceled",
+  "test_mode": true
+}
+```
+  </Tab>
+</Tabs>
+
+For full details on cancellation behavior and webhooks, see [Cancel a hold](/documentation/payments/guides/cancel-a-hold).
+
+</Step>
+<Step>
+## Monitor status and webhooks
+
+Use webhooks to track the lifecycle of the hold and capture process.
+
+* `hold.requires_capture`: Sent when a hold is approved and funds are successfully reserved and awaiting capture.
+* `hold.captured`: Sent for every capture you perform. If you partially capture funds from the same hold three times, your system receives this webhook three times.
+* `hold.succeeded`: Sent only for the first capture. It tells your system that the initial settlement was successful and does not fire again for subsequent captures against the same hold.
+* `hold.canceled`: Sent when the hold is canceled by the merchant or expires.
+* `hold.failed`: Sent if the initial attempt to create the hold is declined.
+
+<Callout type="warn">
+Always verify webhook signatures using the `Pay-Signature` header and your endpoint's secret key (via HMAC SHA-256) to ensure the event is legitimate.
+</Callout>
+
+</Step>
+</Steps>
+
+## Next steps
+
+* Read [Cancel a hold](/documentation/payments/guides/cancel-a-hold) for full details on releasing reserved funds, including cancellation rules and webhook behavior.
+* Read [Refund a charge](/documentation/payments/guides/refund-a-charge) to learn how to return funds after a capture has already settled.
+* Read [Create a charge](/documentation/payments/guides/create-a-charge) to understand how a standard charge differs from the hold and capture flow.
+* Read the [Webhooks overview](/documentation/payments/webhooks) to learn how to verify signatures and handle hold lifecycle events reliably.

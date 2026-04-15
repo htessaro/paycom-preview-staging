@@ -1,8 +1,39 @@
 ---
-title: Risk, Disputes, & Fraud
-description: Manage chargebacks and configure fraud rules.
+title: Risk, dispute & fraud
+description: Manage chargebacks, early dispute resolution, and configure fraud prevention rules.
 ---
 
-# Risk, Disputes, & Fraud
+import { Card, Cards } from 'fumadocs-ui/components/card';
+import {
+  Gavel,
+  Handshake,
+  AlertTriangle,
+  ShieldCheck,
+} from 'lucide-react';
 
-Configure velocity checks, integrate 3D Secure, and manage chargebacks and disputes effectively.
+<Cards>
+  <Card
+    icon={<Gavel />}
+    title="Disputes"
+    href="/docs/risk-disputes-fraud/disputes"
+    description="Manage the formal chargeback lifecycle, from initial notification to representment and final decision."
+  />
+  <Card
+    icon={<Handshake />}
+    title="Collaborations"
+    href="/docs/risk-disputes-fraud/collaborations"
+    description="Resolve potential disputes early using pre-dispute alert services like Ethoca and RDR."
+  />
+  <Card
+    icon={<AlertTriangle />}
+    title="Fraud warnings"
+    href="/docs/risk-disputes-fraud/fraud-warnings"
+    description="Monitor TC40 and SAFE reports to identify high-risk transactions before they become formal disputes."
+  />
+  <Card
+    icon={<ShieldCheck />}
+    title="Risk rules"
+    href="/docs/risk-disputes-fraud/risk-rules"
+    description="Configure velocity limits, blocklists, and name verification (ANI) to protect your business."
+  />
+</Cards>

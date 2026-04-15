@@ -1,0 +1,621 @@
+---
+title: Create a charge
+description: Move funds from a customer to a merchant account using the Pay.com API or SDK.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom'
+import universalUI from './universal-ui.png'
+import headlessUI from './headless-ui.jpeg'
+
+Creating a charge moves funds from a customer to a merchant account. You
+can create a charge using the API or the SDK, depending on how much
+control you need over the payment flow.
+
+- The SDK handles payment collection on the frontend. It securely
+  captures card details and manages the checkout flow for you. Learn
+  about SDK integration modes in the
+  [Pay.com SDKs overview](/docs/payments/sdk/pay-com-sdks-overview).
+- The API processes payments entirely from your server. You collect and
+  send the customer's card details and handle the full payment lifecycle.
+  This approach requires full PCI-DSS compliance.
+
+Both paths create the same type of charge. Choose the one that best fits
+your level of control, development resources, and PCI-DSS compliance
+requirements.
+
+## Requirements
+
+**For API integrations:**
+- [Retrieve your API credentials](/docs/api-reference/authentication)
+  from your dashboard.
+- [Generate a unique `idempotency-key` header](/docs/api-reference/idempotency-key)
+  for each request.
+
+**For SDK integrations:**
+- Complete the
+  [get started with the Pay.com SDK](/docs/payments/sdk/integrate-the-pay-com-sdk)
+  guide. You'll need a `client_secret` from your payment session and an
+  initialized `pay` instance.
+
+<Steps>
+
+<Step>
+## Initiate the payment
+
+How you start the payment depends on your integration path. The API sends
+a single server-side request. The SDK renders a checkout form in the
+browser and handles card collection for you.
+
+<Tabs items={['API', 'SDK']}>
+  <Tab value="API">
+    Send a `POST` request to [`/v1/charges`](/docs/api-reference/charges/create-charge).
+    Specify the transaction `amount`, `currency`, and payment method.
+
+    For the payment method, you can use:
+    - `source_data`: Raw card details, APMs, or encrypted payloads from
+      Apple Pay and Google Pay.
+    - `source`: A previously saved payment method identifier.
+
+    Amounts are in the smallest currency unit — `8000` equals $80.00 USD.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+        ```json
+        {
+          "amount": 8000,
+          "currency": "usd",
+          "source_data": {
+            "type": "card",
+            "card": {
+              "number": "4242424242424242",
+              "expiry_month": "12",
+              "expiry_year": "2028",
+              "cvv": "123",
+              "name": "John Smith"
+            }
+          }
+        }
+        ```
+      </Tab>
+      <Tab value="Response">
+        ```json
+        {
+          "id": "chrg_685125114794084352",
+          "resource": "charge",
+          "amount": 8000,
+          "amount_human_readable": "80.00",
+          "currency": "usd",
+          "status": "succeeded",
+          "payment_method": "pm_card_685125127054035968",
+          "payment_method_details": {
+            "card": {
+              "brand": "visa",
+              "last4": "4242",
+              "exp_month": "12",
+              "exp_year": "2028",
+              "funding": "debit",
+              "network": "visa"
+            },
+            "type": "card"
+          },
+          "created": "2026-03-06T14:02:39.261Z",
+          "test_mode": true
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Tab>
+
+  <Tab value="SDK">
+    Create a `checkout` instance from your `pay` instance and pass your
+    `client_secret` to tie the checkout to the payment session you created
+    on your server. Register `onSuccess` and `onFailure` here — these
+    callbacks fire when the payment completes or fails.
+
+    Then call the SDK method that matches your integration mode.
+
+    <Tabs items={['Universal', 'Headless', 'CDN']}>
+      <Tab value="Universal">
+        Call `checkout.universal()` with a selector pointing to your
+        container element. The SDK renders a fully hosted payment form,
+        including card fields, wallet buttons, and a submit button, inside
+        that element.
+
+        ```jsx
+        import { useEffect, useState } from 'react'
+        import Pay from '@pay-com/js'
+
+        function CheckoutPage() {
+          const [paymentDone, setPaymentDone] = useState(false)
+          const [errorMessage, setErrorMessage] = useState(null)
+
+          useEffect(() => {
+            async function initCheckout() {
+              const pay = await Pay.com({
+                identifier: '{id}',
+                live: true
+              })
+
+              const checkout = pay.checkout({
+                clientSecret: '{client_secret}',
+                onSuccess: (payment) => {
+                  setPaymentDone(true)
+                },
+                onFailure: (error) => {
+                  setErrorMessage(error.message)
+                },
+              })
+              checkout.universal({ container: '#paycom_checkout' })
+            }
+
+            initCheckout()
+          }, [])
+
+          if (paymentDone) {
+            return <p>Payment complete. Thank you for your order.</p>
+          }
+
+          return (
+            <div>
+              <div id="paycom_checkout"></div>
+              {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+            </div>
+          )
+        }
+
+        export default CheckoutPage
+        ```
+
+        <ImageZoom
+          src={universalUI}
+          alt="Universal Component rendered in the browser"
+          width={800}
+          height={600}
+        />
+
+        <Callout type="info">
+          You can customize the default styles to match your brand. See the
+          [styling guide](/docs/payments/sdk/sdk-customization) for details.
+        </Callout>
+
+        ### Custom submit button (optional)
+
+        By default, the SDK renders its own submit button. To use your own,
+        pass `submitButton: false` to `checkout.universal()`:
+
+        ```js
+        checkout.universal({
+          container: '#paycom_checkout',
+          toggles: { submitButton: false }
+        })
+        ```
+
+        Then validate the form before submitting:
+
+        ```js
+        async function handleSubmit() {
+          const { valid, invalidFields } = await checkout.validate()
+
+          if (valid) {
+            try {
+              await checkout.submit()
+            } catch (e) {
+              console.log('Authorization failed:', e.message)
+            }
+          } else {
+            console.log('Fix these fields:', invalidFields)
+          }
+        }
+        ```
+
+        Wire it up to your button:
+
+        ```jsx
+        <div id="paycom_checkout"></div>
+        <button onClick={handleSubmit}>Pay Now</button>
+        ```
+      </Tab>
+
+      <Tab value="Headless">
+        With the Headless method, you build and own the UI. The SDK does not
+        render anything — you collect the card data from your own form and
+        pass it to `checkout.headless()` to trigger the payment.
+
+        `useRef` stores the `checkout` instance so `handleSubmit` can access
+        it outside of `useEffect`. Without it, `handleSubmit` would not have
+        access to the `checkout` instance when the button is clicked.
+
+        ```jsx
+        import { useEffect, useState, useRef } from 'react'
+        import Pay from '@pay-com/js'
+
+        function CheckoutPage() {
+          const checkoutRef = useRef(null)
+          const [paymentDone, setPaymentDone] = useState(false)
+          const [errorMessage, setErrorMessage] = useState(null)
+          const [cardData, setCardData] = useState({
+            number: '',
+            cvv: '',
+            expirationMonth: '',
+            expirationYear: '',
+            name: '',
+          })
+
+          useEffect(() => {
+            async function initCheckout() {
+              const pay = await Pay.com({
+                identifier: '{id}',
+                live: true
+              })
+
+              const checkout = pay.checkout({
+                clientSecret: '{client_secret}',
+                onSuccess: (payment) => {
+                  setPaymentDone(true)
+                },
+                onFailure: (error) => {
+                  setErrorMessage(error.message)
+                },
+              })
+              checkoutRef.current = checkout
+            }
+            initCheckout()
+          }, [])
+
+          async function handleSubmit() {
+            const checkout = checkoutRef.current
+            if (!checkout) return
+
+            await checkout.headless('card', {
+              number: cardData.number,
+              cvv: cardData.cvv,
+              expirationMonth: cardData.expirationMonth,
+              expirationYear: cardData.expirationYear,
+              name: cardData.name,
+            })
+          }
+
+          if (paymentDone) {
+            return <p>Payment complete. Thank you for your order.</p>
+          }
+
+          return (
+            <div>
+              <input
+                placeholder="Card number"
+                onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
+              />
+              <input
+                placeholder="CVV"
+                onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
+              />
+              <input
+                placeholder="Expiry month"
+                onChange={(e) => setCardData({ ...cardData, expirationMonth: e.target.value })}
+              />
+              <input
+                placeholder="Expiry year"
+                onChange={(e) => setCardData({ ...cardData, expirationYear: e.target.value })}
+              />
+              <input
+                placeholder="Cardholder name"
+                onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
+              />
+              <button onClick={handleSubmit}>Pay Now</button>
+              {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+            </div>
+          )
+        }
+
+        export default CheckoutPage
+        ```
+
+        <Callout type="info">
+          The inputs above are unstyled placeholders. Replace them with your
+          own designed components. The SDK captures the data you pass to
+          `checkout.headless()` — it does not render any UI itself.
+        </Callout>
+
+        <ImageZoom
+          src={headlessUI}
+          alt="Headless checkout with custom styling"
+          width={800}
+          height={600}
+        />
+      </Tab>
+
+      <Tab value="CDN">
+        When using the CDN, the SDK is loaded from a script tag and is
+        available globally on the `window` object. The checkout UI is the
+        same payment form as the Universal SDK, including card fields, wallet
+        buttons, and the submit button.
+
+        ```html
+        <div id="paycom_checkout"></div>
+        <div id="error-message" style="color: red;"></div>
+
+        <script>
+          window.onload = async function () {
+            const { Pay } = window
+
+            const pay = Pay.com({ identifier: '{id}' })
+
+            const checkout = pay.checkout({
+              clientSecret: '{client_secret}',
+              onSuccess: (payment) => {
+                document.getElementById('paycom_checkout').innerHTML =
+                  '<p>Payment complete. Thank you for your order.</p>'
+              },
+              onFailure: (error) => {
+                document.getElementById('error-message').innerText = error.message
+              },
+            })
+
+            checkout.universal({ container: '#paycom_checkout' })
+          }
+        </script>
+        ```
+
+        <Callout type="warn">
+          `window.onload` is required when using the CDN. Without it, the
+          SDK may not be ready when your script runs, causing the checkout
+          to fail to initialize.
+        </Callout>
+      </Tab>
+    </Tabs>
+  </Tab>
+</Tabs>
+</Step>
+
+<Step>
+## Check the payment status
+
+Once the payment is submitted, inspect the outcome to decide how to
+proceed.
+
+<Tabs items={['API', 'SDK']}>
+  <Tab value="API">
+    Inspect the `status` field in the response. These are the possible
+    values:
+
+    - `succeeded`: The charge was approved. Funds are captured and
+      transferred to the merchant account. You can consider the
+      transaction complete.
+    - `failed`: The transaction was declined.
+    - `pending`: Used for asynchronous methods like SEPA or ACH. The
+      charge waits for bank confirmation.
+    - `requires_authentication`: A 3DS challenge is required before the
+      funds can be captured. This occurs when regional regulations
+      (PSD2) require it, when you actively enforce 3DS for fraud
+      prevention, or when the customer uses an APM that requires a
+      direct bank login. Follow the next step to complete the
+      authentication.
+
+    <Callout type="info">
+      If your customers are in PSD2-regulated regions (EU/UK) or you want
+      to enforce 3DS for fraud prevention, see
+      [Create a charge with 3DS](/documentation/payments/guides/create-a-charge-with-3ds).
+    </Callout>
+  </Tab>
+
+  <Tab value="SDK">
+    The `checkout` instance fires two callbacks when the payment flow
+    ends.
+
+    **`onSuccess`** fires when the checkout completes successfully in the
+    browser. Use it to redirect the customer to a confirmation page or
+    show a success message.
+
+    **`onFailure`** fires when the checkout encounters an error. Use
+    `error.message` to display a clear, actionable reason for the
+    failure, and redirect the customer or update the UI as needed.
+
+    <Callout type="warn">
+      `onSuccess` is a frontend signal only. A customer closing their
+      browser or a network issue can prevent it from firing. Never use it
+      as the sole trigger for order fulfilment — always confirm payment
+      outcomes via webhooks on your backend.
+    </Callout>
+  </Tab>
+</Tabs>
+</Step>
+
+<Step>
+## Handle customer authentication (API only)
+
+If the API charge response returns `requires_authentication`, you must
+redirect the customer to a bank challenge before the funds can be
+captured.
+
+Send a `POST` request to
+[`/v1/sessions/authentication/linked`](/docs/api-reference/authenticationsessions/create-linked-authentication-session)
+with the charge ID in the `resource` field. The `confirm` value controls
+what happens after the customer completes the challenge.
+
+<Tabs items={['confirm: true (recommended)', 'confirm: false (manual)']}>
+  <Tab value="confirm: true (recommended)">
+    Pay.com authorizes the charge automatically after the customer
+    completes the challenge. Your backend receives a `charge.succeeded`
+    or `charge.failed` webhook with the final outcome. No further API
+    call is needed.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+        ```json
+        {
+          "resource": "chrg_686511994907394048",
+          "confirm": true,
+          "return_url": "https://your-site.com/payment/complete"
+        }
+        ```
+      </Tab>
+      <Tab value="Response">
+        ```json
+        {
+          "id": "sca_686512987359412224",
+          "resource": "authentication_session",
+          "amount": 10000,
+          "amount_human_readable": "100.00",
+          "currency": "usd",
+          "status": "open",
+          "return_url": "https://your-site.com/payment/complete",
+          "url": "https://sca.dev.pay.com/authenticate?client_secret=eyJhbGciOiJIUzUxMiJ9...",
+          "payment_method": "pm_card_686512001609893888",
+          "payment_method_details": {
+            "card": {
+              "brand": "visa",
+              "exp_month": "12",
+              "exp_year": "2028",
+              "funding": "debit",
+              "last4": "1091",
+              "network": "visa"
+            },
+            "type": "card"
+          },
+          "test_mode": true
+        }
+        ```
+      </Tab>
+    </Tabs>
+
+    Redirect the customer to the `url` in the response. Pay.com
+    authorizes the charge after the challenge completes and sends the
+    result via webhook.
+  </Tab>
+
+  <Tab value="confirm: false (manual)">
+    Pay.com redirects the customer to your `return_url` after the
+    challenge without capturing funds. Once the customer lands on your
+    `return_url`, call
+    [`POST /v1/charges/{charge_id}/confirm`](/docs/api-reference/charges/confirm-charge)
+    from your server to finalize the charge.
+
+    Use this when you need to run checks (such as fraud scoring or
+    inventory verification) between the challenge completing and the
+    funds being captured.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+        ```json
+        {
+          "resource": "chrg_686511724072799232",
+          "confirm": false,
+          "return_url": "https://your-site.com/payment/complete"
+        }
+        ```
+      </Tab>
+      <Tab value="Response">
+        ```json
+        {
+          "id": "sca_686512328534917120",
+          "resource": "authentication_session",
+          "amount": 10000,
+          "amount_human_readable": "100.00",
+          "currency": "usd",
+          "status": "open",
+          "return_url": "https://your-site.com/payment/complete",
+          "url": "https://sca.dev.pay.com/authenticate?client_secret=eyJhbGciOiJIUzUxMiJ9...",
+          "test_mode": true
+        }
+        ```
+      </Tab>
+    </Tabs>
+
+    Redirect the customer to the `url`. Once Pay.com redirects them back
+    to your `return_url`, call the confirm endpoint to finalize the
+    charge.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+        `POST /v1/charges/chrg_686511724072799232/confirm`
+
+        ```json
+        {}
+        ```
+      </Tab>
+      <Tab value="Response">
+        ```json
+        {
+          "id": "chrg_686511724072799232",
+          "resource": "charge",
+          "amount": 10000,
+          "amount_human_readable": "100.00",
+          "currency": "usd",
+          "status": "succeeded",
+          "payment_method_details": {
+            "card": {
+              "brand": "mastercard",
+              "exp_month": "12",
+              "exp_year": "2028",
+              "funding": "debit",
+              "last4": "1096",
+              "network": "mastercard",
+              "three_d_secure": {
+                "authentication_flow": "challenge",
+                "eci": "02",
+                "liability_shift": true,
+                "result": "success",
+                "result_reason": "authenticated",
+                "version": "2.2.0"
+              }
+            },
+            "type": "card"
+          },
+          "test_mode": true
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Tab>
+</Tabs>
+</Step>
+
+</Steps>
+
+## Listen for webhooks
+
+Your integration works without webhooks, but status updates can happen
+asynchronously. In production, confirm payment outcomes on your backend
+independently of the API response or frontend callbacks — network issues
+or a customer closing the browser can prevent either from being reliable.
+
+<Tabs items={['API', 'SDK']}>
+  <Tab value="API">
+    Subscribe to the following events:
+
+    - `charge.succeeded`: The funds are successfully captured.
+    - `charge.failed`: The transaction could not be completed.
+  </Tab>
+  <Tab value="SDK">
+    Subscribe to the following event:
+
+    - `payment_session.completed`: The payment session resolved. Check
+      the status to fulfill the order or handle the failure.
+  </Tab>
+</Tabs>
+
+<Callout type="warn">
+  Always verify webhook signatures using the `Pay-Signature` header and
+  your endpoint's secret key via HMAC SHA-256 before acting on any event.
+</Callout>
+
+See the full list of [webhook events](/documentation/payments/webhooks/webhook-events)
+and the [webhooks overview](/documentation/payments/webhooks) for setup
+instructions and signature verification.
+
+## Next steps
+
+- Read the [webhooks overview](/documentation/payments/webhooks) to learn
+  how to verify signatures and set up your endpoint.
+- Read the [holds overview](/documentation/paycom-concepts/holds-and-captures) to reserve
+  funds for inventory verification and perform partial or multiple
+  captures.
+- Read the [refunds guide](/documentation/paycom-concepts/refunds) to process
+  full or partial returns for settled charges.
+- Read [create a charge with 3DS](/documentation/payments/guides/create-a-charge-with-3ds)
+  to add fraud prevention and regional compliance to your integration.
+- Read [accept wallet payments](/documentation/payments/guides/accept-wallet-payments-api)
+  to add Apple Pay and Google Pay to your checkout.

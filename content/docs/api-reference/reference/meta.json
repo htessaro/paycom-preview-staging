@@ -1,0 +1,9 @@
+{
+  "title": "Developer resources",
+  "root": true,
+  "icon": "FlaskConical",
+  "pages": [
+    "index",
+    "testing-cards"
+  ]
+}

@@ -1,0 +1,70 @@
+---
+title: Accept Apple Pay and Google Pay with the SDK
+description: Trigger Apple Pay and Google Pay payments using the Headless SDK.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+
+Apple Pay and Google Pay are triggered using the Headless SDK. You check whether the wallet is available in the customer's browser, then call `checkout.headless()` with the wallet type when the customer clicks the button.
+
+<Callout type="info">
+  If you are already using the Universal SDK, Apple Pay and Google Pay are 
+  included automatically — you do not need this guide. Continue here only 
+  if you are using the Headless SDK.
+</Callout>
+
+## Requirements
+
+Before you begin:
+
+- Apple Pay and Google Pay must be activated on your Pay.com merchant account. Check the Payment methods section of your [dashboard](https://dashboard.pay.com) to confirm availability.
+- You must have completed [get started with the Pay.com SDK](/docs/payments/sdk/integrate-the-pay-com-sdk) and have a `client_secret` and an initialized `pay` instance ready.
+
+
+<Steps>
+<Step>
+        ## Check wallet availability
+        Before rendering wallet buttons in your UI, check whether Apple Pay or Google Pay are available in the customer's browser using canMakePayments(). It returns a boolean for each wallet, allowing you to display only the supported payment options on the customer’s device.
+
+        ```js
+        const canMakePayments = await checkout.canMakePayments()
+        // { applepay: true, googlepay: false }
+        ```
+        Only render a wallet button if the corresponding value is `true`.
+
+</Step>
+
+<Step>
+        ## Trigger the payment
+        Once the customer clicks a wallet button, call `checkout.headless()` with the wallet type. The SDK handles the payment sheet, authorization, and outcome.
+
+        ```js
+        async function handleApplePay() {
+          await checkout.headless('applepay')
+        }
+
+        async function handleGooglePay() {
+          await checkout.headless('googlepay')
+        }
+        ```
+        `onSuccess` fires when the payment completes. `onFailure` fires if the customer cancels or the payment is declined. Both are registered on the `checkout` instance, see [Create a charge](/documentation/payments/guides/create-a-charge) for details.
+
+</Step>
+
+</Steps>
+
+## Listen for webhooks
+
+Wallet payments use the same webhook event as card payments. Subscribe to `payment_session.completed` on your backend to confirm the outcome independently of the browser.
+
+<Callout type="warn">
+  Always verify webhook signatures using the `Pay-Signature` header and your endpoint's secret key via HMAC SHA-256 before acting on any event.
+</Callout>
+
+See the [Webhooks overview](/documentation/payments/webhooks) for setup instructions and signature verification.
+
+## Next steps
+ 
+To accept bank redirect payments such as iDEAL and GiroPay using the Headless SDK, see [accept bank redirect payments](/documentation/payments/guides/accept-bank-redirect-payments).

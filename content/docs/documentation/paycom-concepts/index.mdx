@@ -8,16 +8,12 @@ import {
   Zap,
   ArrowRightLeft,
   CreditCard,
-  Lock,
-  Undo2,
-  Send,
-  ShieldCheck,
   Building2,
+  Ban,
+  Coins,
 } from 'lucide-react';
 
-Pay.com is a unified payment gateway and processor. These concept pages explain the
-building blocks of the platform so you can make informed decisions when designing
-your integration.
+Pay.com is a unified payment gateway and processor. These concept pages explain the building blocks of the platform so you can make informed decisions when designing your integration. These core principles apply universally, whether you are using our browser-based SDKs or our server-to-server API.
 
 Start here to understand how a payment moves from creation to settlement:
 
@@ -36,43 +32,32 @@ Start here to understand how a payment moves from creation to settlement:
   />
 </Cards>
 
-Learn the core objects that represent money movement in Pay.com:
+Learn the core transaction types and authentication in Pay.com:
 
 <Cards>
   <Card
     icon={<CreditCard />}
-    title="Charges"
-    href="/docs/paycom-concepts/charges"
-    description="How charges work as the core transaction type for capturing funds from a customer."
+    title="Transactions"
+    href="/docs/paycom-concepts/transactions"
+    description="Charges, holds, refunds, payouts, and 3D Secure authentication — all transaction types in one place."
   />
   <Card
-    icon={<Lock />}
-    title="Holds and captures"
-    href="/docs/paycom-concepts/holds-and-captures"
-    description="Reserve funds at authorization and capture or cancel them later."
+    icon={<CreditCard />}
+    title="Payment method tokens"
+    href="/docs/paycom-concepts/payment-method-tokens"
+    description="Understand the tokenization model used to secure and manage payment methods."
   />
   <Card
-    icon={<Undo2 />}
-    title="Refunds"
-    href="/docs/paycom-concepts/refunds"
-    description="Return funds to customers with full, partial, and multiple refunds on a single charge."
+    icon={<Ban />}
+    title="Decline codes"
+    href="/docs/paycom-concepts/decline-codes"
+    description="Learn how Pay.com unifies decline reasons from different networks and providers."
   />
   <Card
-    icon={<Send />}
-    title="Payouts"
-    href="/docs/paycom-concepts/payouts"
-    description="Send funds from your merchant account to a customer's payment method."
-  />
-</Cards>
-
-Understand the infrastructure that sits beneath every transaction:
-
-<Cards>
-  <Card
-    icon={<ShieldCheck />}
-    title="3D Secure"
-    href="/docs/paycom-concepts/3d-secure"
-    description="How Pay.com's agnostic 3DS layer handles authentication for SDK and server-to-server integrations."
+    icon={<Coins />}
+    title="Currencies"
+    href="/docs/paycom-concepts/currencies"
+    description="How Pay.com handles transaction amounts and multi-currency support."
   />
   <Card
     icon={<Building2 />}

@@ -66,22 +66,28 @@ Keep your API Key private. Never share it or commit it to repositories.
 Your first API call depends on the integration path you chose in Step 1:
 
 #### For SDK (Payment sessions)
-If you use the Universal SDK or Headless SDK, start by creating a payment session via a `POST` request to the [`/v1/sessions/payment`](/docs/api-reference/paymentsessions/create-ps) endpoint. 
-Include the `amount`, `currency`, and `customer_id` in your payload to receive the session parameters required to initialize the SDK components in your frontend application. 
+If you use the Universal SDK or Headless SDK, start by creating a payment session via a `POST` request to the [`/v1/sessions/payment`](/docs/api-reference/paymentsessions/create-ps) endpoint.
+Include the `amount`, `currency`, and `customer_id` in your payload to receive the session parameters required to initialize the SDK on your frontend.
 
 <Callout type="warn">
-We highly recommend also passing the customer's `email` in this request. While not strictly required to open a session, it is vital for 3D Secure authentication and prevents the SDK from needing to manually prompt the user for it.
+We recommend also passing the customer's `email` in this request. While not required to open a session, it is needed for 3D Secure authentication and prevents the SDK from prompting the user for it during checkout.
 </Callout>
 
+Follow the [set up the Pay.com SDK](/docs/payments/sdk/integrate-the-pay-com-sdk) guide to install the package and initialize your first checkout.
+
 #### For Tokenization (Hybrid flow)
-If you are using the SDK to tokenize cards, send a `POST` request to the [`/v1/sessions/tokenization`](/docs/api-reference/tokenizationsessions/create-tokenization-session) endpoint. This is a simple API that requires no parameters in the payload [cite: 271, 272]. Use the returned token to render the SDK, save the card, and transact on your backend.
+If you are using the SDK to tokenize cards, send a `POST` request to the [`/v1/sessions/tokenization`](/docs/api-reference/tokenizationsessions/create-tokenization-session) endpoint. Use the returned token to render the SDK, save the card, and charge on your backend.
+
+See the [tokenize a card](/docs/payments/sdk/tokenize-a-card) guide for the full flow.
 
 #### For API-only (Server-to-server)
-If you maintain PCI-DSS Level 1 compliance, skip the session creation and process the transaction directly by sending a `POST` request to either the [`/v1/charges`](/docs/payments/server-to-server-guides/create-a-charge) endpoint (for immediate capture) or the [`/v1/holds`](/docs/api-reference/holds/create-a-hold) endpoint (to authorize now and capture later) [cite: 282, 284, 291]. 
-Include either raw card details or an external token in your payload to initiate the transaction immediately.
+If you maintain PCI-DSS Level 1 compliance, skip the session creation and process the transaction directly. Send a `POST` request to either the [`/v1/charges`](/docs/api-reference/charges/create-charge) endpoint (for immediate capture) or the [`/v1/holds`](/docs/api-reference/holds/create-a-hold) endpoint (to authorize now and capture later).
+Include either raw card details or an external token in your payload to start the transaction.
+
+See the [create a charge](/docs/payments/guides/create-a-charge) guide for the full API flow.
 
 <Callout type="info">
-We recommend you pass a unique V4 UUID in the [`idempotency-key` header](/docs/api-reference/idempotency-key) for all `POST` requests. This ensures that if a network disruption occurs in transit, you can safely retry the request without risking double-charging the customer [cite: 374, 375].
+Pass a unique V4 UUID in the [`idempotency-key` header](/docs/api-reference/idempotency-key) for all `POST` requests. This lets you safely retry requests after a network disruption without risking a duplicate charge.
 </Callout>
 </Step>
 </Steps>
@@ -90,7 +96,9 @@ We recommend you pass a unique V4 UUID in the [`idempotency-key` header](/docs/a
 
 Now that you have configured your workspace and authenticated your first request, explore these resources to build out your integration:
 
-* Use our **[Integration](/docs/introduction/choose-your-integration)** page to deep-dive into the technical differences between SDK-based and API-only flows.
-* Visit the **[Webhooks](/documentation/payments/webhooks)** page to learn how to receive real-time notifications for payment success, failures, and chargebacks.
-* Read about **[Idempotency](/docs/api-reference/idempotency-key)** to ensure your integration safely handles retries without creating duplicate transactions.
-* Explore our **[API Reference](/docs/api-reference/index)** for a complete list of endpoints, including customers, subscriptions, and specialized payment methods.
+* Read the [integration types](/docs/introduction/choose-your-integration) page for a detailed comparison of SDK-based and API-only flows.
+* Follow the [set up the Pay.com SDK](/docs/payments/sdk/integrate-the-pay-com-sdk) guide to install the SDK and run your first checkout.
+* Read the [create a charge](/docs/payments/guides/create-a-charge) guide to process your first payment via the API or SDK.
+* Visit the [webhooks](/documentation/payments/webhooks) section to receive real-time notifications for payment successes, failures, and chargebacks.
+* Read the [idempotency key](/docs/api-reference/idempotency-key) reference to make sure your integration handles retries safely.
+* Explore the [API reference](/docs/api-reference/index) for a complete list of endpoints, including customers, subscriptions, and specialized payment methods.

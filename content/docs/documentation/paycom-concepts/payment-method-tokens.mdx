@@ -1,0 +1,85 @@
+---
+title: Payment method tokens
+description: Understand the Pay.com tokenization model and how to securely manage temporary tokens and permanent payment methods.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Pay.com uses a two-stage tokenization model to ensure that sensitive payment data never 
+touches your servers. Card details are collected by the Pay.com SDK and immediately 
+converted into tokens: first a short-lived temporary token, then optionally a permanent 
+payment method ID for future use.
+
+## Token types
+
+Pay.com uses two types of tokens to represent payment data at different stages of the 
+flow:
+
+| | Temporary token | Permanent payment method |
+|---|---|---|
+| **Prefix** | `tok_card_` | `pm_card_`, `pm_paypal_`, etc. |
+| **Lifetime** | Short-lived; valid for a single session | Permanent until deleted or the underlying instrument expires |
+| **Purpose** | Represents raw card data collected by the SDK | Represents a stored, reusable payment method |
+| **Used in** | `POST /v1/payment_methods` to create a permanent ID | `payment_method` field on charges and holds |
+
+You never handle raw card data directly. The SDK collects it and returns a `tok_` token; 
+your server exchanges that token for a `pm_` ID and stores only the permanent identifier.
+
+## Tokenization flow
+
+<Steps>
+<Step>
+### Create a session
+Your server creates a setup session via `POST /v1/setup_sessions`. The session gives 
+the SDK the context it needs to securely collect card details.
+</Step>
+<Step>
+### Collect card details
+The Pay.com SDK renders a secure card input on your frontend. When the customer submits 
+their details, the SDK sends the data directly to Pay.com and returns a temporary 
+`tok_card_` token to your frontend. No card data passes through your servers.
+</Step>
+<Step>
+### Exchange for a permanent ID
+Your server calls `POST /v1/payment_methods` with the `tok_card_` token. Pay.com 
+validates the token and returns a permanent `payment_method_id` such as `pm_card_123...`.
+</Step>
+<Step>
+### Use the payment method
+Pass the `payment_method_id` in the `payment_method` field when creating charges or 
+holds. The same ID can be reused for future transactions, one-click checkouts, or 
+recurring payments.
+</Step>
+</Steps>
+
+## Network tokens
+
+For eligible cards, Pay.com automatically upgrades stored payment methods to **network 
+tokens**, scheme-level credentials issued by Visa (VTS) or Mastercard (MDES) that 
+replace the raw card number with a network-signed cryptogram.
+
+Network tokens offer two key advantages over standard tokens: they are automatically 
+updated by the card network when a card is reissued or a number changes, and they 
+typically produce higher authorization rates because issuers treat them as lower-risk 
+credentials.
+
+Network token usage is handled automatically by Pay.com. No changes to your integration 
+are required. When a network token is used, the charge response includes a 
+`network_token` field indicating the token reference.
+
+<Callout type="info">
+Network token support depends on card eligibility and issuer participation. Not all 
+cards are enrolled in Visa VTS or Mastercard MDES.
+</Callout>
+
+## The full token lifecycle
+
+Temporary tokens, permanent payment methods, and network tokens are not separate systems. 
+They are three stages of the same pipeline. A customer enters their card once; the SDK 
+converts it to a `tok_` token; your server exchanges that for a `pm_` ID; and Pay.com 
+automatically upgrades eligible cards to a network token behind the scenes.
+
+From that point forward, you work exclusively with the `pm_` ID. Pay.com handles 
+credential updates, network token refreshes, and reissuance transparently, without any 
+changes required on your end.

@@ -35,6 +35,8 @@ We highly recommend passing the customer's email in the `billing_details` object
 
 This diagram breaks down the process for API integrations. It shows how the transaction moves from your server to the bank and back again to finalize the payment:
 
+<Diagram id="3ds-auth-flow" />
+
 ```mermaid
 graph TD
     Step1["1. Initiate the transaction <br/> POST /v1/charges or /v1/holds"] 

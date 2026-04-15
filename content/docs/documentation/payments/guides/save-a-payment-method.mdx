@@ -1,0 +1,450 @@
+---
+title: Save a payment method
+description: Store a customer's card for future charges using the API or SDK. Returns a reusable payment method ID for subscriptions and off-session payments.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Saving a payment method stores a customer's card so you can charge it
+later without the customer being present. Both paths return a reusable
+payment method ID (`pm_card_xxx`) that works across charges, subscriptions,
+and off-session billing.
+
+- The API validates the card directly with the issuer using a zero-amount
+  transaction. Raw card data passes through your servers, so this requires
+  PCI Level 1 or SAQ-D compliance.
+- The SDK collects card details in a hosted checkout form, so raw card
+  data never touches your servers. Use a payment session to charge and
+  save in one step, or a setup session to save without charging.
+
+## Requirements
+
+**For API integrations:**
+- [Retrieve your API credentials](/docs/api-reference/authentication)
+  from your dashboard.
+- A `customer_reference_id` to associate the card with a customer record.
+- Browser metadata (IP address, user agent, screen dimensions) if the
+  issuer requires a 3DS challenge.
+
+**For SDK integrations:**
+- Complete the
+  [get started with the Pay.com SDK](/docs/payments/sdk/integrate-the-pay-com-sdk)
+  guide. You'll need an initialized `pay` instance.
+- Choose your session type: use a payment session to charge and save in
+  one step, or a setup session to save without an immediate charge.
+
+<Steps>
+
+<Step>
+## Store the card
+
+<Tabs items={['API', 'SDK']}>
+  <Tab value="API">
+    Call [`POST /v1/payment_methods`](/docs/api-reference/paymentmethods/create-payment-method)
+    with the card details and `setup_future_usage: "off_session"` to vault
+    the card for future off-session charges.
+
+    <Callout type="warn">
+      Raw card data passes through your servers. This flow requires PCI
+      Level 1 or SAQ-D compliance.
+    </Callout>
+
+    The API returns one of three outcomes:
+
+    - `created`: The card was verified and vaulted. No further steps needed.
+    - `requires_authentication`: The issuer requires a 3DS challenge.
+      Continue to the next step.
+    - error: Card verification failed.
+
+    <Tabs items={['No 3DS (immediate)', 'With 3DS challenge']}>
+      <Tab value="No 3DS (immediate)">
+        For cards that do not require a 3DS challenge, pass the card
+        details and billing information. The card is verified and vaulted
+        in a single request.
+
+        <Tabs items={['Request', 'Response']}>
+          <Tab value="Request">
+            ```json
+            {
+              "type": "card",
+              "customer_reference_id": "cust-john-smith-001",
+              "card": {
+                "number": "4242424242424242",
+                "expiry_month": "12",
+                "expiry_year": "2028",
+                "cvv": "123",
+                "name": "John Smith"
+              },
+              "billing_details": {
+                "name": "John Smith",
+                "email": "john.smith@example.com",
+                "phone": "+14155551234",
+                "address": {
+                  "line1": "123 Main Street",
+                  "city": "San Francisco",
+                  "state": "CA",
+                  "postal_code": "94102",
+                  "country": "US"
+                }
+              },
+              "setup_future_usage": "off_session"
+            }
+            ```
+          </Tab>
+          <Tab value="Response">
+            ```json
+            {
+              "id": "pm_card_685217824846643200",
+              "resource": "payment_method",
+              "status": "created",
+              "type": "card",
+              "card": {
+                "brand": "visa",
+                "last4": "4242",
+                "exp_month": "12",
+                "exp_year": "2028",
+                "funding": "debit",
+                "network": "visa"
+              },
+              "customer_reference_id": "cust-john-smith-001",
+              "off_session": true,
+              "test_mode": true
+            }
+            ```
+          </Tab>
+        </Tabs>
+
+        `status: "created"` confirms the card is verified and vaulted.
+        Store the `id` (`pm_card_...`) to use in future charges.
+      </Tab>
+
+      <Tab value="With 3DS challenge">
+        To require a 3DS challenge, include `authentication_context`
+        inside the `card` object and set
+        `payment_method_options.card.request_threed_secure` to
+        `"challenge"`. All `browser_details` fields are required.
+
+        <Tabs items={['Request', 'Response']}>
+          <Tab value="Request">
+            ```json
+            {
+              "type": "card",
+              "customer_reference_id": "cust-john-smith-001",
+              "card": {
+                "number": "5200000000001096",
+                "expiry_month": "12",
+                "expiry_year": "2028",
+                "cvv": "123",
+                "name": "John Smith",
+                "authentication_context": {
+                  "customer_ip_address": "192.168.1.1",
+                  "browser_details": {
+                    "accept_header": "*/*",
+                    "javascript_enabled": true,
+                    "language": "en-US",
+                    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "screen_width": 1920,
+                    "screen_height": 1080,
+                    "timezone_offset": "-300",
+                    "java_enabled": false,
+                    "color_depth": 24
+                  }
+                }
+              },
+              "billing_details": {
+                "name": "John Smith",
+                "email": "john.smith@example.com"
+              },
+              "setup_future_usage": "off_session",
+              "payment_method_options": {
+                "card": {
+                  "request_threed_secure": "challenge"
+                }
+              }
+            }
+            ```
+          </Tab>
+          <Tab value="Response">
+            ```json
+            {
+              "id": "pm_card_686169133447908352",
+              "resource": "payment_method",
+              "status": "requires_authentication",
+              "type": "card",
+              "card": {
+                "brand": "mastercard",
+                "last4": "1096",
+                "exp_month": "12",
+                "exp_year": "2028",
+                "funding": "debit",
+                "network": "mastercard"
+              },
+              "customer_reference_id": "cust-john-smith-001",
+              "off_session": true,
+              "test_mode": true
+            }
+            ```
+          </Tab>
+        </Tabs>
+
+        `status: "requires_authentication"` means the card needs a 3DS
+        challenge before it can be vaulted. Store the `id` and continue
+        to the next step.
+      </Tab>
+    </Tabs>
+  </Tab>
+
+  <Tab value="SDK">
+    Create a session on your server to authorize the checkout and tell
+    Pay.com to store the card for future use. Set
+    `setup_future_usage: "off_session"` in the session request so the
+    stored card is eligible for future off-session charges.
+
+    <Callout type="info">
+      `off_session` is required for subscriptions and any recurring charge
+      where the customer will not be present. If you omit it, the stored
+      card will not be eligible for future off-session charges.
+    </Callout>
+
+    <Tabs items={['Payment session', 'Setup session']}>
+      <Tab value="Payment session">
+        A payment session charges the customer and saves their card in
+        a single checkout. Use this when you want to charge upfront and
+        store the card at the same time.
+
+        ```javascript
+        const response = await fetch("https://api.staging.pay.com/v1/sessions/payment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-paycom-api-key": "YOUR_API_KEY"
+          },
+          body: JSON.stringify({
+            amount: 1000,
+            currency: "usd",
+            customer_reference_id: "cust-john-smith-001",
+            setup_future_usage: "off_session"
+          })
+        })
+        ```
+
+        The response returns a `client_secret` and session `id`. Pass
+        both to the SDK in the next step.
+
+        ```json
+        {
+          "id": "ps_296645958265997319",
+          "resource": "payment_session",
+          "client_secret": "eyJ0eXAiOiJKV1Qi...",
+          "customer_reference_id": "cust-john-smith-001",
+          "status": "open"
+        }
+        ```
+      </Tab>
+
+      <Tab value="Setup session">
+        A setup session saves the customer's card without charging them.
+        Use this for free trials, pay-later flows, or any scenario where
+        you want to collect card details without an immediate charge.
+
+        ```javascript
+        const response = await fetch("https://api.staging.pay.com/v1/sessions/setup", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-paycom-api-key": "YOUR_API_KEY"
+          },
+          body: JSON.stringify({
+            customer_reference_id: "cust-john-smith-001",
+            setup_future_usage: "off_session"
+          })
+        })
+        ```
+
+        The response returns a `client_secret` and session `id`. Pass
+        both to the SDK in the next step.
+
+        ```json
+        {
+          "id": "ss_296645958265997319",
+          "resource": "setup_session",
+          "client_secret": "eyJ0eXAiOiJKV1Qi...",
+          "customer_reference_id": "cust-john-smith-001",
+          "status": "open"
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Tab>
+</Tabs>
+</Step>
+
+<Step>
+## Complete the checkout (SDK only)
+
+After creating the session, initialize the SDK on your frontend using
+the `id` and `client_secret` returned from your server. The SDK renders
+a card form for the customer to enter their details. The flow is identical
+for both session types.
+
+```javascript
+const pay = await Pay.com({
+  identifier: '{id}',
+})
+
+const checkout = pay.checkout({
+  clientSecret: '{client_secret}',
+  onSuccess: (payment) => {
+    // payment.paymentMethod — stored payment method ID (pm_card_xxx)
+    // payment.amount        — 0 for setup sessions, charged amount for payment sessions
+    // payment.status        — "succeeded"
+    console.log('Payment method saved:', payment.paymentMethod)
+  },
+  onFailure: (error) => {
+    console.log('Failed:', error.message)
+  },
+})
+
+checkout.universal({ container: '#paycom_checkout' })
+```
+
+Once the customer submits the form, `payment.paymentMethod` in the
+`onSuccess` callback returns the stored payment method ID. Save this
+value in your database against the customer record.
+
+<Callout type="info">
+  Pay.com stores card payment methods as network tokens. If a customer's
+  card is reissued with a new number or expiry date, the token updates
+  automatically so future charges continue without the customer needing
+  to update their details.
+</Callout>
+</Step>
+
+<Step>
+## Create an authentication session (API only, if required)
+
+This step is only needed if step 1 returned
+`status: "requires_authentication"`.
+
+Call [`POST /v1/sessions/authentication/linked`](/docs/api-reference/authenticationsessions/create-linked-authentication-session)
+with the payment method ID in the `resource` field. You must set
+`confirm` to `false` for the payment method flow — there is no
+auto-confirm option here.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+    ```json
+    {
+      "resource": "pm_card_686169133447908352",
+      "confirm": false,
+      "return_url": "https://your-site.com/payment-method/complete"
+    }
+    ```
+  </Tab>
+  <Tab value="Response">
+    ```json
+    {
+      "id": "sca_687278801096279040",
+      "resource": "authentication_session",
+      "amount": 0,
+      "amount_human_readable": "0.00",
+      "status": "open",
+      "return_url": "https://your-site.com/payment-method/complete",
+      "url": "https://sca.dev.pay.com/authenticate?client_secret=eyJhbGciOiJIUzUxMiJ9...",
+      "payment_method": "pm_card_686169133447908352",
+      "test_mode": true
+    }
+    ```
+  </Tab>
+</Tabs>
+
+`amount: 0` confirms this is a zero-amount card verification, not a
+charge. Redirect the customer to the `url` to complete the bank
+challenge. Pay.com redirects them back to your `return_url` when the
+challenge finishes.
+</Step>
+
+<Step>
+## Confirm the payment method (API only, if required)
+
+This step is only needed if step 3 returned a
+`requires_authentication` status.
+
+After the customer completes the challenge and is redirected to your
+`return_url`, call
+[`POST /v1/payment_methods/{payment_method_id}/confirm`](/docs/api-reference/paymentmethods/confirm-payment-method).
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+    `POST /v1/payment_methods/pm_card_686169133447908352/confirm`
+
+    ```json
+    {}
+    ```
+  </Tab>
+  <Tab value="Response">
+    ```json
+    {
+      "id": "pm_card_686169133447908352",
+      "resource": "payment_method",
+      "status": "created",
+      "type": "card",
+      "card": {
+        "brand": "mastercard",
+        "last4": "1096",
+        "exp_month": "12",
+        "exp_year": "2028",
+        "funding": "debit",
+        "network": "mastercard"
+      },
+      "customer_reference_id": "cust-john-smith-001",
+      "off_session": true,
+      "test_mode": true
+    }
+    ```
+  </Tab>
+</Tabs>
+
+`status: "created"` confirms the card is verified and vaulted. The `id`
+is now ready to use in future charges.
+
+<Callout type="warn">
+  Calling this endpoint before the customer completes the bank challenge
+  returns `{ "code": "card_declined", "decline_code": "authentication_failure" }`.
+  Wait for the customer to be redirected to your `return_url` first.
+</Callout>
+</Step>
+
+</Steps>
+
+## Listen for webhooks (API only)
+
+Use webhooks to track the outcome of each verification on your backend.
+
+Subscribe to the following events:
+
+- `payment_method.created`: The card was verified and vaulted
+  successfully.
+- `payment_method.failed_authentication`: The verification was declined.
+
+<Callout type="warn">
+  Always verify webhook signatures using the `Pay-Signature` header and
+  your endpoint's secret key via HMAC SHA-256 before acting on any event.
+</Callout>
+
+<Callout type="info">
+  Payment method tokens are interchangeable across all Pay.com flows,
+  including the API, SDK, and orchestration layers.
+</Callout>
+
+## Next steps
+
+- Read [Create recurring charges](/documentation/payments/guides/create-recurring-charges)
+  to use a vaulted payment method for future off-session billing.
+- Read [Create a charge with 3DS](/documentation/payments/guides/create-a-charge-with-3ds)
+  to understand the 3DS challenge flow when charging rather than vaulting
+  a card.
+- Read the [webhooks overview](/documentation/payments/webhooks) to learn
+  how to verify signatures and handle payment method events reliably.

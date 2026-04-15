@@ -1,0 +1,323 @@
+---
+title: Test your risk rules
+description: Verify that payment, block, and review rules fire correctly
+  by creating test charges and inspecting the response.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+
+Pay.com's rules engine evaluates conditions on each incoming charge and
+applies a configured action before or after authorization. Rules are
+created in the Pay.com dashboard, not via the API. This guide shows you
+how to write test charges that trigger a rule, and how to read the
+response to confirm the rule fired.
+
+## Rule types
+
+Two rule types are available:
+
+| Rule type | When it runs | Available actions |
+| :--- | :--- | :--- |
+| Payment | Before authorization (pre-network) | Block, Require 3DS, 3DS challenge, 3DS exemption, 3DS not required |
+| Review | After authorization (post-network) | Flag transaction for review, Flag customer for review |
+
+## Requirements
+
+To test a rule, you need:
+
+- A rule created and set to **Active** in the Pay.com dashboard. Rules in
+  **Draft** or **Paused** state do not affect charge responses.
+- Simulation mode turned **off** on the rule. In simulation mode, the
+  rule logs a match internally but does not change the charge outcome.
+- A test mode API key. See [Authentication](/docs/introduction/authentication).
+- A raw card charge that includes the field the rule evaluates.
+
+<Callout type="info">
+Rules only apply to customer-initiated transactions (CIT). Off-session
+charges (those using a stored payment method with `off_session: true`)
+bypass rule evaluation entirely. This is consistent with PCI and SCA
+standards for merchant-initiated transactions (MIT). Use a raw card
+charge to test rules.
+</Callout>
+
+## Fields the rules engine evaluates
+
+When creating a charge, set the condition field in `source_data` to match
+your rule. The table below shows which fields the rules engine reads and
+where to set them in the request:
+
+| Condition type | Field the rule reads | Where to set it in the request |
+| :--- | :--- | :--- |
+| First name | First word of the cardholder name | `source_data.billing_details.name` |
+| BIN | First six digits of the card number | `source_data.card.number` (derived automatically) |
+| Card country | Issuing bank country | `source_data.billing_details.address.country` |
+
+<Callout type="warn">
+`billing_details.phone` is not stored by the charge API. Values sent in
+that field are discarded silently, so any rule condition based on phone
+number will never match a raw card charge.
+</Callout>
+
+## Test a payment rule
+
+Payment rules run synchronously before the charge reaches the card
+network. The result is always visible in the immediate charge response
+under `risk_assessment_details`.
+
+<Steps>
+<Step>
+## Create a charge that matches the rule condition
+
+Send a `POST` request to [`/v1/charges`](/api-reference/charges/create-charge).
+Set the condition field in `billing_details` to a value that matches your
+rule.
+
+For a rule that requires 3DS, include `authentication_context` with
+browser details inside the `card` object. Without it, the 3DS flow
+cannot complete.
+
+The example below tests a payment rule with condition
+`first name equals TestThreeDS`:
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```json
+POST /v1/charges
+
+{
+  "amount": 1000,
+  "currency": "usd",
+  "source_data": {
+    "type": "card",
+    "card": {
+      "number": "5235881302392773",
+      "expiry_month": "12",
+      "expiry_year": "2028",
+      "cvv": "123",
+      "name": "TestThreeDS User",
+      "authentication_context": {
+        "customer_ip_address": "192.168.1.1",
+        "browser_details": {
+          "accept_header": "*/*",
+          "javascript_enabled": true,
+          "language": "en-US",
+          "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+          "screen_width": 1920,
+          "screen_height": 1080,
+          "timezone_offset": "-300",
+          "java_enabled": false,
+          "color_depth": 24
+        }
+      }
+    },
+    "billing_details": {
+      "name": "TestThreeDS User",
+      "email": "test@example.com",
+      "address": {
+        "line1": "100 Test St",
+        "city": "New York",
+        "state": "NY",
+        "postal_code": "10001",
+        "country": "US"
+      }
+    }
+  },
+  "description": "Rule test — require 3DS"
+}
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "id": "chrg_697560860452719616",
+  "status": "succeeded",
+  "risk_assessment_details": {
+    "outcome": "require_three_ds",
+    "outcome_source": "rule",
+    "rule_id": "rl_697532456877686784",
+    "flags": [],
+    "bypassed": []
+  },
+  "payment_method_details": {
+    "card": {
+      "three_d_secure": {
+        "authentication_flow": "frictionless",
+        "eci": "02",
+        "liability_shift": true,
+        "result": "success",
+        "result_reason": "authenticated",
+        "version": "2.2.0"
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+</Step>
+
+<Step>
+## Confirm the rule fired
+
+Check `risk_assessment_details` in the response:
+
+- `outcome` shows what action the rule applied (`require_three_ds`,
+  `block`, and so on).
+- `outcome_source: "rule"` confirms a dashboard rule triggered the
+  action, not the card network or issuer.
+- `rule_id` is the ID of the matched rule. You can cross-reference it
+  with the rule IDs shown in your Pay.com dashboard.
+
+If `risk_assessment_details` is `null`, the rule did not fire. See
+[Troubleshooting](#troubleshooting) below.
+</Step>
+</Steps>
+
+## Require 3DS outcome
+
+When a payment rule requires 3DS, Pay.com authenticates the customer
+before authorization. The response shape depends on how the card issuer
+handles the challenge.
+
+**Frictionless** — the issuer authenticates the customer without a
+browser redirect. The charge completes in a single request and returns
+`status: "succeeded"`:
+
+```json
+{
+  "status": "succeeded",
+  "risk_assessment_details": {
+    "outcome": "require_three_ds",
+    "outcome_source": "rule",
+    "rule_id": "rl_697532456877686784"
+  },
+  "payment_method_details": {
+    "card": {
+      "three_d_secure": {
+        "authentication_flow": "frictionless",
+        "liability_shift": true,
+        "result": "success"
+      }
+    }
+  }
+}
+```
+
+**Browser challenge** — the issuer requires an interactive step. The
+charge returns `status: "requires_authentication"`. Continue with the
+[3DS challenge flow](/docs/payments/payment-concepts/3d-secure) to
+create a linked authentication session and redirect the customer to
+complete the challenge.
+
+## Block outcome
+
+When a payment rule blocks a charge, it is declined before it reaches
+the card network. The API returns an error response instead of
+`201 Created`:
+
+```json
+{
+  "error": {
+    "type": "payment_method_error",
+    "code": "card_declined",
+    "decline_code": "fraud",
+    "message": "Fraud transaction (blocked)",
+    "charge": "chrg_697560953687902208",
+    "risk_assessment_details": {
+      "outcome": "block",
+      "outcome_source": "rule",
+      "rule_id": "rl_697560098213463040"
+    },
+    "underlying_network_details": null
+  }
+}
+```
+
+A few things to note about blocked charges:
+
+- The charge object is still created. Retrieve it with
+  [`GET /v1/charges/{charge_id}`](/api-reference/charges/get-charge)
+  using the ID in `error.charge`.
+- `underlying_network_details: null` confirms the charge never reached
+  the network.
+- `decline_code: "fraud"` is the code Pay.com uses for all
+  rule-blocked transactions.
+
+## Review outcome
+
+Review rules run after authorization and flag the transaction or customer
+for manual review without blocking the payment. The charge returns
+`status: "succeeded"`.
+
+Review evaluation is asynchronous. `risk_assessment_details` may be
+`null` in the immediate charge response. Retrieve the charge a few
+seconds later to see the populated result:
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```json
+GET /v1/charges/chrg_697560887862495232
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "id": "chrg_697560887862495232",
+  "status": "succeeded",
+  "risk_assessment_details": {
+    "outcome_source": "rule",
+    "rule_id": "rl_..."
+  }
+}
+```
+</Tab>
+</Tabs>
+
+Flagged transactions and customers also appear in the Pay.com dashboard
+under **Risk Reviews**.
+
+## Troubleshooting
+
+The most common reason a rule does not fire is a dashboard configuration
+issue, not a problem in your request. Work through the checklist below
+before changing your integration code.
+
+<Accordions type="multiple">
+<Accordion title="risk_assessment_details is null in the response">
+
+1. **Rule status**: go to **Dashboard → Rules** and confirm the rule
+   shows **Active**. Draft and Paused rules have no effect on charges.
+2. **Simulation mode**: for payment rules, confirm **Simulation** is
+   turned off. In simulation mode the rule matches internally but does
+   not change the charge outcome or response.
+3. **Off-session charges**: rules do not evaluate charges with
+   `off_session: true`. Use a raw card charge with the customer present.
+
+</Accordion>
+<Accordion title="decline_code: duplicate_card instead of rule outcome">
+
+If your staging account has duplicate card checking enabled, reusing a
+card number that was already tokenized returns `decline_code: duplicate_card`
+before the rules engine is reached. Use a different card number for each
+test run.
+
+</Accordion>
+</Accordions>
+
+## Next steps
+
+- [Payment rules](/docs/risk-disputes-fraud/rules/payment-rules): configure
+  pre-authorization actions including Block, Require 3DS, and 3DS exemptions.
+- [Review rules](/docs/risk-disputes-fraud/rules/review-rules): configure
+  post-authorization flagging for transactions and customers.
+- [Test risk events](/docs/risk-disputes-fraud/test-risk-events): simulate
+  disputes, collaborations, and fraud warnings in test mode.
+- [3D Secure](/docs/payments/payment-concepts/3d-secure): handle
+  `requires_authentication` responses when a rule triggers a browser
+  challenge.
+- [Webhook events](/docs/payments/webhooks/webhook-events): subscribe to
+  charge events and verify payload signatures.

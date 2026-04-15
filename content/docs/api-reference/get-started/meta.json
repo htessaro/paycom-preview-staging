@@ -1,0 +1,13 @@
+{
+  "title": "Get started",
+  "root": true,
+  "icon": "Rocket",
+  "pages": [
+    "index",
+    "authentication",
+    "environments",
+    "http-response-codes",
+    "idempotency-key",
+    "postman-collections"
+  ]
+}

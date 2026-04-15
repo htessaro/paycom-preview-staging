@@ -1,0 +1,11 @@
+{
+  "title": "Rules",
+  "pages": [
+    "index",
+    "payment-rules",
+    "review-rules",
+    "risk-lists",
+    "rule-conditions",
+    "test-rules"
+  ]
+}

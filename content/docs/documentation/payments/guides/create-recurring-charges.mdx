@@ -1,0 +1,436 @@
+---
+title: Create recurring charges
+description: Charge customers on a recurring basis using stored payment method tokens via the API, or set up automated subscription billing via the SDK.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Pay.com supports two models for recurring charges. Choose based on how
+much control you need over the billing schedule.
+
+- The **API** lets you trigger each charge manually using a stored
+  payment method token. You control when each charge fires, the amount,
+  and the retry logic. Use this when you manage billing timing in your
+  own system.
+- The **SDK (subscriptions)** lets you define a billing schedule once
+  and have Pay.com trigger charges automatically. You create a
+  subscription package with the amount and interval, then link a
+  customer's stored card to it. Use this when you want Pay.com to manage
+  the billing cadence for you.
+
+Both models require a stored payment method (`pm_card_xxx`). If you do
+not have one yet, follow the
+[save a payment method](/documentation/payments/guides/save-a-payment-method)
+guide first.
+
+## Requirements
+
+**For both integration paths:**
+- A stored payment method ID (`pm_card_xxx`) associated with a customer.
+  See [save a payment method](/documentation/payments/guides/save-a-payment-method).
+
+**For API integrations:**
+- [Retrieve your API credentials](/docs/api-reference/authentication)
+  from your dashboard.
+- [Generate a unique `idempotency-key` header](/docs/api-reference/idempotency-key)
+  for each request.
+- The `underlying_network_id` from the initial charge if you plan to
+  target the card by network ID or raw card data.
+
+**For SDK (subscriptions):**
+- [Retrieve your API credentials](/docs/api-reference/authentication)
+  from your dashboard.
+
+<Steps>
+
+<Step>
+## Set up the billing configuration
+
+<Tabs items={['API', 'SDK (subscriptions)']}>
+  <Tab value="API">
+    The API does not require setup beyond having a stored payment method.
+    Each recurring charge is a standard `POST /v1/charges` request with
+    `"off_session": true` to tell the issuing bank the customer is not
+    present.
+
+    When you created the initial charge with
+    `"setup_future_usage": "off_session"`, the response included two
+    values you need for future recurring charges:
+
+    - `payment_method` — the stored card ID (`pm_card_...`)
+    - `underlying_network_id` — the network transaction ID that links
+      all charges in this recurring sequence
+
+    <Callout type="info">
+      See [create a charge](/documentation/payments/guides/create-a-charge)
+      for the initial charge flow. Add `"setup_future_usage": "off_session"`
+      to `source_data` to enable card storage.
+    </Callout>
+  </Tab>
+
+  <Tab value="SDK (subscriptions)">
+    A subscription package is a reusable billing template you create once
+    and reuse across multiple customers. It defines how much to charge,
+    how often, and in which currency.
+
+    Send a `POST` request to `/v1/subscriptions/packages`. The example
+    below creates a package that charges $10.00 (1000 in minor units)
+    once every month.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+        ```javascript
+        const response = await fetch("https://api.staging.pay.com/v1/subscriptions/packages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-paycom-api-key": "YOUR_API_KEY"
+          },
+          body: JSON.stringify({
+            reference: "pkg-monthly-10usd",
+            settings: {
+              amount: {
+                amount: 1000
+              },
+              currency: "usd",
+              schedule: {
+                interval: "month",
+                interval_count: 1
+              }
+            }
+          })
+        })
+        ```
+      </Tab>
+      <Tab value="Response">
+        ```json
+        {
+          "id": "subpkg_684787299547876352",
+          "resource": "subscription_package",
+          "active": true,
+          "reference": "pkg-monthly-10usd",
+          "settings": {
+            "amount": {
+              "amount": 1000
+            },
+            "currency": "usd",
+            "schedule": {
+              "interval": "month",
+              "interval_count": 1
+            }
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
+
+    Store the subscription package `id` (`subpkg_...`). You will use it
+    when creating a subscription in the next step.
+
+    ### Initial term extension (optional)
+
+    To extend the first billing cycle, add `initial_term_extension` to
+    the `settings` object. For example, with a monthly package, a
+    one-month extension means the customer is first charged after two
+    months, then monthly from that point on.
+
+    ```json
+    "initial_term_extension": {
+      "interval": "month",
+      "interval_count": 1
+    }
+    ```
+  </Tab>
+</Tabs>
+</Step>
+
+<Step>
+## Create the recurring charge
+
+<Tabs items={['API', 'SDK (subscriptions)']}>
+  <Tab value="API">
+    Send a `POST` request to [`/v1/charges`](/docs/api-reference/charges/create-charge)
+    with `"off_session": true`. Amounts are in the smallest currency unit
+    — `5000` equals $50.00 USD.
+
+    There are four ways to target the stored card. Choose the one that
+    fits how your system stores customer data.
+
+    <Tabs items={['By payment method ID', 'By customer reference ID', 'By payment method + network ID', 'By raw card data (PCI)']}>
+      <Tab value="By payment method ID">
+        Pass the `pm_card_...` ID in `source`. Pay.com looks up the
+        `underlying_network_id` automatically. Use this when you store
+        the payment method ID in your own database.
+
+        <Tabs items={['Request', 'Response']}>
+          <Tab value="Request">
+            ```json
+            {
+              "amount": 5000,
+              "currency": "usd",
+              "source": "pm_card_687080745486778368",
+              "off_session": true,
+              "description": "Monthly subscription renewal",
+              "reference": "sub-renewal-pm-001"
+            }
+            ```
+          </Tab>
+          <Tab value="Response">
+            ```json
+            {
+              "id": "chrg_687080841926412288",
+              "resource": "charge",
+              "amount": 5000,
+              "amount_human_readable": "50.00",
+              "currency": "usd",
+              "status": "succeeded",
+              "payment_method": "pm_card_687080745486778368",
+              "customer_reference_id": "cust-jane-doe-recurring-001",
+              "off_session": true,
+              "test_mode": true
+            }
+            ```
+          </Tab>
+        </Tabs>
+      </Tab>
+
+      <Tab value="By customer reference ID">
+        Pass `customer_reference_id` and Pay.com charges the customer's
+        default or most recently used stored card. This is the simplest
+        approach when a customer has a single stored card.
+
+        <Tabs items={['Request', 'Response']}>
+          <Tab value="Request">
+            ```json
+            {
+              "amount": 5000,
+              "currency": "usd",
+              "customer_reference_id": "cust-jane-doe-recurring-001",
+              "off_session": true,
+              "description": "Monthly subscription renewal",
+              "reference": "sub-renewal-cust-001"
+            }
+            ```
+          </Tab>
+          <Tab value="Response">
+            ```json
+            {
+              "id": "chrg_687080913841949696",
+              "resource": "charge",
+              "amount": 5000,
+              "amount_human_readable": "50.00",
+              "currency": "usd",
+              "status": "succeeded",
+              "customer_reference_id": "cust-jane-doe-recurring-001",
+              "off_session": true,
+              "test_mode": true
+            }
+            ```
+          </Tab>
+        </Tabs>
+      </Tab>
+
+      <Tab value="By payment method + network ID">
+        Pass the payment method ID inside `source_data.source.id` together
+        with the `underlying_network_id` from the initial charge. Use this
+        when a customer has multiple active recurring sequences on the same
+        card and you need to specify which sequence to continue.
+
+        <Tabs items={['Request', 'Response']}>
+          <Tab value="Request">
+            ```json
+            {
+              "amount": 5000,
+              "currency": "usd",
+              "off_session": true,
+              "source_data": {
+                "type": "source",
+                "source": {
+                  "id": "pm_card_687080745486778368"
+                },
+                "underlying_network_id": "dcc8d869-fa23-4e4c-ae3e-8e1ec33b0004"
+              },
+              "customer_reference_id": "cust-jane-doe-recurring-001",
+              "description": "Monthly subscription renewal",
+              "reference": "sub-renewal-pm-nid-001"
+            }
+            ```
+          </Tab>
+          <Tab value="Response">
+            ```json
+            {
+              "id": "chrg_687081737364179968",
+              "resource": "charge",
+              "amount": 5000,
+              "amount_human_readable": "50.00",
+              "currency": "usd",
+              "status": "succeeded",
+              "customer_reference_id": "cust-jane-doe-recurring-001",
+              "test_mode": true
+            }
+            ```
+          </Tab>
+        </Tabs>
+      </Tab>
+
+      <Tab value="By raw card data (PCI)">
+        Pass the full card details inside `source_data.card` together
+        with the `underlying_network_id` from the initial charge. Use
+        this only if you store raw card data on your own servers.
+
+        <Callout type="warn">
+          Raw card data passes through your servers. This method requires
+          PCI Level 1 or SAQ-D compliance.
+        </Callout>
+
+        <Tabs items={['Request', 'Response']}>
+          <Tab value="Request">
+            ```json
+            {
+              "amount": 5000,
+              "currency": "usd",
+              "off_session": true,
+              "source_data": {
+                "type": "card",
+                "card": {
+                  "number": "4242424242424242",
+                  "expiry_month": "12",
+                  "expiry_year": "2028",
+                  "cvv": "123",
+                  "name": "Jane Doe"
+                },
+                "underlying_network_id": "dcc8d869-fa23-4e4c-ae3e-8e1ec33b0004"
+              },
+              "customer_reference_id": "cust-jane-doe-recurring-001",
+              "description": "Monthly subscription renewal",
+              "reference": "sub-renewal-chd-nid-001"
+            }
+            ```
+          </Tab>
+          <Tab value="Response">
+            ```json
+            {
+              "id": "chrg_687081785254740992",
+              "resource": "charge",
+              "amount": 5000,
+              "amount_human_readable": "50.00",
+              "currency": "usd",
+              "status": "succeeded",
+              "customer_reference_id": "cust-jane-doe-recurring-001",
+              "test_mode": true
+            }
+            ```
+          </Tab>
+        </Tabs>
+      </Tab>
+    </Tabs>
+  </Tab>
+
+  <Tab value="SDK (subscriptions)">
+    Send a `POST` request to `/v1/subscriptions` using the subscription
+    package `id` from step 1 and the stored payment method ID.
+
+    | Field | Description |
+    |---|---|
+    | `customer_reference_id` | The customer ID used when storing the payment method. |
+    | `payment_method` | The payment method ID (`pm_card_xxx`) from the customer's checkout. |
+    | `subscription_package` | The subscription package `id` (`subpkg_xxx`). |
+    | `reference` | A unique ID for this subscription in your system. |
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+        ```javascript
+        const response = await fetch("https://api.staging.pay.com/v1/subscriptions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-paycom-api-key": "YOUR_API_KEY"
+          },
+          body: JSON.stringify({
+            customer_reference_id: "cust-john-smith-001",
+            payment_method: "pm_card_684790996696828928",
+            subscription_package: "subpkg_684787299547876352",
+            reference: "sub-john-smith-monthly-001"
+          })
+        })
+        ```
+      </Tab>
+      <Tab value="Response">
+        ```json
+        {
+          "id": "sub_684790996696828928",
+          "resource": "subscription",
+          "status": "active",
+          "customer_reference_id": "cust-john-smith-001",
+          "payment_method": "pm_card_684790996696828928",
+          "subscription_package": "subpkg_684787299547876352",
+          "reference": "sub-john-smith-monthly-001"
+        }
+        ```
+      </Tab>
+    </Tabs>
+
+    By default, Pay.com does not charge the customer when the subscription
+    is created — it assumes the customer was already charged during the
+    payment session used to store the card. If the card was stored using
+    a setup session or a previously saved payment method, set
+    `charge_at_creation: true` to charge the customer immediately on
+    subscription creation.
+  </Tab>
+</Tabs>
+</Step>
+
+<Step>
+## Handle the response (API only)
+
+Because API recurring charges happen in the background, your system must
+handle each response status programmatically.
+
+- `succeeded`: The charge was approved and settled.
+- `failed`: The charge was declined, often due to insufficient funds or
+  an expired card.
+- `pending`: Used for payment methods that require bank confirmation,
+  such as SEPA or ACH.
+</Step>
+
+</Steps>
+
+## Listen for webhooks
+
+Because the customer is not present during recurring billing, use
+webhooks to trigger automated fulfillment and recovery logic on your
+backend.
+
+<Tabs items={['API', 'SDK (subscriptions)']}>
+  <Tab value="API">
+    Subscribe to the following events:
+
+    - `charge.succeeded`: The payment was confirmed. Use this to keep the
+      subscription active.
+    - `charge.failed`: The charge was declined. Use this to send recovery
+      emails or retry the payment.
+  </Tab>
+  <Tab value="SDK (subscriptions)">
+    Subscribe to subscription lifecycle events to handle renewals,
+    failures, and cancellations. See the
+    [manage the subscription lifecycle](/docs/payments/sdk/manage-subscription-lifecycle)
+    guide for the full list of events and how to handle each one.
+  </Tab>
+</Tabs>
+
+<Callout type="warn">
+  Always verify webhook signatures using the `Pay-Signature` header and
+  your endpoint's secret key via HMAC SHA-256 before acting on any event.
+</Callout>
+
+## Next steps
+
+- Read [manage the subscription lifecycle](/docs/payments/sdk/manage-subscription-lifecycle)
+  to handle renewals, failed charges, retries, payment method updates,
+  and cancellations.
+- Read the [webhooks overview](/documentation/payments/webhooks) to set
+  up your endpoint and verify signatures.
+- Read [refund a charge](/documentation/payments/guides/refund-a-charge)
+  to process full or partial returns for settled recurring charges.

@@ -11,7 +11,7 @@ const sections = [
   { text: 'Payments', url: '/documentation/payments', icon: CreditCard },
   { text: 'Payment Methods', url: '/documentation/payment-methods', icon: Wallet },
   { text: 'Orchestration', url: '/documentation/orchestration', icon: Network },
-  { text: 'Risk, Disputes & Fraud', url: '/documentation/risk-disputes-fraud', icon: ShieldAlert },
+  { text: 'Risk, Dispute & Fraud', url: '/documentation/risk-disputes-fraud', icon: ShieldAlert },
   { text: 'Reporting & Reconciliation', url: '/documentation/reporting-reconciliation', icon: BarChart },
 ];
 

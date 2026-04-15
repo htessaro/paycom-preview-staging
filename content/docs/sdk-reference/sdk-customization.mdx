@@ -1,0 +1,453 @@
+---
+title: Customize the universal component
+description: Use the style object to apply your brand's colors, typography, and spacing to the Universal checkout form without changing your payment logic.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom'
+import sdkCustomization from './sdk-customization.png'
+
+The Universal Component renders a fully hosted checkout form inside your page. By default, it uses Pay.com's visual design. The `style` object lets you override that design to match your brand, without switching to the Headless SDK.
+
+You pass `style` as a parameter directly to `checkout.universal()`. it is not a separate method call. It is a plain JavaScript object where each key targets a specific region of the form and each value is a standard CSS property.
+
+<Callout type="info">
+  Customization controls the visual appearance of the form only. It does not change the form's layout, field order, or which payment methods are shown. If you need that level of control, use the [Headless SDK](/docs/payments/sdks/headless) instead.
+</Callout>
+
+## Requirements
+
+Before you begin, make sure you have a working Universal checkout. Follow the [create a charge with the SDK](/docs/payments/sdks/create-a-charge-with-sdk) guide to implement it.
+
+## How to apply styles
+
+The diagram below shows which `style` key maps to each region of the checkout form.
+
+<ImageZoom 
+    src= {sdkCustomization}
+    alt="Universal Component rendered in the browser"
+    width={800}
+    height={600}
+    />
+
+
+Pass a `style` object as a parameter to `checkout.universal()`:
+
+```js
+checkout.universal({
+  container: '#paycom_checkout',
+  style: {
+    base: {
+      backgroundColor: '#ffffff',
+      fontFamily: "'Inter', sans-serif",
+    },
+    submit: {
+      backgroundColor: '#111827',
+      color: '#ffffff',
+    }
+  }
+})
+```
+
+Every key in the `style` object is optional. You only need to include the regions of the checkout form you want to change. Omitted regions render using Pay.com's default styling.
+
+<Callout type="info">
+  All CSS property names must be in camelCase. Use `borderRadius`, not `border-radius`. Values that are not valid CSS properties are silently ignored.
+</Callout>
+
+
+## Form container
+
+The `base` key targets the outermost wrapper of the entire component. It is the right place to set your background color, font family, and outer border radius.
+
+Styles applied to `base` cascade into child regions. Setting `fontFamily` here applies it to the whole form unless a more specific region overrides it.
+
+```js
+style: {
+  base: {
+    backgroundColor: '#f9fafb',
+    color: '#111827',
+    fontFamily: "'Inter', sans-serif",
+    borderRadius: '16px',
+  }
+}
+```
+
+## Card input fields
+
+The checkout form has four card input fields: card number, expiry date, CVV, and cardholder name. You control how they look using the `cardForm` key.
+
+To set a shared background, padding, or border around all four fields as a group, use `cardForm.base`:
+
+```js
+style: {
+  cardForm: {
+    base: {
+      backgroundColor: '#ffffff',
+      borderRadius: '10px',
+      padding: '16px',
+    }
+  }
+}
+```
+
+To style each field individually, use `cardForm.number`, `cardForm.expiry`, `cardForm.cvv`, and `cardForm.name`:
+
+```js
+style: {
+  cardForm: {
+    number: {
+      backgroundColor: '#ffffff',
+      color: '#111827',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+      fontSize: '15px',
+    },
+    expiry: {
+      backgroundColor: '#ffffff',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+    },
+    cvv: {
+      backgroundColor: '#ffffff',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+    },
+    name: {
+      backgroundColor: '#ffffff',
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+    }
+  }
+}
+```
+
+### Card form submit button
+
+Use `cardForm.submit` to style the submit button that appears inside the card form specifically. This is separate from the top-level `submit` key, which targets the main submit button at the bottom of the full checkout form.
+
+```js
+style: {
+  cardForm: {
+    submit: {
+      backgroundColor: '#2563eb',
+      color: '#ffffff',
+      borderRadius: '8px',
+      fontWeight: '700',
+    }
+  }
+}
+```
+
+### Checkboxes
+
+If your card form includes checkboxes (for example, a "Save card for future use" option), use `cardForm.checkboxes` to style them. 
+
+```js
+style: {
+  cardForm: {
+    checkboxes: {
+      buttonBackground: '#2563eb',
+      labelColor: '#111827',
+    }
+  }
+}
+```
+
+## Submit button
+
+Use the top-level `submit` key to change the look of the main submit button at the bottom of the checkout form.
+
+```js
+style: {
+  submit: {
+    backgroundColor: '#2563eb',
+    color: '#ffffff',
+    borderRadius: '8px',
+    fontSize: '15px',
+    fontWeight: '700',
+    padding: '14px',
+  }
+}
+```
+
+<Callout type="info">
+  If you are using a custom submit button with `toggles: { submitButton: false }`, you do not need to style `submit`. See the [custom submit button](/docs/payments/sdks/create-a-charge-with-sdk#custom-submit-button-optional) guide for details.
+</Callout>
+
+
+## Style the express checkout container
+The `expressCheckout` key styles the container that wraps the express payment buttons, 
+including Apple Pay and Google Pay. Use it to control the background, border radius, 
+and padding of that wrapper
+
+ 
+```js
+style: {
+  expressCheckout: {
+    borderRadius: '8px',
+    padding: '12px',
+    backgroundColor: '#f9fafb',
+  }
+}
+```
+
+
+## Alternative payment method buttons
+
+The `apmButtons` key styles the container for alternative payment method buttons such as iDEAL and GiroPay that appear as clickable options in the checkout form. Use it to control the shape and spacing of those buttons as a group:
+
+```js
+style: {
+  apmButtons: {
+    borderRadius: '8px',
+    padding: '12px',
+    backgroundColor: '#f9fafb',
+  }
+}
+```
+
+## Alternative payment method fields
+
+When a customer selects an APM, the form renders additional input fields (for example, a bank selector for iDEAL). There are two ways to style these fields.
+
+### Global APM field styles
+
+The `paymentMethodFields` key applies styles globally to all APM input fields across every payment method.
+
+```js
+style: {
+  paymentMethodFields: {
+    label: {
+      color: '#6b7280',
+      fontSize: '12px',
+      fontWeight: '500',
+    },
+    input: {
+      border: '1px solid #d1d5db',
+      borderRadius: '8px',
+    }
+  }
+}
+```
+
+### Per-APM field styles
+ 
+For finer control over a specific payment method, use the `apms` key with the APM name as a sub-key (for example, `apms.ideal`). These styles apply only to that APM's fields and override the global `paymentMethodFields` styles for that method.
+ 
+```js
+style: {
+  apms: {
+    ideal: {
+      input: {
+        borderColor: '#ccc',
+        borderRadius: '8px',
+      }
+    }
+  }
+}
+```
+## Dividers
+
+Dividers are the horizontal lines with text labels that separate sections of the form, for example, the "Pay with card" label between the express checkout buttons and the card form. There are three named dividers:
+
+| Key | Description |
+|---|---|
+| `dividers.payWith` | Above the card form |
+| `dividers.showOtherWaysToPay` | Between the card form and the APM section |
+| `dividers.savedPaymentMethods` | Above the saved payment methods list |
+
+Each divider accepts a `text` key for the label and a `divider` key for the line:
+
+```js
+style: {
+  dividers: {
+    payWith: {
+      text: { color: '#9ca3af', fontSize: '12px' },
+      divider: { color: '#e5e7eb', height: '1px' }
+    },
+    showOtherWaysToPay: {
+      text: { color: '#9ca3af', fontSize: '12px' },
+      divider: { color: '#e5e7eb', height: '1px' }
+    },
+    savedPaymentMethods: {
+      text: { color: '#9ca3af', fontSize: '12px' },
+      divider: { color: '#e5e7eb', height: '1px' }
+    }
+  }
+}
+```
+
+## Saved payment methods
+
+When a returning customer has saved cards, the form displays two distinct areas you can style separately: the section container and the individual card rows.
+
+### Section container
+
+Use the top-level `savedPaymentMethods` key to control the outer container that wraps the entire saved payment methods section:
+
+```js
+style: {
+  savedPaymentMethods: {
+    backgroundColor: '#f9fafb',
+    borderRadius: '12px',
+    padding: '16px',
+  }
+}
+```
+
+### Card rows
+
+Use `existingSource` to control how each saved card row looks. The `base` sub-key styles the default state of each row; the `':selected'` key inside it styles the currently active row:
+
+```js
+style: {
+  existingSource: {
+    base: {
+      backgroundColor: '#f3f4f6',
+      borderRadius: '8px',
+      ':selected': {
+        backgroundColor: '#eff6ff',
+        border: '1px solid #3b82f6',
+      }
+    },
+    radioButton: {
+      color: '#d1d5db',
+      ':selected': {
+        color: '#2563eb',
+      }
+    }
+  }
+}
+```
+
+<Callout type="info">
+  `':selected'` is a plain object key, not a CSS pseudo-class. It must be written as a string, including the quotes.
+</Callout>
+
+### CVV re-entry field
+
+When a customer selects a saved card, the form may display a CVV input for re-verification. Use `existingSource.cvv` to style that field and its label:
+
+```js
+style: {
+  existingSource: {
+    cvv: {
+      style: {
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+      },
+      labelStyle: {
+        color: '#6b7280',
+        fontSize: '12px',
+      },
+      errorMessage: {
+        color: '#ef4444',
+        fontSize: '12px',
+      }
+    }
+  }
+}
+```
+
+### Delete icons and confirmation text
+
+When a customer removes a saved card, the form shows delete, confirm, and cancel icons alongside a confirmation message. Use `existingSource.icons` and `existingSource.deleteText` to style these states:
+
+```js
+style: {
+  existingSource: {
+    icons: {
+      delete: {
+        color: '#9ca3af',
+      },
+      confirmDeletion: {
+        color: '#ef4444',
+      },
+      cancelDeletion: {
+        color: '#6b7280',
+      }
+    },
+    deleteText: {
+      color: '#374151',
+      fontSize: '13px',
+    }
+  }
+}
+```
+
+## Complete example
+
+The example below shows a full `style` object applied to `checkout.universal()`, covering all the sections of the form:
+
+```js
+checkout.universal({
+  container: '#paycom_checkout',
+  style: {
+    base: {
+      backgroundColor: '#f9fafb',
+      color: '#111827',
+      fontFamily: "'Inter', sans-serif",
+      borderRadius: '16px',
+    },
+    cardForm: {
+      base: {
+        backgroundColor: '#ffffff',
+        borderRadius: '10px',
+        padding: '16px',
+      },
+      number: {
+        backgroundColor: '#ffffff',
+        color: '#111827',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+        fontSize: '15px',
+      },
+      expiry: {
+        backgroundColor: '#ffffff',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+      },
+      cvv: {
+        backgroundColor: '#ffffff',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+      },
+      name: {
+        backgroundColor: '#ffffff',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+      },
+      submit: {
+        backgroundColor: '#2563eb',
+        color: '#ffffff',
+        borderRadius: '8px',
+        fontWeight: '700',
+      },
+      checkboxes: {
+        buttonBackground: '#2563eb',
+        labelColor: '#111827',
+      }
+    },
+    submit: {
+      backgroundColor: '#2563eb',
+      color: '#ffffff',
+      borderRadius: '8px',
+      fontSize: '15px',
+      fontWeight: '700',
+      padding: '14px',
+    },
+  }
+})
+```
+
+## Try it now
+
+Copy the complete example above and paste it into your `checkout.universal()` call. Adjust the colors and values to match your brand, then reload your checkout page to see the changes instantly. Remove any keys you don't need, the component falls back to Pay.com's default styling for anything you leave out.
+
+
+## Next steps
+
+- For a complete list of all style keys and their accepted properties, see the [style object reference](/docs/sdk-reference/sdk-style-reference).
+- For all available SDK methods, see the [SDK reference](/docs/sdk-reference).

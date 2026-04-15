@@ -1,0 +1,12 @@
+{
+  "title": "Endpoints",
+  "pages": [
+    "create-charge",
+    "create-hold",
+    "capture-hold",
+    "create-refund",
+    "create-payment-method",
+    "create-payout",
+    "create-linked-authentication-session"
+  ]
+}

@@ -5,8 +5,9 @@
   "pages": [
     "index",
     "get-started",
-    "server-to-server-guides",
-    "webhooks",
-    "sdks"
+    "sdk",
+    "guides",
+    "endpoints",
+    "webhooks"
   ]
 }

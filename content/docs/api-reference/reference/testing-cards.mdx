@@ -1,0 +1,92 @@
+---
+title: Test cards
+description: Card numbers for testing payment scenarios in the Pay.com sandbox environment.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+Use these card numbers to simulate payment scenarios in the
+[sandbox environment](/api-reference/get-started/environments). Test cards
+behave exactly like real cards in the API, but no funds are moved.
+
+<Callout type="warn">
+Test cards only work in the sandbox environment. Using them in production
+will result in a declined transaction.
+</Callout>
+
+When using any test card, you can supply:
+
+- **Expiry date:** any future date (for example, `12/2028`)
+- **CVV:** any 3-digit number (for example, `123`), or 4 digits for
+  American Express cards
+- **Billing address:** any valid address
+
+## Approved cards
+
+These cards simulate a successful authorization. Use them to test the
+happy path: a charge that completes without friction or additional
+authentication steps.
+
+| Card number | Brand |
+| :--- | :--- |
+| `4242424242424242` | Visa |
+| `4111111111111111` | Visa |
+| `5555555555554444` | Mastercard |
+| `5555444433331111` | Mastercard |
+| `2223003122003222` | Mastercard |
+| `378282246310005` | American Express |
+| `371449635398431` | American Express |
+| `6011111111111117` | Discover |
+| `6011000990139424` | Discover |
+
+## Declined cards
+
+These cards simulate a declined transaction. Use them to verify that your
+integration handles payment failures correctly, for example, showing the
+right error message to the customer or prompting them to try a different
+card.
+
+| Card number | Decline reason |
+| :--- | :--- |
+| `4000007818415900` | Do not honor |
+| `4000005357086322` | Insufficient funds |
+| `4000004452879855` | Stolen card |
+
+## 3DS result cards
+
+These cards give you predictable 3D Secure outcomes without going through
+a full interactive 3DS challenge. Use them to verify that your integration
+responds correctly to each result, for example, redirecting the customer
+when a challenge is needed or handling authentication failures gracefully.
+
+| Card number | Result |
+| :--- | :--- |
+| `4000000000001000` | Approved |
+| `5200000000001096` | 3DS challenge, approved |
+| `4000000000001091` | 3DS challenge, declined (insufficient funds) |
+| `4000000000001109` | 3DS challenge failure |
+
+## Cards to trigger different 3DS flows
+
+These cards give you fine-grained control over 3DS behavior and issuer
+decline codes. Use them to test specific edge cases, for example, how
+your integration handles a card that passes 3DS authentication but is
+still declined at authorization.
+
+| Card number | Result / reason code |
+| :--- | :--- |
+| `4001888587298851` | Expired card / 54 |
+| `4001882420575674` | Stolen card / 43 |
+| `4001882758168944` | 3DS + insufficient funds |
+| `4001886514955924` | Approved (no 3DS) |
+| `4001889458981666` | Approved (3DS) |
+| `4444499122901754` | Do not honor / 05 |
+| `4444491578116623` | Insufficient funds / 51 |
+| `4444499523287118` | 3DS + insufficient funds |
+| `4444492185088577` | Approved (no 3DS) |
+| `4444491766949009` | Approved (3DS) |
+| `5333303384453218` | Policy / 82 |
+| `5333306819994367` | 3DS failure |
+| `5333301408867512` | 3DS + insufficient funds |
+| `5333307639217468` | Approved (no 3DS) |
+| `5333306665631428` | Approved (3DS) |

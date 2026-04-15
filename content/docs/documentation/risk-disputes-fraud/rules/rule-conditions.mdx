@@ -1,0 +1,51 @@
+---
+title: Rule conditions and operators
+description: Reference for all available condition fields and operators
+  for payment and review rules.
+---
+
+A rule condition defines what Pay.com evaluates on each charge. Each
+condition has three parts: a **field** (what to check), an **operator**
+(how to compare), and a **value** (what to compare against). All conditions
+in a rule must be true for the rule to match.
+
+## Payment rule conditions
+
+Payment rules evaluate fields that are available before authorization. The
+table below lists the available condition fields:
+
+| Field | What the rule evaluates | Where the value comes from |
+| :--- | :--- | :--- |
+| First name | First word of the cardholder name | `source_data.billing_details.name` |
+| BIN | First six digits of the card number | `source_data.card.number` (derived automatically) |
+| Card country | Issuing country of the card | `source_data.billing_details.address.country` |
+
+## Review rule conditions
+
+Review rules evaluate fields that are only available after authorization.
+The table below lists the available condition fields:
+
+| Field | What the rule evaluates |
+| :--- | :--- |
+| AVS result | Address Verification Service response from the issuing bank |
+| ANI result | Account Name Inquiry result (Visa only). See [Account Name Inquiry](/docs/risk-disputes-fraud/rules/review-rules#account-name-inquiry-ani) for setup details. |
+| 3DS result | Outcome of the 3D Secure authentication flow |
+
+## Operators
+
+Operators define how the rule compares the field value against your
+configured value:
+
+| Operator | Description | When to use |
+| :--- | :--- | :--- |
+| Equals | Exact match against a single value | Matching a specific name, country code, or result |
+| Is in list | Match against any value in a [risk list](/docs/risk-disputes-fraud/rules/risk-lists) | Matching against a large or frequently changing set of values |
+
+## Next steps
+
+- [Payment rules](/docs/risk-disputes-fraud/rules/payment-rules): use
+  conditions to block charges or enforce 3DS before authorization.
+- [Review rules](/docs/risk-disputes-fraud/rules/review-rules): use
+  post-authorization fields to flag transactions or customers for review.
+- [Risk lists](/docs/risk-disputes-fraud/rules/risk-lists): create named
+  collections of values to use with the **is in list** operator.

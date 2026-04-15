@@ -1,5 +1,13 @@
 {
-  "title": "Risk, Disputes, & Fraud",
+  "title": "Risk, dispute & fraud",
   "root": true,
-  "icon": "ShieldAlert"
+  "icon": "ShieldAlert",
+  "pages": [
+    "index",
+    "disputes",
+    "collaborations",
+    "fraud-warnings",
+    "test-risk-events",
+    "rules"
+  ]
 }

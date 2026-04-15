@@ -1,0 +1,51 @@
+---
+title: Accept bank redirect payments
+description: Trigger iDEAL and GiroPay payments using the Headless SDK. Redirect customers to their bank to authorize payment directly from their account.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+Bank redirect payments work differently from card or wallet payments. Instead of the SDK collecting card details, the customer is redirected to their bank to authorize the payment directly from their account. iDEAL and GiroPay are both bank redirect methods available through the Headless SDK.
+
+<Callout type="info">
+  Bank redirect payments are triggered using the Headless SDK only. If you are using the Universal SDK, activated bank redirect methods are rendered automatically.
+</Callout>
+
+## Requirements
+
+Before you begin:
+
+- iDEAL and GiroPay must be activated on your Pay.com merchant account. Check the Payment methods section of your [dashboard](https://dashboard.pay.com) to confirm availability.
+- You must have completed [get started with the Pay.com SDK](/docs/payments/sdk/integrate-the-pay-com-sdk) and have a `client_secret` and an initialized `pay` instance ready.
+
+## iDEAL
+
+iDEAL requires the customer's bank BIC code. Present a list of supported banks for the customer to select from, then pass the corresponding BIC to `checkout.headless()`.
+
+```js
+await checkout.headless('ideal', {
+  bic: 'SNSBNL2A',
+})
+```
+
+The SDK redirects the customer to their bank to authorize the payment. `onSuccess` fires when authorization completes, `onFailure` fires if the customer cancels or the bank declines.
+
+## GiroPay
+
+GiroPay requires no additional parameters. Call `checkout.headless()` with the payment method type to trigger the redirect.
+
+```js
+await checkout.headless('giropay')
+```
+
+## Listen for webhooks
+
+Bank redirect payments resolve asynchronously, as the customer leaves your page to authorize at their bank. Always confirm the outcome on your backend via webhooks rather than relying solely on the `onSuccess` callback.
+
+Subscribe to `payment_session.completed` to confirm whether the payment succeeded or failed.
+
+<Callout type="warn">
+  Always verify webhook signatures using the `Pay-Signature` header and your endpoint's secret key via HMAC SHA-256 before acting on any event.
+</Callout>
+
+See the [Webhooks overview](/documentation/payments/webhooks) for setup instructions and signature verification.

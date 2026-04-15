@@ -1,9 +1,9 @@
 {
   "title": "Webhooks",
+  "root": true,
+  "icon": "Webhook",
   "pages": [
     "index",
-    "configure-webhooks",
-    "verify-webhook-signatures",
     "webhook-events"
   ]
 }

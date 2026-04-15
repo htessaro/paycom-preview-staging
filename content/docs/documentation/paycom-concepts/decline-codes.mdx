@@ -1,0 +1,81 @@
+---
+title: Decline codes
+description: Learn how Pay.com unifies decline reasons from different networks into consistent codes for easier error handling and customer communication.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+When a payment is declined, Pay.com maps the result to a **unified decline code**, a 
+consistent set of error identifiers that work the same way regardless of which bank or 
+card network processed the transaction. This lets you build a single error-handling path 
+in your integration instead of parsing provider-specific strings from each network.
+
+## Decline code format
+
+Declined transactions return a `402 Payment Required` HTTP status. The response body 
+includes a `decline_code` attribute identifying the reason, and a `message` field with a 
+developer-facing description.
+```json
+{
+  "error": {
+    "type": "card_error",
+    "decline_code": "insufficient_funds",
+    "message": "The card has insufficient funds to complete the purchase."
+  }
+}
+```
+
+Map `decline_code` to your own localized, customer-facing messages in your UI. The raw 
+`message` field is intended for developer logs and debugging, not for display to 
+end users.
+
+## Common decline codes
+
+The table below lists the most frequently encountered decline codes, what they mean, and 
+the recommended action for each:
+
+| Code | Description | Recommended action |
+|---|---|---|
+| `insufficient_funds` | The card has insufficient funds or has exceeded its credit limit. | Ask the customer to use a different card or add funds. |
+| `card_expired` | The card's expiration date has passed. | Ask the customer to update their card details. |
+| `incorrect_cvc` | The CVC/CVV check failed. | Ask the customer to re-enter their security code. |
+| `stolen_card` | The card has been reported as stolen. | Do not retry. Ask the customer to contact their bank. |
+| `processing_error` | An error occurred while processing the card. | Retry the transaction after a short delay. |
+| `transaction_not_allowed` | The card does not support this transaction type. | Ask the customer to contact their bank. |
+
+For the complete list of decline codes, see the [API Reference](/api-reference/http-response-codes).
+
+## Network-specific codes
+
+In addition to the unified decline code, Pay.com includes the original network-level code 
+in the response for deeper troubleshooting. These are available under 
+`underlying_network_details` and vary by network.
+
+For Mastercard transactions, Pay.com surfaces the **Merchant Advice Code (MAC)** under 
+`underlying_network_details.mastercard.advice_code`:
+
+| MAC | Meaning |
+|---|---|
+| `01` | New account information available. Update card details and retry. |
+| `02` | Cannot approve at this time. Retry after a delay. |
+| `03` | Do not retry. Contact the customer to resolve with their bank. |
+| `21` | Security violation. Do not retry. |
+
+<Callout type="info">
+Network-specific codes are intended for advanced troubleshooting and logging. For 
+standard error handling, rely on the unified `decline_code`.
+</Callout>
+
+## Next steps
+
+With decline codes mapped in your integration, explore how to surface and 
+act on them across your stack:
+
+- [SDK Overview](/docs/payments/sdks/pay-com-sdks-overview): learn how the Pay.com SDKs 
+  surface decline codes and handle errors on the frontend.
+- [Webhooks](/docs/payments/webhooks): listen for `charge.failed` events to capture and 
+  log decline codes automatically.
+- [Create a charge](/docs/payments/server-to-server-guides/create-a-charge): see how 
+  decline codes appear in a live charge integration.
+- [HTTP Response Codes](/api-reference/http-response-codes): view the full reference for 
+  all error codes and response formats.

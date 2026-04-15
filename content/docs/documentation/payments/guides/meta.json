@@ -1,0 +1,16 @@
+{
+  "title": "Payment guides",
+  "pages": [
+    "create-a-charge",
+    "create-a-charge-with-3ds",
+    "save-a-payment-method",
+    "create-recurring-charges",
+    "hold-and-capture-funds",
+    "cancel-a-hold",
+    "refund-a-charge",
+    "create-a-payout",
+    "accept-wallet-payments-api",
+    "accept-wallet-payments-sdk",
+    "accept-bank-redirect-payments"
+  ]
+}

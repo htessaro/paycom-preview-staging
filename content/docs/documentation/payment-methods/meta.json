@@ -1,5 +1,9 @@
 {
   "title": "Payment Methods",
   "root": true,
-  "icon": "Wallet"
+  "icon": "Wallet",
+  "pages": [
+    "index",
+    "cards"
+  ]
 }

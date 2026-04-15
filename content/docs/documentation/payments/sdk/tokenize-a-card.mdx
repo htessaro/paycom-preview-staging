@@ -1,0 +1,196 @@
+---
+title: Tokenize a card
+description: Collect card details from a customer, convert them into a secure token , and use the token to create a charge, hold, or stored payment method.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+
+The tokenization flow uses a hybrid workflow that combines client-side and server-side operations. The SDK securely captures a customer’s card details and converts them into a token, ensuring that sensitive card data never touches your servers.
+
+The generated token can then be sent to your server and used to interact with the Pay.com API to create a charge, place a hold on a payment, or store a payment method for future use.
+
+## Requirements
+
+* Complete the [get started with the Pay.com SDK](/docs/payments/sdk/integrate-the-pay-com-sdk) guide.
+* Have a `pay` instance initialized with a tokenization session `id`. The session `id` and `client_secret` are returned from creating a tokenization session on your server.
+
+<Steps>
+  <Step>
+    ## Create a checkout instance
+
+    Using the `client_secret` returned from your tokenization session, create a `checkout` instance on the frontend by calling `pay.checkout()`:
+
+    ```javascript
+    const checkout = pay.checkout({
+      clientSecret: '{client_secret}',
+    })
+    ```
+
+    You now have a `checkout` object that you will use to tokenize the card in the next step.
+  </Step>
+
+  <Step>
+    ## Collect card details and tokenize
+
+    Build your own custom form to collect the customer's card details. When the customer submits the form, pass the values to `checkout.headless()`.
+
+    The function accepts two parameters, the payment method type as the first argument, and the card data object as the second argument.
+    
+
+    ```javascript
+     await checkout.headless('card', {
+      number: '4111111111111111',
+      cvv: '123',
+      expirationMonth: '12',
+      expirationYear: '33',
+      name: 'John Doe',
+    })
+    ```
+
+    The SDK returns an object containing a token that represents the customer's card details. Use this token to create a charge, a hold, or a stored payment method for that customer.
+
+    ```json
+    {
+    "token": {
+        "id": "tok_card_685104577720095744"
+    },
+    "type": "token"
+    }
+    ``` 
+    <Callout type="info">
+      Currently, only `card` is supported as the payment method type with a tokenization session.
+    </Callout>
+  </Step>
+
+  <Step>
+    ## Process the payment
+
+    Now that you have a tokenized card, use it to create one of the following:
+
+    <Tabs items={['Charge', 'Hold', 'Save card']}>
+      <Tab value="Charge">
+
+    To create a charge, pass the object returned from tokenizing the card as the `source_data` field, and send a `POST` request to the `/v1/charges` endpoint. For the complete list of request parameters and responses, refer to the [charges API reference](/docs/api-reference/charges/create-charge).
+        ```json
+        {
+          "currency": "usd",
+          "amount": 1000,
+          "source_data": {
+            "type": "token",
+            "token": {
+              "id": "tok_card_685104577720095744"
+            },
+            "billing_details": {
+              "email": "john@example.com",
+              "address": {
+                "line1": "123 Main Street",
+                "city": "San Francisco",
+                "postal_code": "94102",
+                "country": "US"
+              },
+              "phone": "+14155551234"
+            }
+          }
+        }
+        ```
+
+        A charge returns one of three outcomes:
+
+        | Outcome | Description |
+        |---|---|
+        | `succeeded` | The payment went through. |
+        | `requires_authentication` | The customer's bank requires 3DS verification before the charge can complete. |
+        | Payment method error | The card was declined or an error occurred. |
+      </Tab>
+
+      <Tab value="Hold">
+        A hold authorizes the funds on the customer's card without capturing them. Use this when you need confirmation before charging the customer. Pass the token as the `source_data` field and send a `POST` request to the `/v1/holds` endpoint to create a hold. For the complete list of request parameters and responses, refer to the [holds API reference](/docs/api-reference/holds/create-hold).
+        
+
+        ```json
+        {
+          "currency": "usd",
+          "amount": 1000,
+          "source_data": {
+            "type": "token",
+            "token": {
+              "id": "tok_card_685104577720095744"
+            },
+            "billing_details": {
+              "email": "john@example.com",
+              "address": {
+                "line1": "123 Main Street",
+                "city": "San Francisco",
+                "postal_code": "94102",
+                "country": "US"
+              },
+              "phone": "+14155551234"
+            }
+          }
+        }
+        ```
+
+        A hold returns one of three outcomes:
+
+        | Outcome | Description |
+        |---|---|
+        | `succeeded` | The funds are reserved on the customer's card. |
+        | `requires_authentication` | The customer's bank requires 3DS verification before the hold can complete. |
+        | Payment method error | The card was declined or an error occurred. |
+      </Tab>
+
+      <Tab value="Save card">
+      Send a `POST` request to `/v1/payment_methods` with the token to verify and store the card for future use without charging the customer. Include 
+    `setup_future_usage: off_session` in the request body to make the card eligible for future recurring charges.
+
+        <Callout type="info">
+        The `email` field inside `billing_details` is required. Other billing fields are 
+        optional but recommended — they can increase approval rates.
+        </Callout>
+
+        ```json
+        {
+          "customer_reference_id": "927071e4-464c-4f5d-a079-4aa097f922ca",
+          "type": "token",
+          "token": {
+            "id": "tok_card_425366831813886976"
+          },
+          "billing_details": {
+            "email": "john@example.com",
+            "address": {
+              "line1": "123 Main Street",
+              "city": "San Francisco",
+              "postal_code": "94102",
+              "country": "US"
+            },
+            "phone": "+14155551234"
+          },
+          "setup_future_usage": "off_session"
+        }
+        ```
+
+        A payment method creation returns one of three outcomes:
+
+        | Outcome | Description |
+        |---|---|
+        | `created` | The card was saved successfully. |
+        | `requires_authentication` | The customer's bank requires 3DS verification. |
+        | Payment method error | The card was declined or an error occurred. |
+      </Tab>
+    </Tabs>
+   <Callout type="info">
+    If any of the above payment processes return `requires_authentication`, the customer's bank is 
+    requesting additional verification before the transaction can complete. 
+    Follow the [3DS authentication flow](/docs/payments/guides/create-a-charge-with-3ds) 
+    to complete the verification.
+    </Callout>
+  </Step>
+</Steps>
+
+You now have a tokenized card that can be used to charge the customer, place a hold on funds, or save the card for future payments.
+
+## Next steps
+
+Learn how to handle additional bank verification by implementing the [3DS authentication flow](/docs/payments/guides/create-a-charge-with-3ds).

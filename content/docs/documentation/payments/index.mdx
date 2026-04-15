@@ -5,7 +5,7 @@ description: Build your payment infrastructure with Pay.com. Create charges, man
 
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Card, Cards } from 'fumadocs-ui/components/card';
-import { PiggyBank, Repeat, ShieldCheck, Zap, Undo2, BellRing, ArrowRightLeft, CreditCard, Lock, Shield, Building2 } from 'lucide-react';
+import { PiggyBank, Repeat, ShieldCheck, Zap, Undo2, BellRing, ArrowRightLeft, CreditCard, Building2 } from 'lucide-react';
 
 Welcome to the Pay.com payment engine. Our infrastructure handles the complexity of global routing and 3DS compliance so you can focus on building your product.
 
@@ -24,6 +24,12 @@ Understand the fundamentals of our payment system and how transactions move thro
     href="/docs/payments/get-started"
     description="Choose between Universal SDK, Headless, or API-only flows based on your PCI needs."
   />
+  <Card
+    icon={<CreditCard />}
+    title="Set up the SDK"
+    href="/docs/payments/sdk/integrate-the-pay-com-sdk"
+    description="Install the Pay.com SDK, create a payment session, and initialize your first checkout."
+  />
 </Cards>
 
 Learn the core building blocks of the Pay.com payment model:
@@ -37,21 +43,9 @@ Learn the core building blocks of the Pay.com payment model:
   />
   <Card
     icon={<CreditCard />}
-    title="Charges"
-    href="/docs/paycom-concepts/charges"
-    description="Learn how charges represent captured funds and what states they move through."
-  />
-  <Card
-    icon={<Lock />}
-    title="Holds and captures"
-    href="/docs/paycom-concepts/holds-and-captures"
-    description="Reserve funds at authorization and capture them later when you fulfill an order."
-  />
-  <Card
-    icon={<Shield />}
-    title="3D Secure"
-    href="/docs/paycom-concepts/3d-secure"
-    description="How Pay.com handles cardholder authentication and when 3DS is triggered."
+    title="Transactions"
+    href="/docs/paycom-concepts/transactions"
+    description="Charges, holds, refunds, payouts, and 3D Secure — all transaction types and how they work."
   />
   <Card
     icon={<Building2 />}
@@ -67,19 +61,19 @@ Once you've integrated, use these tools to manage the post-payment experience an
   <Card
     icon={<PiggyBank />}
     title="Hold and capture funds"
-    href="/docs/payments/server-to-server-guides/hold-and-capture-funds"
+    href="/docs/payments/guides/hold-and-capture-funds"
     description="Master payments by reserving funds during checkout and capturing them upon fulfillment."
   />
   <Card
     icon={<Undo2 />}
-    title="Manage refunds"
-    href="/docs/api-reference/refunds/create-refund"
+    title="Refund a charge"
+    href="/docs/payments/guides/refund-a-charge"
     description="Process full or partial returns for successfully authorized charges."
   />
   <Card
     icon={<BellRing />}
     title="Webhooks and events"
-    href="/documentation/payments/webhooks"
+    href="/api-reference/webhooks"
     description="Set up listeners for real-time notifications on payment successes, failures, and 3DS authentications."
   />
   <Card

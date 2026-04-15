@@ -1,0 +1,123 @@
+---
+title: Fraud warnings
+description: Learn what fraud warnings are, how they differ from formal disputes, and how to act on them before they become chargebacks.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+A fraud warning is a notification from a card network that a cardholder or their issuing bank
+has flagged a transaction as unauthorized. Unlike formal disputes, fraud warnings are
+non-financial messages, which means no funds are withdrawn when you receive one. When a card
+network sends a fraud warning, Pay.com delivers a `fraud_warning.created` webhook event to
+your endpoint and updates the **Fraud Warnings** page in the dashboard. You can review and
+respond to warnings through the dashboard or the
+[Fraud Warnings API](/api-reference/fraudwarnings).
+
+Understanding fraud warnings matters because they are strong early signals of incoming 
+chargebacks, and acting on them quickly is your most effective tool for protecting your 
+merchant account.
+
+## Why fraud warnings matter
+
+Most transactions flagged with a fraud warning eventually result in a formal chargeback,
+making them one of the most reliable early-warning signals available to you.
+
+Monitoring and acting on fraud warnings lets you:
+
+- **Identify high-risk patterns early:** Spot fraud rings or product vulnerabilities before 
+  they scale into larger losses.
+- **Avoid chargeback fees:** Refunding a flagged transaction before it escalates saves you 
+  the administrative fees charged for a formal bank dispute.
+- **Protect your dispute ratios:** High chargeback rates can lead to fines or account 
+  suspension. Proactive refunds keep your ratios within acceptable thresholds.
+
+Refunding a transaction flagged by a fraud warning prevents the cardholder's bank from 
+filing a formal chargeback for that same transaction. This makes early refunds the most 
+effective way to contain your dispute exposure.
+
+## How to respond
+
+A fraud warning appears in your **Fraud Warnings** dashboard or via the 
+[List fraud warnings](/api-reference/fraudwarnings/list-fraud-warnings) endpoint.
+To respond, take the following steps:
+
+1. **Review the transaction.** Check the customer's order history, the shipping status, 
+   and any associated risk signals. If the product has not shipped yet, cancel the order 
+   immediately.
+2. **Issue a proactive refund.** If the transaction looks suspicious, navigate to the 
+   transaction and refund the full amount before a formal chargeback is filed.
+3. **Update your blocklists (optional).** If you identify a pattern, add the relevant 
+   customer identifiers to your [Risk rules](/docs/risk-disputes-fraud/risk-rules) to 
+   block future attempts from the same source.
+
+## Webhook integration
+
+You can automate your fraud response logic by listening for the `fraud_warning.created` 
+event. When Pay.com receives a fraud warning from the card network, it sends this webhook 
+to your configured endpoint.
+
+```json
+{
+  "id": "evt_457771954326208512",
+  "resource": "event",
+  "type": "fraud_warning.created",
+  "created": "2024-06-17T05:02:18.906Z",
+  "data": {
+    "id": "frdwrn_685125114794084352",
+    "resource": "fraud_warning",
+    "actionable": true,
+    "amount": 93150,
+    "amount_human_readable": "931.50",
+    "charge": "chrg_685125114794084352",
+    "created": "2024-06-17T00:00:00.000Z",
+    "currency": "usd",
+    "customer": "cust_685125114794084352",
+    "customer_reference_id": "12345678",
+    "fraud_type": "unauthorized_use_of_card",
+    "reference": "123456",
+    "test_mode": false
+  }
+}
+```
+The following table describes the properties included in the `fraud_warning` data object:
+
+| Field | Description |
+|---|---|
+| `id` | Unique identifier for the fraud warning object. |
+| `actionable` | If `true`, no chargeback has been filed yet and you can still refund the transaction to prevent one. If `false`, the window has passed and the transaction has already escalated. |
+| `amount` | The transaction amount in the currency's minor unit. |
+| `amount_human_readable` | The transaction amount formatted as a string in the currency's main unit, for example `"931.50"`. |
+| `charge` | The ID of the charge associated with this warning. Use this to look up the transaction and issue a refund. |
+| `currency` | The transaction currency as a lowercase ISO 4217 code. |
+| `customer` | The Pay.com customer ID associated with the transaction. |
+| `customer_reference_id` | Your internal identifier for the customer, as passed when the original charge was created. |
+| `fraud_type` | The type of fraud reported by the card network, for example `unauthorized_use_of_card`. |
+| `reference` | The card network's reference number for the fraud report. |
+| `test_mode` | If `true`, the event was generated in test mode and no real funds are involved. |
+
+When your endpoint receives this event, check `actionable` first. If it is `true`, use 
+the `charge` ID to retrieve the transaction and assess whether to issue a refund. If it 
+is `false`, no action is possible and you should log the event for reporting purposes 
+only.
+
+For instructions on configuring endpoints and verifying payloads, see
+[Webhook events](/docs/payments/webhooks/webhook-events).
+
+<Callout type="info">
+To test fraud warning handling in sandbox, use the simulate endpoint to trigger a
+`fraud_warning.created` event against a test charge. See
+[Test risk events in sandbox](/docs/risk-disputes-fraud/test-risk-events).
+</Callout>
+
+## Next steps
+
+Fraud warnings are most effective as part of a broader prevention strategy. 
+Explore the tools that work alongside them:
+
+- [Collaborations](/docs/risk-disputes-fraud/collaborations): use pre-dispute alert services 
+  like Ethoca and RDR to catch fraud even earlier in the process.
+- [Risk rules](/docs/risk-disputes-fraud/risk-rules): configure ANI verification and
+  custom transaction rules to block suspicious activity before it is reported.
+- [Disputes](/docs/risk-disputes-fraud/disputes): understand the formal chargeback process 
+  if a fraud warning is not acted on in time.
+- [Fraud warnings API](/api-reference/fraudwarnings): view the full technical reference.

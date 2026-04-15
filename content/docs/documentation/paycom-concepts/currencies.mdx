@@ -1,0 +1,104 @@
+---
+title: Currencies
+description: Learn how Pay.com handles multi-currency transactions, exchange rates, and the required minor unit format for API amounts.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+Pay.com supports transactions in over 100 currencies. All amounts in the API are 
+expressed as integers in the **minor unit** of the currency, the lowest denomination 
+available, to ensure precision and avoid floating-point errors.
+
+## Minor units
+
+Every currency has a defined minor unit that determines how you express amounts in API 
+requests. There are three categories:
+
+<Tabs items={['Standard (2 decimal places)', 'Zero-decimal', 'Three-decimal']}>
+  <Tab value="Standard (2 decimal places)">
+    Most currencies divide into 100 minor units. Multiply the display amount by 100 to 
+    get the integer value.
+
+    | Currency | Display amount | API value |
+    |---|---|---|
+    | USD | $10.00 | `1000` |
+    | GBP | £5.50 | `550` |
+    | EUR | €100.00 | `10000` |
+  </Tab>
+  <Tab value="Zero-decimal">
+    Some currencies have no fractional units. Pass the display amount directly as the 
+    integer value.
+
+    | Currency | Display amount | API value |
+    |---|---|---|
+    | JPY | ¥1000 | `1000` |
+    | KRW | ₩5000 | `5000` |
+    | VND | ₫20000 | `20000` |
+  </Tab>
+  <Tab value="Three-decimal">
+    Certain currencies divide into 1,000 minor units. Multiply the display amount by 
+    1,000 to get the integer value.
+
+    | Currency | Display amount | API value |
+    |---|---|---|
+    | KWD | 1.000 | `1000` |
+    | BHD | 5.250 | `5250` |
+    | OMR | 10.000 | `10000` |
+  </Tab>
+</Tabs>
+
+<Callout type="info">
+Not sure which category a currency falls into? Check the full list of supported 
+currencies and their decimal precision in the [API Reference](/api-reference).
+</Callout>
+
+## Currency codes
+
+Specify currencies in API requests using the three-letter **ISO 4217** code in 
+**lowercase**. The table below shows common examples:
+
+| Currency | ISO 4217 code | Minor unit |
+|---|---|---|
+| US Dollar | `usd` | 2 decimal places |
+| Euro | `eur` | 2 decimal places |
+| British Pound | `gbp` | 2 decimal places |
+| Japanese Yen | `jpy` | Zero-decimal |
+| South Korean Won | `krw` | Zero-decimal |
+| Kuwaiti Dinar | `kwd` | 3 decimal places |
+
+A charge of $10.00 USD would be expressed in an API request as follows:
+```json
+{
+  "amount": 1000,
+  "currency": "usd",
+  "payment_method": "pm_card_123..."
+}
+```
+
+## Verifying amounts
+
+All API responses include an `amount_human_readable` field that returns the amount as a 
+formatted string in the currency's main unit. Use this field to verify that your integer 
+conversion is correct before displaying values to customers.
+```json
+{
+  "amount": 1000,
+  "currency": "usd",
+  "amount_human_readable": "10.00"
+}
+```
+
+To convert amounts between currencies before sending them to Pay.com, use the 
+[Exchange Rates API](/api-reference/exchangerates).
+
+## Putting it together
+
+Every API request that involves money requires two fields working in tandem: `amount` 
+as an integer in the currency's minor unit, and `currency` as a lowercase ISO 4217 code. 
+Getting any of these wrong, whether passing a decimal amount, using the wrong minor unit 
+multiplier, or using an uppercase currency code, will result in a validation error.
+
+Use `amount_human_readable` in API responses to verify your conversions during 
+development, and use the [Exchange Rates API](/api-reference/exchangerates) to calculate 
+amounts dynamically when your integration handles multiple currencies.

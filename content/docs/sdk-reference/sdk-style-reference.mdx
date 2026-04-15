@@ -1,0 +1,121 @@
+---
+title: Style object reference
+description: Complete reference for all keys accepted by the style parameter in checkout.universal().
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+The `style` parameter in `checkout.universal()` accepts a plain JavaScript
+object. Each key targets a specific region of the checkout form. All CSS
+property names must be in camelCase (for example, `borderRadius`, not
+`border-radius`). Values that are not valid CSS properties are silently
+ignored.
+
+For examples of how to apply these styles, see
+[Customize the universal component](/docs/sdk-reference/sdk-customization).
+
+## Top-level keys
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `base` | CSS properties | Outermost wrapper of the entire form. Styles cascade into child regions unless a more specific key overrides them. |
+| `submit` | CSS properties | Main submit button at the bottom of the checkout form. |
+| `savedPaymentMethods` | CSS properties | Container wrapping the saved payment methods section. |
+| `expressCheckout` | CSS properties | Container wrapping the express checkout section. |
+| `apmButtons` | CSS properties | Container for alternative payment method (APM) buttons such as iDEAL and GiroPay. |
+| `cardForm` | Object | Card input fields, submit button, and checkboxes. See [`cardForm` keys](#cardform-keys). |
+| `apms` | Object | Per-APM field styles. See [`apms` keys](#apms-keys). |
+| `dividers` | Object | Horizontal divider lines with text labels that separate form sections. See [`dividers` keys](#dividers-keys). |
+| `existingSource` | Object | Saved card rows, radio buttons, CVV re-entry field, and deletion UI. See [`existingSource` keys](#existingsource-keys). |
+| `paymentMethodFields` | Object | Input fields rendered when a customer selects an APM. See [`paymentMethodFields` keys](#paymentmethodfields-keys). |
+
+## `cardForm` keys
+
+The `cardForm` key accepts an object with the following properties. Styles
+applied to `base` affect all four card fields as a group. Use the individual
+field keys to target each field separately.
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `base` | CSS properties | Shared container around all four card fields. |
+| `number` | CSS properties | Card number input field. |
+| `cvv` | CSS properties | CVV input field. |
+| `expiry` | CSS properties | Expiry date input field. |
+| `name` | CSS properties | Cardholder name input field. |
+| `submit` | CSS properties | Submit button inside the card form. Separate from the top-level `submit` key. |
+| `checkboxes.buttonBackground` | `string` | Background color of checkbox buttons (for example, "Save card for future use"). |
+| `checkboxes.labelColor` | `string` | Text color of checkbox labels. |
+
+## `apms` keys
+
+The `apms` key accepts an object where each key is an APM identifier (for
+example, `ideal`, `giropay`). Styles set here override the global
+`paymentMethodFields` styles for that specific APM.
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `<apm-name>.input` | CSS properties | Input fields rendered by that APM's form. |
+| `<apm-name>.divider.text` | CSS properties | Text label on the APM's internal divider. |
+| `<apm-name>.divider.divider.color` | `string` | Color of the APM's internal divider line. |
+| `<apm-name>.divider.divider.height` | `string` | Height of the APM's internal divider line. |
+| `<apm-name>.divider.divider.marginBottom` | `string` | Bottom margin of the APM's internal divider. |
+| `<apm-name>.divider.divider[':disabled'].color` | `string` | Divider line color in a disabled state. |
+| `<apm-name>.divider.divider[':disabled'].height` | `string` | Divider line height in a disabled state. |
+
+## `dividers` keys
+
+The `dividers` key controls the three named horizontal dividers that
+separate sections of the checkout form.
+
+| Key | Description |
+|-----|-------------|
+| `dividers.payWith` | Divider above the card form section. |
+| `dividers.showOtherWaysToPay` | Divider between the card form and the APM section. |
+| `dividers.savedPaymentMethods` | Divider above the saved payment methods list. |
+
+Each divider accepts the following sub-keys:
+
+| Sub-key | Type | Description |
+|---------|------|-------------|
+| `text` | CSS properties | Text label displayed on the divider. |
+| `divider` | CSS properties | The horizontal line, including `color` and `height`. |
+
+## `existingSource` keys
+
+The `existingSource` key controls how saved card rows and their related UI
+look when a returning customer has stored payment methods.
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `base` | CSS properties | Default appearance of each saved card row. |
+| `base[':selected']` | CSS properties | Appearance of the currently selected saved card row. |
+| `radioButton.color` | `string` | Default color of the radio button. |
+| `radioButton[':selected'].color` | `string` | Color of the radio button when that card row is selected. |
+| `cvv.style` | CSS properties | CVV re-entry input field shown when a saved card is selected. |
+| `cvv.labelStyle` | CSS properties | Label for the CVV re-entry field. |
+| `cvv.errorMessage` | CSS properties | Validation error text below the CVV field. |
+| `icons.delete` | CSS properties | Delete icon in its default state. |
+| `icons.confirmDeletion` | CSS properties | Confirm icon shown when the customer starts a deletion. |
+| `icons.cancelDeletion` | CSS properties | Cancel icon shown when the customer starts a deletion. |
+| `deleteText` | CSS properties | Confirmation message shown when the customer starts a deletion. |
+
+<Callout type="info">
+  `':selected'` and `':disabled'` are plain object keys, not CSS
+  pseudo-classes. Write them as strings, including the quotes: `':selected'`.
+</Callout>
+
+## `paymentMethodFields` keys
+
+The `paymentMethodFields` key applies styles globally to all APM input
+fields across every payment method. Styles set here are overridden by
+per-APM styles defined under `apms`.
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `label` | CSS properties | Labels above APM input fields. |
+| `input` | CSS properties | Text input fields. |
+| `date` | CSS properties | Date input fields. |
+| `radio.color` | `string` | Color of radio button indicators. |
+| `radio.label` | CSS properties | Labels next to radio buttons. |
+| `select` | CSS-in-JS properties | Select (dropdown) elements. |
+| `checkbox` | Object | Checkbox elements. |

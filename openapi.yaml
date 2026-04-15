@@ -23,124 +23,59 @@ info:
 
     You can use the API in test mode, which does not affect your live data or interact with the banking networks.
 servers:
-  - url: https://api.staging.pay.com/v1
-    description: Test mode (Staging)
+  - url: https://api.sandbox.pay.com/v1
+    description: Test mode (Sandbox)
   - url: https://api.pay.com/v1
     description: Live mode (Production)
 security:
   - ApiKeyAuth: []
 tags:
-  - name: PaymentAttempts
-    x-displayName: Payment Attempts
-    description: A Payment Attempt represents an attempt to pay within a customer's payment session. Each attempt captures the details and outcome of a single payment try.
-  - name: SetupAttempts
-    x-displayName: Setup Attempts
-    description: A Setup Attempt represents an attempt to verify and add a payment method within a customer's setup session without charging them.
-  - name: Adjustments
-    x-displayName: Adjustments
-    description: Adjustments represent modifications to settlement amounts, such as monthly minimums, corrections, or other post-transaction changes.
-  - name: TransactionStatus
-    x-displayName: Transaction Status
-    description: Query the current status of any transaction by its ID.
-  - name: ValueLists
-    x-displayName: Value Lists
-    description: Value Lists allow you to create and manage custom lists of values for use in rules, filters, and other configurations.
+  - name: Payment Sessions
+    description: Create and manage payment sessions for secure, client-side payment collection.
+  - name: Setup Sessions
+    description: Create and manage setup sessions to securely collect and store payment method details without charging.
+  - name: Tokenization Sessions
+    description: Create tokenization sessions for secure card collection.
+  - name: Charges
+    description: "Create and manage charges to collect payments from customers. Supports one-time payments, confirmations, refunds, partial approvals, and transaction status lookups."
+  - name: Holds
+    description: Place holds on funds to reserve an amount before capturing. Useful for authorization-then-capture payment flows.
   - name: Refunds
-    x-displayName: Refunds
     description: Refund endpoints allow you to return funds to customers for completed charges, either partially or in full.
   - name: Payouts
-    x-displayName: Payouts
     description: Payouts enable you to send funds to customer's cards, bank accounts or other payment methods.
-  - name: Subscriptions
-    x-displayName: Subscriptions
-    description: Create and manage subscriptions for recurring payments. Set up subscription packages, handle billing cycles, and manage subscriber lifecycle.
-  - name: Settlements
-    x-displayName: Settlements
-    description: View settlement details and breakdowns showing how funds are allocated and transferred to your account.
+  - name: Authentication Sessions
+    description: "Manage 3D Secure authentication sessions for enhanced payment security, including standalone sessions independent of payment flows."
   - name: Customers
-    x-displayName: Customers
     description: Manage customer records, including their payment methods and transaction history.
-  - name: Disputes
-    x-displayName: Disputes
-    description: Handle chargebacks and disputes, submit evidence, and track dispute resolution status.
-  - name: PaymentLinks
-    x-displayName: Payment Links
-    description: Create shareable payment links that allow customers to complete payments without integration.
-  - name: PaymentMethods
-    x-displayName: Payment Methods
-    description: Store, retrieve, and manage payment methods including cards, bank accounts, and digital wallets.
-  - name: FraudWarnings
-    x-displayName: Fraud Warnings
-    description: Access fraud warnings and alerts associated with transactions to help identify potentially fraudulent activity.
-  - name: Merchants
-    x-displayName: Merchants
-    description: Retrieve merchant configuration and available payment method options.
-  - name: ExchangeRates
-    x-displayName: Exchange Rates
-    description: Get current exchange rates and calculate currency conversions for multi-currency transactions.
-  - name: Reconciliation
-    x-displayName: Reconciliation
-    description: Access transaction reconciliation data for accounting and financial reporting purposes.
-  - name: ServiceFees
-    x-displayName: Service Fees
-    description: Manage and retrieve service fees applied to settlements.
-  - name: SetupSessions
-    x-displayName: Setup Sessions
-    description: Create and manage setup sessions to securely collect and store payment method details without charging.
-  - name: PaymentSessions
-    x-displayName: Payment Sessions
-    description: Create and manage payment sessions for secure, client-side payment collection.
-  - name: AuthenticationSessions
-    x-displayName: Authentication Sessions
-    description: Manage 3D Secure authentication sessions for enhanced payment security.
+  - name: Payment Methods
+    description: "Store, retrieve, and manage payment methods including cards, bank accounts, and digital wallets. Includes token and network token management."
+  - name: Payment Method Domains
+    description: "Register and manage domains for Apple Pay and Google Pay web payments. Includes Apple Pay session creation for merchant validation."
   - name: Checkout
-    x-displayName: Checkout
     description: Create hosted checkout experiences for seamless payment collection.
-  - name: Cashflow
-    x-displayName: Cashflow
-    description: Monitor your account balances and track cashflow transactions.
-  - name: Charges
-    x-displayName: Charges
-    description: Create and manage charges to collect payments from customers. Supports one-time payments, confirmations, and refunds.
-  - name: Holds
-    x-displayName: Holds
-    description: Place holds on funds to reserve an amount before capturing. Useful for authorization-then-capture payment flows.
+  - name: Payment Links
+    description: Create shareable payment links that allow customers to complete payments without integration.
+  - name: Subscriptions
+    description: "Create and manage subscriptions and subscription packages for recurring payments. Set up billing terms, handle billing cycles, and manage subscriber lifecycle."
+  - name: Disputes
+    description: "Handle chargebacks and disputes, submit evidence, track dispute resolution status, and manage supporting documents."
   - name: Collaborations
-    x-displayName: Collaborations
     description: Manage and resolve all pre-dispute collaborations tools (CDRN, Ethoca, Mastercard Collaboration).
-  - name: RiskAssessment
-    x-displayName: Risk Assessment
-    description: Assess transaction risk before processing payments.
-  - name: RiskReview
-    x-displayName: Risk Review
-    description: Manage and resolve risk reviews for flagged transactions.
-  - name: Tokens
-    x-displayName: Tokens
-    description: Retrieve tokenized payment method information.
-  - name: AuthenticationSessionsIndependent
-    x-displayName: Independent Authentication Sessions
-    description: Create standalone 3D Secure authentication sessions independent of payment flows.
-  - name: PartialApproval
-    x-displayName: Partial Approval
-    description: Handle partial approval scenarios for charges.
-  - name: NetworkTokens
-    x-displayName: Network Tokens
-    description: Retrieve and manage network tokens for payment methods.
-  - name: ApplePaySessions
-    x-displayName: Apple Pay Sessions
-    description: Create Apple Pay sessions for merchant validation.
-  - name: TokenizationSessions
-    x-displayName: Tokenization Sessions
-    description: Create tokenization sessions for secure card collection.
-  - name: PaymentMethodDomains
-    x-displayName: Payment Method Domains
-    description: Register and manage domains for Apple Pay and Google Pay web payments.
-  - name: Documents
-    x-displayName: Documents
-    description: Upload and manage documents for dispute evidence and other purposes.
-  - name: SubscriptionPackages
-    x-displayName: Subscription Packages
-    description: Create and manage subscription packages that define billing terms for recurring payments.
+  - name: Fraud Warnings
+    description: Access fraud warnings and alerts associated with transactions to help identify potentially fraudulent activity.
+  - name: Risk
+    description: "Assess transaction risk before processing payments and manage risk reviews for flagged transactions."
+  - name: Value Lists
+    description: Value Lists allow you to create and manage custom lists of values for use in rules, filters, and other configurations.
+  - name: Settlements
+    description: "View settlement details, breakdowns, adjustments, and service fees showing how funds are allocated and transferred to your account."
+  - name: Reconciliation
+    description: Access transaction reconciliation data for accounting and financial reporting purposes.
+  - name: Exchange Rates
+    description: Get current exchange rates and calculate currency conversions for multi-currency transactions.
+  - name: Merchants
+    description: Retrieve merchant configuration and available payment method options.
 paths:
   /attempts/payment:
     get:
@@ -151,7 +86,7 @@ paths:
         Querying the API with the unique identifier of a Payment Session that was returned from a previous request will return the corresponding Payment Attempts.
       operationId: retrieve-attempts-of-a-payment-session
       tags:
-        - PaymentAttempts
+        - Payment Sessions
       parameters:
         - $ref: '#/components/parameters/payment-session-id'
       responses:
@@ -184,7 +119,7 @@ paths:
         Querying the API with the unique identifier of a Payment Attempt that was returned from a previous request will return the corresponding Payment Attempt information.
       operationId: retrieve-attempt-of-a-payment-session
       tags:
-        - PaymentAttempts
+        - Payment Sessions
       parameters:
         - schema:
             type: string
@@ -218,7 +153,7 @@ paths:
         Querying the API with the unique identifier of a Setup Session that was returned from a previous request will return the corresponding Setup Attempts.
       operationId: retrieve-attempts-of-a-setup-session
       tags:
-        - SetupAttempts
+        - Setup Sessions
       parameters:
         - $ref: '#/components/parameters/setup-session-id'
       responses:
@@ -245,7 +180,7 @@ paths:
         Querying the API with the unique identifier of a Setup Attempt that was returned from a previous request will return the corresponding Setup Attempt information.
       operationId: retrieve-a-setup-attempt
       tags:
-        - SetupAttempts
+        - Setup Sessions
       parameters:
         - schema:
             type: string
@@ -570,7 +505,7 @@ paths:
       operationId: list-adjustments
       description: Retrieves a list of adjustments for a specific settlement.
       tags:
-        - Adjustments
+        - Settlements
       parameters:
         - name: settlement_id
           schema:
@@ -617,7 +552,7 @@ paths:
       description: Retrieves the details of an adjustment.
       operationId: get-adjustment-by-id
       tags:
-        - Adjustments
+        - Settlements
       parameters:
         - in: path
           name: adjustment_id
@@ -656,7 +591,7 @@ paths:
     get:
       summary: Get transaction status
       tags:
-        - TransactionStatus
+        - Charges
       responses:
         '200':
           description: Returns the transaction object.
@@ -696,7 +631,7 @@ paths:
     get:
       summary: Retrieve a Value List
       tags:
-        - ValueLists
+        - Value Lists
       responses:
         '200':
           description: Returns the value list object.
@@ -730,7 +665,7 @@ paths:
     put:
       summary: Update a Value List
       tags:
-        - ValueLists
+        - Value Lists
       requestBody:
         $ref: '#/components/requestBodies/update-value-list'
       responses:
@@ -766,7 +701,7 @@ paths:
     delete:
       summary: Delete a Value List
       tags:
-        - ValueLists
+        - Value Lists
       responses:
         '204':
           description: Deleted successfully.
@@ -797,7 +732,7 @@ paths:
     get:
       summary: Retrieve a Value List Item
       tags:
-        - ValueLists
+        - Value Lists
       responses:
         '200':
           description: Returns the value list item object.
@@ -839,7 +774,7 @@ paths:
     delete:
       summary: Delete a Value List Item
       tags:
-        - ValueLists
+        - Value Lists
       responses:
         '204':
           description: Deleted successfully.
@@ -877,7 +812,7 @@ paths:
     post:
       summary: Update a Value List Item
       tags:
-        - ValueLists
+        - Value Lists
       requestBody:
         $ref: '#/components/requestBodies/update-value-list-item'
       responses:
@@ -922,7 +857,7 @@ paths:
     post:
       summary: Create a Value List
       tags:
-        - ValueLists
+        - Value Lists
       requestBody:
         $ref: '#/components/requestBodies/create-value-list'
       responses:
@@ -949,7 +884,7 @@ paths:
     get:
       summary: List Value Lists
       tags:
-        - ValueLists
+        - Value Lists
       responses:
         '200':
           description: Returns a list of value list objects.
@@ -1000,7 +935,7 @@ paths:
     get:
       summary: List Value List Items
       tags:
-        - ValueLists
+        - Value Lists
       responses:
         '200':
           description: Returns a list of value list item objects.
@@ -1034,7 +969,7 @@ paths:
     post:
       summary: Create a Value List Item
       tags:
-        - ValueLists
+        - Value Lists
       requestBody:
         $ref: '#/components/requestBodies/create-value-list-item'
       responses:
@@ -1073,7 +1008,7 @@ paths:
       description: Creates a new subscription package.
       operationId: create-subscription-package
       tags:
-        - SubscriptionPackages
+        - Subscriptions
       parameters:
         - $ref: '#/components/parameters/idempotency-key'
       requestBody:
@@ -1107,7 +1042,7 @@ paths:
       description: Retrieves the details of a subscription package.
       operationId: get-subscription-package
       tags:
-        - SubscriptionPackages
+        - Subscriptions
       parameters:
         - $ref: '#/components/parameters/subscription-package-id'
       responses:
@@ -1128,7 +1063,7 @@ paths:
       description: Updates a subscription package.
       operationId: patch-subscription-package
       tags:
-        - SubscriptionPackages
+        - Subscriptions
       parameters:
         - $ref: '#/components/parameters/idempotency-key'
         - $ref: '#/components/parameters/subscription-package-id'
@@ -1156,7 +1091,7 @@ paths:
       description: Deletes a subscription package.
       operationId: delete-subscription-package
       tags:
-        - SubscriptionPackages
+        - Subscriptions
       parameters:
         - $ref: '#/components/parameters/idempotency-key'
         - $ref: '#/components/parameters/subscription-package-id'
@@ -1716,27 +1651,30 @@ paths:
                 type:
                   type: string
                   description: The type of evidence being submitted.
-                  example: receipt
-                document_id:
+                  example: additional_evidence
+                document:
                   type: string
                   pattern: ^doc_\d{18,20}$
                   description: The ID of an uploaded document to use as evidence.
                   example: doc_296645958265997312
-                description:
+                text:
                   type: string
                   description: A text description or explanation for this evidence.
-                  example: Original receipt showing customer signature
+                  example: Customer placed order and goods were delivered on the transaction date.
+              required:
+                - document
+                - text
             example:
-              type: receipt
-              document_id: doc_296645958265997312
-              description: Original receipt showing customer signature
+              type: additional_evidence
+              document: doc_296645958265997312
+              text: Customer placed order and goods were delivered on the transaction date.
       responses:
         '201':
-          description: Returns the created evidence object.
+          description: Returns the updated dispute object. To retrieve the created evidence record (evd_...), call GET /disputes/{dispute_id}/evidences after submission.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/evidence'
+                $ref: '#/components/schemas/dispute'
         '400':
           description: Invalid request parameters.
           content:
@@ -1834,17 +1772,17 @@ paths:
             schema:
               type: object
               properties:
-                document_id:
+                document:
                   type: string
                   pattern: ^doc_\d{18,20}$
                   description: The ID of a new document to replace the existing one.
                   example: doc_296645958265997312
-                description:
+                text:
                   type: string
-                  description: Updated description for this evidence.
+                  description: Updated text description for this evidence.
                   example: Updated receipt with clearer signature
             example:
-              description: Updated receipt with clearer signature
+              text: Updated receipt with clearer signature
       responses:
         '200':
           description: Returns the updated evidence object.
@@ -1964,7 +1902,7 @@ paths:
     post:
       summary: Create a Payment link
       tags:
-        - PaymentLinks
+        - Payment Links
       requestBody:
         $ref: '#/components/requestBodies/create-payment-link'
       responses:
@@ -1994,7 +1932,7 @@ paths:
     get:
       summary: Retrieve a Payment Link
       tags:
-        - PaymentLinks
+        - Payment Links
       responses:
         '200':
           description: Returns the payment link object.
@@ -2034,7 +1972,7 @@ paths:
     put:
       summary: Update a Payment Link
       tags:
-        - PaymentLinks
+        - Payment Links
       requestBody:
         $ref: '#/components/requestBodies/update-payment-link'
       responses:
@@ -2072,7 +2010,7 @@ paths:
     post:
       summary: Create a Payment Method
       tags:
-        - PaymentMethods
+        - Payment Methods
       requestBody:
         $ref: '#/components/requestBodies/create-payment-method'
       responses:
@@ -2102,7 +2040,7 @@ paths:
     post:
       summary: Confirm a Payment Method
       tags:
-        - PaymentMethods
+        - Payment Methods
       responses:
         '201':
           description: Returns the confirmed payment method object.
@@ -2144,7 +2082,7 @@ paths:
     get:
       summary: Retrieve a Payment Method
       tags:
-        - PaymentMethods
+        - Payment Methods
       responses:
         '200':
           description: Returns the payment method object.
@@ -2184,7 +2122,7 @@ paths:
     delete:
       summary: Delete a Payment Method
       tags:
-        - PaymentMethods
+        - Payment Methods
       responses:
         '204':
           description: Payment method deleted successfully.
@@ -2216,7 +2154,7 @@ paths:
     get:
       summary: Retrieve a Network Token
       tags:
-        - NetworkTokens
+        - Payment Methods
       responses:
         '200':
           description: Returns the network token object.
@@ -2257,7 +2195,7 @@ paths:
     get:
       summary: Retrieve a Network Token Cryptogram
       tags:
-        - NetworkTokens
+        - Payment Methods
       responses:
         '200':
           description: Returns the network token cryptogram object.
@@ -2298,7 +2236,7 @@ paths:
     post:
       summary: Create a Payment Method from Token
       tags:
-        - PaymentMethods
+        - Payment Methods
       requestBody:
         $ref: '#/components/requestBodies/create-from-token'
       responses:
@@ -2330,7 +2268,7 @@ paths:
       description: Retrieves the details of a fraud warning.
       operationId: get-fraud-warning-by-id
       tags:
-        - FraudWarnings
+        - Fraud Warnings
       parameters:
         - in: path
           name: transaction_id
@@ -2371,12 +2309,8 @@ paths:
       description: Retrieves a list of fraud warnings.
       operationId: list-fraud-warnings
       tags:
-        - FraudWarnings
+        - Fraud Warnings
       parameters:
-        - $ref: '#/components/parameters/created-greater-than-or-equals'
-        - $ref: '#/components/parameters/created-greater-than'
-        - $ref: '#/components/parameters/created-less-than-or-equals'
-        - $ref: '#/components/parameters/created-less-than'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/customer-reference-id'
         - $ref: '#/components/parameters/ending-before'
@@ -2391,19 +2325,19 @@ paths:
                 properties:
                   resource:
                     type: string
-                    example: charges
+                    example: fraudWarnings
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/fraud-warning'
                     description: Array of fraud warnings, sorted.
-                  hasMore:
+                  has_more:
                     type: boolean
                     description: Indicates if there are more fraud warnings available for pagination.
                 required:
                   - resource
                   - data
-                  - hasMore
+                  - has_more
         '400':
           description: Invalid request parameters.
           content:
@@ -2415,7 +2349,7 @@ paths:
       summary: Retrieve Exchange Rates
       description: Retrieves exchange rates for given currencies.
       tags:
-        - ExchangeRates
+        - Exchange Rates
       operationId: get-exchange-rates
       parameters:
         - in: query
@@ -2467,7 +2401,7 @@ paths:
       summary: Retrieve Charge Exchange Rates
       description: Retrieves the exchange rates that were applied to a charge.
       tags:
-        - ExchangeRates
+        - Exchange Rates
       operationId: get-charge-exchange-rates
       parameters:
         - in: path
@@ -2508,7 +2442,7 @@ paths:
       summary: Calculate Exchange Rates
       description: Calculates exchange rates for given currencies.
       tags:
-        - ExchangeRates
+        - Exchange Rates
       operationId: calculate-exchange-rates
       parameters:
         - $ref: '#/components/parameters/idempotency-key'
@@ -2667,7 +2601,7 @@ paths:
       operationId: list-service-fees
       description: Retrieves a list of service fees.
       tags:
-        - ServiceFees
+        - Settlements
       responses:
         '200':
           description: Returns a list of service fee objects.
@@ -2715,7 +2649,7 @@ paths:
       description: Retrieves the details of a service fee.
       operationId: get-service-fees-by-id
       tags:
-        - ServiceFees
+        - Settlements
       parameters:
         - in: path
           required: true
@@ -2756,7 +2690,7 @@ paths:
       description: Creates a new payment session.
       operationId: create-ps
       tags:
-        - PaymentSessions
+        - Payment Sessions
       requestBody:
         content:
           application/json:
@@ -2861,7 +2795,7 @@ paths:
       description: Retrieves a list of payment sessions.
       operationId: list-payment-sessions
       tags:
-        - PaymentSessions
+        - Payment Sessions
       parameters:
         - $ref: '#/components/parameters/created-greater-than-or-equals'
         - $ref: '#/components/parameters/created-greater-than'
@@ -2913,7 +2847,7 @@ paths:
       description: Retrieves the details of a payment session.
       operationId: get-ps-by-id
       tags:
-        - PaymentSessions
+        - Payment Sessions
       parameters:
         - in: path
           required: true
@@ -2953,7 +2887,7 @@ paths:
       description: Updates a payment session.
       operationId: update-ps
       tags:
-        - PaymentSessions
+        - Payment Sessions
       parameters:
         - in: path
           required: true
@@ -3013,7 +2947,7 @@ paths:
       description: Retrieves the client details of a payment session.
       operationId: get-ps-client-details
       tags:
-        - PaymentSessions
+        - Payment Sessions
       parameters:
         - in: path
           required: true
@@ -3054,7 +2988,7 @@ paths:
       description: Retrieves the details of an authentication session.
       operationId: get-sca-by-id
       tags:
-        - AuthenticationSessions
+        - Authentication Sessions
       parameters:
         - in: path
           required: true
@@ -3095,7 +3029,7 @@ paths:
       description: Creates a new setup session.
       operationId: create-ss
       tags:
-        - SetupSessions
+        - Setup Sessions
       parameters:
         - $ref: '#/components/parameters/idempotency-key'
       requestBody:
@@ -3156,7 +3090,7 @@ paths:
       description: Retrieves the details of a setup session.
       operationId: get-ss-by-id
       tags:
-        - SetupSessions
+        - Setup Sessions
       parameters:
         - in: path
           required: true
@@ -3230,7 +3164,7 @@ paths:
       description: Retrieves the current merchant balance.
       operationId: get-merchant-balance
       tags:
-        - Cashflow
+        - Charges
       responses:
         '200':
           description: Returns the balance object.
@@ -3250,7 +3184,7 @@ paths:
       description: Retrieves the details of a cashflow transaction.
       operationId: get-cashflow-transaction
       tags:
-        - Cashflow
+        - Charges
       parameters:
         - name: cashflow_transaction_id
           in: path
@@ -3285,7 +3219,7 @@ paths:
       description: Retrieves a list of cashflow transactions.
       operationId: get-cashflow-transactions-bulk
       tags:
-        - Cashflow
+        - Charges
       parameters:
         - $ref: '#/components/parameters/created-greater-than-or-equals'
         - $ref: '#/components/parameters/created-greater-than'
@@ -3668,7 +3602,7 @@ paths:
       description: Simulate clear.
       operationId: simulate-clear
       tags:
-        - Cashflow
+        - Charges
       parameters:
         - name: transaction_id
           in: path
@@ -4062,10 +3996,6 @@ paths:
       tags:
         - Collaborations
       parameters:
-        - $ref: '#/components/parameters/created-greater-than-or-equals'
-        - $ref: '#/components/parameters/created-greater-than'
-        - $ref: '#/components/parameters/created-less-than-or-equals'
-        - $ref: '#/components/parameters/created-less-than'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/ending-before'
         - $ref: '#/components/parameters/starting-after'
@@ -4150,7 +4080,7 @@ paths:
       description: Assess a payment.
       operationId: assess-payment
       tags:
-        - RiskAssessment
+        - Risk
       requestBody:
         content:
           application/json:
@@ -4179,7 +4109,7 @@ paths:
     get:
       summary: Retrieve a Token
       tags:
-        - Tokens
+        - Payment Methods
       responses:
         '200':
           description: Returns the token object.
@@ -4216,7 +4146,7 @@ paths:
       description: Cancel a partial approval for a Charge.
       operationId: cancel-partial-approval-charge
       tags:
-        - PartialApproval
+        - Charges
       parameters:
         - name: transaction_id
           in: path
@@ -4252,7 +4182,7 @@ paths:
       description: Confirm a partial approval for a Charge.
       operationId: confirm-partial-approval-charge
       tags:
-        - PartialApproval
+        - Charges
       parameters:
         - name: transaction_id
           in: path
@@ -4300,7 +4230,7 @@ paths:
       summary: List Payment Method Domains
       description: Retrieves the list of payment method domains.
       tags:
-        - PaymentMethodDomains
+        - Payment Method Domains
       operationId: get-payment-method-domains
       responses:
         '200':
@@ -4325,7 +4255,7 @@ paths:
     post:
       summary: Register a Payment Method Domain
       tags:
-        - PaymentMethodDomains
+        - Payment Method Domains
       requestBody:
         $ref: '#/components/requestBodies/register-payment-method-domains'
       responses:
@@ -4351,7 +4281,7 @@ paths:
     post:
       summary: Unregister a Payment Method Domain
       tags:
-        - PaymentMethodDomains
+        - Payment Method Domains
       requestBody:
         $ref: '#/components/requestBodies/unregister-payment-method-domains'
       responses:
@@ -4379,7 +4309,7 @@ paths:
       description: Creates a new independent authentication session.
       operationId: create-sca
       tags:
-        - AuthenticationSessionsIndependent
+        - Authentication Sessions
       requestBody:
         content:
           application/json:
@@ -4410,7 +4340,7 @@ paths:
       description: Submits an independent authentication session and retrieves the details.
       operationId: post-sca-by-id
       tags:
-        - AuthenticationSessionsIndependent
+        - Authentication Sessions
       parameters:
         - in: path
           required: true
@@ -4451,7 +4381,7 @@ paths:
       description: Retrieves the details of an independent authentication session.
       operationId: get-sca-independent-by-id
       tags:
-        - AuthenticationSessionsIndependent
+        - Authentication Sessions
       parameters:
         - in: path
           required: true
@@ -4492,7 +4422,7 @@ paths:
       description: Creates a new document record. After creating, use the upload endpoint to upload the file contents.
       operationId: create-document
       tags:
-        - Documents
+        - Disputes
       parameters:
         - $ref: '#/components/parameters/idempotency-key'
       requestBody:
@@ -4542,7 +4472,7 @@ paths:
       description: Retrieves the details of a document by its unique identifier.
       operationId: get-document-by-id
       tags:
-        - Documents
+        - Disputes
       parameters:
         - in: path
           name: id
@@ -4595,7 +4525,7 @@ paths:
       description: Retrieves the binary contents of a document. Returns the file with appropriate content-type headers.
       operationId: get-document-contents
       tags:
-        - Documents
+        - Disputes
       parameters:
         - in: path
           name: id
@@ -4637,7 +4567,7 @@ paths:
       description: Uploads the binary contents for a document. The document must be created first using the create document endpoint.
       operationId: upload-document
       tags:
-        - Documents
+        - Disputes
       parameters:
         - in: path
           name: document_id
@@ -4698,7 +4628,7 @@ paths:
   /charges/{transaction_id}/simulate/dispute:
     post:
       summary: Simulate a Dispute
-      description: Simulates a dispute on a charge. This endpoint is only available in test mode and is useful for testing dispute handling flows.
+      description: Simulates a dispute on a charge. This endpoint is only available in sandbox/test mode and is useful for testing dispute handling flows.
       operationId: simulate-dispute
       tags:
         - Disputes
@@ -4743,7 +4673,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/validation-error'
         '403':
-          description: Forbidden - endpoint only available in test mode.
+          description: Forbidden - endpoint only available in sandbox mode.
           content:
             application/json:
               schema:
@@ -4763,10 +4693,10 @@ paths:
   /charges/{transaction_id}/simulate/fraud_warning:
     post:
       summary: Simulate a Fraud Warning
-      description: Simulates a fraud warning on a charge. This endpoint is only available in test mode and is useful for testing fraud warning handling flows.
+      description: Simulates a fraud warning on a charge. This endpoint is only available in sandbox/test mode and is useful for testing fraud warning handling flows.
       operationId: simulate-fraud-warning
       tags:
-        - FraudWarnings
+        - Fraud Warnings
       parameters:
         - in: path
           name: transaction_id
@@ -4809,11 +4739,12 @@ paths:
               raw_code: '7523'
       responses:
         '200':
-          description: Fraud warning simulated successfully.
+          description: Fraud warning simulated successfully. Returns the plain-text string "OK" (not JSON).
           content:
-            application/json:
+            text/plain:
               schema:
-                type: object
+                type: string
+                example: OK
         '400':
           description: Invalid request parameters.
           content:
@@ -4821,7 +4752,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/validation-error'
         '403':
-          description: Forbidden - endpoint only available in test mode.
+          description: Forbidden - endpoint only available in sandbox mode.
           content:
             application/json:
               schema:
@@ -4841,7 +4772,7 @@ paths:
   /charges/{transaction_id}/simulate/collaboration:
     post:
       summary: Simulate a Collaboration
-      description: Simulates a collaboration request (CDRN, Ethoca, Mastercard Collaboration) on a charge. This endpoint is only available in test mode.
+      description: Simulates a collaboration request (CDRN, Ethoca, Mastercard Collaboration) on a charge. This endpoint is only available in sandbox/test mode.
       operationId: simulate-collaboration
       tags:
         - Collaborations
@@ -4883,7 +4814,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/validation-error'
         '403':
-          description: Forbidden - endpoint only available in test mode.
+          description: Forbidden - endpoint only available in sandbox mode.
           content:
             application/json:
               schema:
@@ -4916,50 +4847,35 @@ paths:
             schema:
               type: object
               required:
-                - dispute_ids
+                - disputes
+                - documents
               properties:
-                dispute_ids:
+                disputes:
                   type: array
                   items:
                     type: string
                     pattern: ^dspt_\d{18,20}$
-                  description: Array of dispute IDs to defend.
+                  description: Array of dispute IDs to defend. All disputes must be in "open" or "pre_arbitration" status.
                   example:
                     - dspt_296645958265997312
                     - dspt_296645958265997313
+                documents:
+                  type: array
+                  items:
+                    type: string
+                    pattern: ^doc_\d{18,20}$
+                  description: Array of uploaded document IDs to use as shared evidence across all disputes.
+                  example:
+                    - doc_296645958265997312
             example:
-              dispute_ids:
+              disputes:
                 - dspt_296645958265997312
                 - dspt_296645958265997313
+              documents:
+                - doc_296645958265997312
       responses:
-        '200':
-          description: Returns the bulk defend result object.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  successful:
-                    type: array
-                    items:
-                      type: string
-                    description: List of dispute IDs that were successfully defended.
-                  failed:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        dispute_id:
-                          type: string
-                        error:
-                          type: string
-                    description: List of disputes that failed to be defended with error messages.
-              example:
-                successful:
-                  - dspt_296645958265997312
-                failed:
-                  - dispute_id: dspt_296645958265997313
-                    error: Dispute already resolved
+        '204':
+          description: Defense submitted successfully. The defense is applied asynchronously — dispute statuses do not change immediately.
         '400':
           description: Invalid request parameters.
           content:
@@ -5024,7 +4940,7 @@ paths:
       description: Retrieves the details of a risk review by its unique identifier.
       operationId: get-risk-review
       tags:
-        - RiskReview
+        - Risk
       parameters:
         - in: path
           name: review_id
@@ -5073,7 +4989,7 @@ paths:
       description: Resolves a pending risk review by approving or declining it.
       operationId: resolve-risk-review
       tags:
-        - RiskReview
+        - Risk
       parameters:
         - in: path
           name: review_id
@@ -5157,7 +5073,7 @@ paths:
       description: Retrieves a risk review by its reference identifier.
       operationId: get-risk-review-by-reference
       tags:
-        - RiskReview
+        - Risk
       parameters:
         - in: path
           name: reference_id
@@ -5206,7 +5122,7 @@ paths:
       description: Creates a tokenization session for securely collecting card details client-side.
       operationId: create-tokenization-session
       tags:
-        - TokenizationSessions
+        - Tokenization Sessions
       parameters:
         - $ref: '#/components/parameters/idempotency-key'
       responses:
@@ -5253,7 +5169,7 @@ paths:
       description: Creates an Apple Pay session for merchant validation. Returns session data required for Apple Pay web payments.
       operationId: create-applepay-session
       tags:
-        - ApplePaySessions
+        - Payment Method Domains
       requestBody:
         required: true
         content:
@@ -5324,7 +5240,7 @@ paths:
       description: Creates a 3D Secure authentication session linked to an existing charge, hold, or payment method.
       operationId: create-linked-authentication-session
       tags:
-        - AuthenticationSessions
+        - Authentication Sessions
       parameters:
         - $ref: '#/components/parameters/idempotency-key'
       requestBody:
@@ -5432,7 +5348,7 @@ paths:
       description: Retrieves all payment attempts associated with a payment session.
       operationId: get-payment-session-attempts
       tags:
-        - PaymentAttempts
+        - Payment Sessions
       parameters:
         - in: path
           name: session
@@ -5485,7 +5401,7 @@ paths:
       description: Retrieves all setup attempts associated with a setup session.
       operationId: get-setup-session-attempts
       tags:
-        - SetupAttempts
+        - Setup Sessions
       parameters:
         - in: path
           name: session
@@ -5538,7 +5454,7 @@ paths:
       description: Imports a payment method using a vault token. This allows importing payment methods from external sources.
       operationId: import-payment-method
       tags:
-        - PaymentMethods
+        - Payment Methods
       parameters:
         - $ref: '#/components/parameters/idempotency-key'
       requestBody:
@@ -6872,7 +6788,7 @@ components:
           description: Underlying network details.
         test_mode:
           type: boolean
-          description: Indicates if transaction is from test environment.
+          description: Indicates if transaction is from sandbox/test environment.
     get-payouts-bulk-response:
       description: Get payouts in bulk response.
       required:
@@ -12245,7 +12161,7 @@ components:
           description: The date and time at which the resource was created. ISO String format.
         test_mode:
           type: boolean
-          description: Indicates if assessment is from test environment.
+          description: Indicates if assessment is from sandbox/test environment.
         options:
           $ref: '#/components/schemas/risk-assessment-options'
           description: Options used for this risk assessment.
@@ -12778,7 +12694,7 @@ components:
           $ref: '#/components/schemas/shipping-details'
         test_mode:
           type: boolean
-          description: Indicates whether the session was created in test mode.
+          description: Indicates whether the session was created in test/sandbox mode.
           example: false
         return_url:
           type: string
@@ -13732,54 +13648,40 @@ components:
 x-tagGroups:
   - name: Web SDK
     tags:
-      - PaymentSessions
-      - SetupSessions
-      - TokenizationSessions
-      - PaymentAttempts
-      - SetupAttempts
-  - name: Core
+      - Payment Sessions
+      - Setup Sessions
+      - Tokenization Sessions
+  - name: Core Transactions
     tags:
       - Charges
       - Holds
       - Refunds
       - Payouts
-      - AuthenticationSessions
-      - AuthenticationSessionsIndependent
+      - Authentication Sessions
       - Customers
-      - TransactionStatus
-      - PartialApproval
   - name: Payment Methods
     tags:
-      - PaymentMethods
-      - PaymentMethodDomains
-      - NetworkTokens
-      - ApplePaySessions
-      - Tokens
-  - name: Risk, Disputes & Fraud
-    tags:
-      - RiskAssessment
-      - RiskReview
-      - FraudWarnings
-      - Disputes
-      - Collaborations
-      - Documents
-      - ValueLists
+      - Payment Methods
+      - Payment Method Domains
   - name: Checkout
     tags:
       - Checkout
-      - PaymentLinks
+      - Payment Links
   - name: Subscriptions
     tags:
       - Subscriptions
-      - SubscriptionPackages
+  - name: Risk, Disputes & Fraud
+    tags:
+      - Risk
+      - Fraud Warnings
+      - Disputes
+      - Collaborations
+      - Value Lists
   - name: Financial Reporting
     tags:
       - Settlements
-      - Adjustments
-      - ServiceFees
       - Reconciliation
-      - Cashflow
-      - ExchangeRates
+      - Exchange Rates
   - name: Configuration
     tags:
       - Merchants

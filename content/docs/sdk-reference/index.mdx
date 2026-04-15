@@ -1,8 +1,396 @@
 ---
 title: SDK Reference
-description: Client and server-side SDKs.
+description: Explore the full Pay.com JavaScript SDK reference; methods, parameters, and examples for Universal, Headless, and Tokenization integrations.
 ---
 
-# SDK Reference
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
 
-Accelerate your integration by using our official SDKs available for various languages and platforms, including Node.js, Python, iOS, and Android.
+
+The Pay.com JavaScript SDK (`@pay-com/js`) is a client-side library for building secure, PCI-compliant checkout experiences. It supports three integration modes which are: Universal, Headless, and Tokenization mode. 
+Each using the same underlying package but initialized and used differently.
+
+
+## Installation
+ <Tabs items={['npm / yarn', 'CDN']}>
+    <Tab value="npm / yarn">
+        ```bash
+        npm install --save @pay-com/js
+        # or
+        yarn add @pay-com/js
+        ```
+    </Tab>
+    <Tab value="CDN">
+        ```html
+        <script type="text/javascript" src="https://js.dev.pay.com/v1"></script>
+        ```
+    </Tab>
+ </Tabs>
+
+### npm / yarn
+
+```bash
+npm install --save @pay-com/js
+# or
+yarn add @pay-com/js
+```
+
+The package includes TypeScript definitions.
+
+### CDN
+
+```html
+<script type="text/javascript" src="https://js.dev.pay.com/v1"></script>
+```
+
+> The CDN URL above targets the sandbox environment. For production use `https://js.pay.com/v1`.
+
+When loaded via CDN, the SDK is available on the global `window` object as `window.Pay`.
+
+
+## Pay.com()
+
+Initializes the SDK and returns a `pay` instance.
+
+```ts
+const pay = await Pay.com(options)
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `identifier` | `string` | Yes | The session `id` returned from creating a payment session or tokenization session on your server. |
+| `live` | `boolean` | No | Set to `true` to connect to the production environment and process real payments. Omit or set to `false` for sandbox. Default: `false`. |
+
+### Returns
+
+A `pay` instance. Use it to call `pay.checkout()` and `pay.authentication()`.
+
+### Example
+
+```ts
+import Pay from '@pay-com/js'
+
+const pay = await Pay.com({
+  identifier: 'ps_217940156986951680',
+  live: true
+})
+```
+
+## pay.checkout()
+
+Creates a checkout instance tied to a payment session or tokenization session.
+
+```ts
+const checkout = pay.checkout(options)
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `clientSecret` | `string` | Yes | The `client_secret` returned from creating a session on your server. Authorizes the checkout on the client. |
+| `onSuccess` | `(payment: PaymentResult) => void` | No | Callback fired when the checkout flow completes successfully in the browser. |
+| `onFailure` | `(error: PaymentError) => void` | No | Callback fired when the checkout flow encounters an error. |
+
+#### `PaymentResult` object
+
+| Field | Type | Description |
+|---|---|---|
+| `amount` | `number` | The charged amount in minor units. `0` for setup sessions. |
+| `customer` | `string` | The Pay.com customer ID. |
+| `paymentMethod` | `string` | The stored payment method ID (`pm_card_xxx`). Present when `setup_future_usage` was set on the session. |
+| `status` | `string` | `"succeeded"` |
+| `transaction` | `string` | The charge ID (`chrg_xxx`) or setup session ID (`ss_xxx`). |
+
+#### `PaymentError` object
+
+| Field | Type | Description |
+|---|---|---|
+| `message` | `string` | A human-readable description of the failure reason. |
+
+### Returns
+
+A `checkout` instance. Use it to render the payment form and submit payments.
+
+### Example
+
+```ts
+const checkout = pay.checkout({
+  clientSecret: 'eyJ0eXAiOiJKV1Q...',
+  onSuccess: (payment) => {
+    console.log('Payment succeeded:', payment.transaction)
+  },
+  onFailure: (error) => {
+    console.log('Payment failed:', error.message)
+  },
+})
+```
+
+## checkout.universal()
+
+Renders the hosted Pay.com checkout form inside a container element on your page. Includes card fields, wallet buttons, saved payment methods, APM buttons, and a submit button.
+
+```ts
+checkout.universal(options)
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `container` | `string` | Yes | A CSS selector string pointing to the DOM element where the form will be rendered. Example: `'#paycom_checkout'`. |
+| `toggles.submitButton` | `boolean` | No | Set to `false` to hide the built-in submit button and use your own. Default: `true`. |
+| `customization` | `CheckoutCustomization` | No | A style override object for customizing the visual appearance of the form. See the [Universal Component customization guide](#). |
+
+### Example — basic render
+
+```jsx
+checkout.universal({
+  container: '#paycom_checkout'
+})
+```
+
+### Example — custom submit button
+
+```js
+checkout.universal({
+  container: '#paycom_checkout',
+  toggles: { submitButton: false }
+})
+
+// Wire up your own button:
+document.getElementById('pay-btn').addEventListener('click', async () => {
+  const { valid, invalidFields } = await checkout.validate()
+  if (valid) {
+    await checkout.submit()
+  } else {
+    console.log('Invalid fields:', invalidFields)
+  }
+})
+```
+
+## checkout.headless()
+
+Submits a payment using card data or wallet/APM trigger collected from your own UI. Does not render any UI itself.
+
+```ts
+await checkout.headless(type, data?)
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `type` | `string` | Yes | The payment method type. See supported values below. |
+| `data` | `object` | Conditional | Required for `card` and `ideal`. Not required for wallet and redirect methods. |
+
+#### Supported `type` values
+
+| Value | Description | `data` required |
+|---|---|---|
+| `'card'` | Credit or debit card | Yes |
+| `'applepay'` | Apple Pay | No |
+| `'googlepay'` | Google Pay | No |
+| `'ideal'` | iDEAL bank redirect | Yes — `{ bic: string }` |
+| `'giropay'` | GiroPay bank redirect | No |
+
+#### Card `data` object
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `number` | `string` | Yes | Card number, no spaces or dashes. |
+| `cvv` | `string` | Yes | Card security code. |
+| `expirationMonth` | `string` | Yes | Two-digit month, e.g. `'12'`. |
+| `expirationYear` | `string` | Yes | Two-digit year, e.g. `'28'`. |
+| `name` | `string` | Yes | Cardholder name as it appears on the card. |
+
+### Returns
+
+For `card` type with a **tokenization session**: returns a token object.
+
+```json
+{
+  "token": {
+    "id": "tok_card_685104577720095744"
+  },
+  "type": "token"
+}
+```
+
+For **payment sessions**: the result is delivered via the `onSuccess` / `onFailure` callbacks registered on `pay.checkout()`.
+
+### Examples
+
+```js
+// Card payment
+await checkout.headless('card', {
+  number: '4111111111111111',
+  cvv: '123',
+  expirationMonth: '12',
+  expirationYear: '28',
+  name: 'Jane Smith',
+})
+
+// Apple Pay
+await checkout.headless('applepay')
+
+// iDEAL
+await checkout.headless('ideal', { bic: 'SNSBNL2A' })
+```
+
+
+## checkout.validate()
+
+Validates the current state of the Universal Component form fields without submitting. Use this before calling `checkout.submit()` when using a custom submit button.
+
+```ts
+const result = await checkout.validate()
+```
+
+### Returns
+
+| Field | Type | Description |
+|---|---|---|
+| `valid` | `boolean` | `true` if all required fields pass validation. |
+| `invalidFields` | `string[]` | An array of field names that failed validation. Empty when `valid` is `true`. |
+
+### Example
+
+```js
+const { valid, invalidFields } = await checkout.validate()
+
+if (valid) {
+  await checkout.submit()
+} else {
+  console.log('Fix these fields:', invalidFields)
+}
+```
+
+## checkout.submit()
+
+Programmatically submits the Universal Component form. Call this after a successful `checkout.validate()` when using a custom submit button (`toggles: { submitButton: false }`).
+
+```ts
+await checkout.submit()
+```
+
+### Throws
+
+Throws an error if authorization fails. Catch it to display a failure message.
+
+```js
+try {
+  await checkout.submit()
+} catch (e) {
+  console.log('Authorization failed:', e.message)
+}
+```
+
+## checkout.canMakePayments()
+
+Checks whether Apple Pay or Google Pay are available in the current browser. Use this before rendering wallet buttons in your Headless SDK UI.
+
+```ts
+const result = await checkout.canMakePayments()
+```
+
+### Returns
+
+```ts
+{
+  applepay: boolean,
+  googlepay: boolean
+}
+```
+
+### Example
+
+```js
+const canPay = await checkout.canMakePayments()
+
+if (canPay.applepay) {
+  // show Apple Pay button
+}
+if (canPay.googlepay) {
+  // show Google Pay button
+}
+```
+
+
+## pay.authentication()
+
+Renders the 3DS bank challenge in a modal overlay when a charge, hold, or payment method returns `requires_authentication`. The customer completes the verification without leaving your page.
+
+```ts
+await pay.authentication(options)
+```
+
+> **Note:** This method is currently in Beta.
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `clientSecret` | `string` | Yes | The `client_secret` from the linked authentication session created on your server. |
+
+### Behavior
+
+Displays the bank challenge modal and resolves once the verification is complete — whether the customer passed or failed. After it resolves, confirm the original transaction from your server using the appropriate `/confirm` endpoint.
+
+### Example
+
+```js
+// After receiving requires_authentication from a charge/hold/payment method:
+const authSession = await createLinkedAuthSession(resourceId)
+
+await pay.authentication({
+  clientSecret: authSession.client_secret
+})
+
+// Now confirm the transaction from your server:
+await confirmTransaction(resourceId)
+```
+
+## Events and callbacks
+
+The SDK communicates results through two callbacks registered on `pay.checkout()`.
+
+### onSuccess
+
+Fires when the checkout flow completes successfully in the browser. This is a frontend-only event — the customer's browser must remain open for it to fire. Always confirm payments on your backend using webhooks.
+
+Common uses:
+- Redirecting the customer to a confirmation page
+- Updating the UI to show a success state
+- Displaying an order summary
+
+### onFailure
+
+Fires when the checkout flow encounters an error in the browser, including card declines and authentication failures.
+
+Common uses:
+- Displaying `error.message` to the customer with a clear reason
+- Offering the customer an opportunity to retry with a different card
+
+
+
+## Environments
+
+| Environment | API base URL | SDK CDN URL | `live` flag |
+|---|---|---|---|
+| Sandbox | `https://api.sandbox.pay.com` | `https://js.dev.pay.com/v1` | `false` (default) |
+| Production | `https://api.pay.com` | `https://js.pay.com/v1` | `true` |
+
+The SDK defaults to sandbox mode. Set `live: true` in `Pay.com()` to switch to production.
+
+## TypeScript support
+
+The SDK package includes TypeScript definitions. Import types directly from `@pay-com/js`:
+
+```ts
+import type { CheckoutCustomization } from '@pay-com/js'
+```
+

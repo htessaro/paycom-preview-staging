@@ -1,0 +1,132 @@
+---
+title: Payment rules
+description: Block charges or enforce 3D Secure before a transaction
+  reaches the card network based on conditions you define.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+Payment rules are configurable conditions that automatically block,
+authenticate, or flag charges before authorization. When a charge matches
+a rule's conditions, Pay.com applies the configured action before the charge
+reaches the card network. The result is visible in the immediate API response under
+`risk_assessment_details`.
+
+## Actions
+
+Each payment rule applies one action when its conditions are met:
+
+| Action | What happens |
+| :--- | :--- |
+| Block | The charge is declined before reaching the card network. The API returns an error with `decline_code: "fraud"`. |
+| Require 3DS | Pay.com authenticates the customer using 3D Secure before authorization proceeds. |
+| 3DS challenge | Pay.com forces an interactive browser challenge step, even if the card issuer would otherwise allow frictionless authentication. |
+| 3DS exemption | Pay.com applies an SCA exemption flag to skip 3D Secure for the transaction. |
+| 3DS not required | Pay.com skips 3D Secure without applying an exemption flag. |
+
+## Conditions
+
+Payment rules evaluate fields available on incoming charges. You define
+conditions in the dashboard when creating a rule. For the complete list of
+available condition fields and operators, see [Rule conditions and
+operators](/docs/risk-disputes-fraud/rules/rule-conditions).
+
+<Callout type="warn">
+`billing_details.phone` is not stored by the charge API. Values sent in
+that field are discarded silently, so any rule condition based on phone
+number will never match.
+</Callout>
+
+## Simulation mode
+
+Before making a rule live, you can enable simulation mode. In simulation
+mode, Pay.com evaluates charges against the rule and logs matches in the
+**Performance** tab, but does not apply the action. Charges proceed as if
+no rule exists.
+
+Simulation mode is useful when:
+
+- You want to confirm the rule conditions are set up correctly.
+- You're releasing a new rule and want to see how it affects your traffic
+  before making it live.
+- The rule applies a blocking action and you want to verify it won't
+  reject legitimate charges.
+
+<Callout type="info">
+Simulation mode is only available for payment rules. Review rules don't
+have a simulation mode because they don't block or change the charge
+outcome.
+</Callout>
+
+## The payment rules page
+
+Go to **Rules → Payment** in the Pay.com dashboard to access payment rules.
+The page has three tabs:
+
+- **Rules**: lists all your payment rules. Each rule shows its current state
+(**Enabled** or **Disabled**). From here you can toggle a rule on or off, or
+use the action menu to view, edit, duplicate, or delete it.
+
+- **Performance**: shows a table of all transactions that matched an enabled
+rule. Each row includes the action applied, the result, whether simulation
+mode was on (a **Yes** value means the rule matched but did not apply the
+action), the rule name, and the rule ID.
+
+- **All Blocked Customers to Review**: lists all transactions that were
+blocked by a payment rule.
+
+## Create a payment rule
+
+<Steps>
+<Step>
+### Open the rule builder
+
+In **Rules → Payment**, click **+ Create new rule**.
+
+Give the rule a descriptive name so you can identify it later.
+</Step>
+
+<Step>
+### Configure the logic
+
+Define the conditions the rule evaluates on each charge. For each condition,
+choose a **Field**, an **Operator**, and a **Value**.
+
+You can combine multiple conditions using **AND** (all conditions must be
+true) or **OR** (any condition must be true).
+
+To match against a set of values, choose the **is in list** operator and
+select a [risk list](/docs/risk-disputes-fraud/rules/risk-lists) you've
+already created.
+</Step>
+
+<Step>
+### Choose an action
+
+Select the action Pay.com takes when a charge matches. See
+[Actions](#actions) for the full list.
+
+For any 3DS-related action, make sure the charge request includes
+`authentication_context` with browser details inside the `card` object.
+Without it, the 3DS flow can't complete.
+</Step>
+
+<Step>
+### Save the rule
+
+To run the rule in simulation mode before it goes live, check the
+**Simulation** checkbox.
+
+Click **Confirm & Save Rule**. The rule is enabled immediately.
+</Step>
+</Steps>
+
+## Next steps
+
+- [Review rules](/docs/risk-disputes-fraud/rules/review-rules): flag
+  transactions or customers for manual review after authorization.
+- [Risk lists](/docs/risk-disputes-fraud/rules/risk-lists): create named
+  collections of values to use in rule conditions.
+- [Test your rules](/docs/risk-disputes-fraud/rules/test-rules): verify that
+  payment rules fire correctly using test charges.

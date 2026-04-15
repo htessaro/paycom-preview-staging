@@ -1,0 +1,237 @@
+---
+title: Specific payment method page guide
+description: Structure and content requirements for individual payment method
+  pages, such as PayPal, Apple Pay, or SEPA Direct Debit.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+This guide defines the structure and content requirements for **specific
+payment method pages** — pages that document a single, named payment method
+such as PayPal, Apple Pay, Klarna, or SEPA Direct Debit.
+
+Each specific page lives under its parent category page and serves as the
+complete reference a developer needs to go from zero to a working integration.
+It answers five questions:
+
+1. What is this method and who is it for?
+2. What are its constraints?
+3. How do I configure it?
+4. How do I integrate it?
+5. What do I need to handle after payment?
+
+Fields marked `{{like_this}}` are candidates for database-driven rendering.
+Fields marked `[[like_this]]` are editorial and must be written by hand.
+
+---
+
+## Section ordering
+
+| # | Section | Required | Condition |
+|---|---|---|---|
+| 1 | Page title and description | Always | — |
+| 2 | At-a-glance properties | Always | — |
+| 3 | How it works | Always | — |
+| 4 | Before you begin | Always | — |
+| 5a | Dashboard configuration | Conditional | Include unless zero dashboard config needed |
+| 5b | Session parameters | Always | — |
+| 6 | Integration paths | Always | One sub-section per supported path |
+| 6a | Hosted Checkout | Conditional | Only if supported |
+| 6b | Drop-in UI | Conditional | Only if supported |
+| 6c | Web SDK | Conditional | Only if supported |
+| 6d | iOS SDK | Conditional | Only if supported |
+| 6e | Android SDK | Conditional | Only if supported |
+| 6f | REST API | Conditional | Only if supported |
+| 7 | Testing | Always | — |
+| 8 | Handling payment events | Always | — |
+| 9 | Refunds | Conditional | Include if refunds are supported |
+| 10 | Disputes | Conditional | Include if disputes are applicable |
+| 11 | Recurring payments | Conditional | Include if any form of recurring is supported |
+| 12 | Frequently asked questions | Conditional | Include only if 2+ genuine questions exist |
+
+---
+
+## 1. Page title and description
+
+<Callout type="info">Always include.</Callout>
+
+The H1 title is the exact, official name of the payment method as the provider
+uses it. Match capitalization precisely: `PayPal`, `Apple Pay`, `iDEAL`,
+`Klarna`.
+
+Below the title, write two to three sentences covering:
+
+- What the method is (one sentence, plain language)
+- Who uses it and where it is most common (one sentence)
+- The primary reason a merchant would enable it (one sentence)
+
+This is not marketing copy. It is orientation. A developer who has never heard
+of this method should be able to read this block and know whether it is
+relevant to them.
+
+---
+
+## 2. At-a-glance properties
+
+<Callout type="info">Always include. Place directly after the description.</Callout>
+
+A developer must be able to check the operational constraints of a payment
+method before writing a single line of code. This table answers those
+questions upfront.
+
+Present as a two-column table. Every row must be filled in. Use
+`Not supported` rather than leaving a cell empty. Use footnotes for nuance
+rather than cramming conditions into a cell.
+
+| Property | Guidance |
+|---|---|
+| **Payment type** | One of: Redirect, In-page, Native app, QR code, Bank push. If the method supports more than one, list them. |
+| **Merchant countries** | ISO 3166-1 alpha-2 codes for countries where the Pay.com merchant account must be located. |
+| **Customer countries** | Countries where the end customer must be located to use this method. |
+| **Currencies** | ISO 4217 codes for all supported currencies. |
+| **Transaction minimum** | Minimum payment amount in the method's primary currency. |
+| **Transaction maximum** | Maximum payment amount, or `No limit`. |
+| **Payment confirmation** | Immediate / Delayed (state the typical delay) / Asynchronous |
+| **Settlement timing** | How long until funds settle to the merchant. |
+| **Refunds** | Full and partial / Full only / Not supported |
+| **Disputes** | Supported / Not supported. If supported, state the window. |
+| **Recurring payments** | Supported / Not supported / Partial — see Recurring section |
+| **Vaulting / saved credentials** | Whether the method supports saving for future use. |
+| **3DS / SCA** | Required / Handled automatically by Pay.com / Not applicable |
+| **Redirect required** | Yes / No. If yes, note whether it is a full-page redirect or a popup. |
+
+---
+
+## 3. How it works
+
+<Callout type="info">Always include.</Callout>
+
+Describe the end-to-end payment flow as experienced by the customer. This
+section builds the mental model the developer needs before reading any
+integration code. Describe the flow from the customer's
+perspective. Follow these rules:
+
+- Write from the customer's point of view, not the API's
+- Each step is one action or event, not a paragraph
+- If the flow branches (for example, success versus failure), describe the
+  primary success path and handle branches in a separate callout
+- Name the specific UI moment where the customer interacts (for example,
+  "The customer taps the Face ID prompt" not "Authentication occurs")
+
+After the steps, add one sentence about the payment state after completion:
+is the payment immediately captured, or does it enter a pending state that
+the merchant must handle?
+
+Include a flow diagram if the flow involves a redirect or a multi-party
+interaction. A Mermaid diagram is sufficient in the initial version.
+
+---
+
+## 4. Before you begin
+
+<Callout type="info">Always include.</Callout>
+
+List everything the developer must have in place before starting the
+integration. Group into two categories:
+
+**Account prerequisites:** Things that must be set up in the Pay.com
+dashboard or with the payment method provider before any code is written.
+
+**Technical prerequisites:** SDK versions, API versions, or platform
+requirements.
+
+State explicitly whether the developer needs a separate account with the
+payment method provider (for example, a PayPal merchant account, an Apple
+developer account) or whether Pay.com handles the relationship. This is a
+common source of confusion.
+
+---
+
+## 5. Configuration
+
+Covers dashboard setup and the session-level parameters that must be passed
+when creating a payment.
+
+<Callout type="info">Always include.</Callout>
+
+
+---
+
+## 6. Integration paths
+
+
+Contains the code the developer needs to render and handle this payment method.
+Include one sub-section for each integration path that Pay.com supports for
+this method.
+
+<Callout type="info">Always include.</Callout>
+
+
+---
+
+## 7. Testing
+
+<Callout type="info">Always include.</Callout>
+
+Tells the developer how to test this integration.
+
+Present as a table with three columns: scenario, test value
+or action, and expected result. Cover at minimum: a successful payment, a
+failed payment, and a pending payment (if the method supports async
+confirmation).
+
+**Sandbox limitations:** Note any flows that can't be tested in sandbox.
+Be explicit — the developer should not discover these limitations during
+testing.
+
+---
+
+## 8. Handling payment events
+
+<Callout type="info">Always include.</Callout>
+
+Documents which webhook events this payment method emits and what the
+developer must do when each one fires.
+
+Present as a table with three columns: event name, when it fires, and
+recommended action. Include only events that are specific to this method
+or that behave differently from a standard card payment. Link to the main
+webhook reference for the full list.
+
+For asynchronous methods, the order of events matters — include a sequencing
+note.
+
+---
+
+## 9. Refunds
+
+Include when the payment method supports refunds (full or partial).
+
+Omit when refunds are not supported. 
+
+---
+
+## 10. Disputes
+
+Include when the payment method has a dispute or chargeback mechanism.
+
+Omit when disputes are not applicable. State this in the At-a-glance table.
+
+
+---
+
+## 11. Recurring payments
+
+<Callout type="info">
+Include when the method supports recurring payments, subscriptions, or stored
+credentials in any form — even partial support.
+
+Omit when recurring is fully unsupported. State this in the At-a-glance table.
+</Callout>
+
+Recurring payment behavior varies significantly between payment methods and
+is one of the most common sources of integration bugs. Be specific about
+what is and is not supported.
+
+---
+

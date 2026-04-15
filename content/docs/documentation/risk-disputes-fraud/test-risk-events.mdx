@@ -1,0 +1,342 @@
+---
+title: Test risk events
+description: Use Pay.com's simulate endpoints to trigger disputes,
+  collaborations, and fraud warnings in test mode.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+In production, disputes, collaborations, and fraud warnings are created by
+card networks and payment processors, not by you. Pay.com receives each
+event and notifies you via webhook, updating the dashboard at the same time.
+
+In sandbox, Pay.com provides simulate endpoints so you can trigger these
+events against a test charge and verify that your integration handles them
+correctly.
+
+## How simulation works
+
+Simulate endpoints are asynchronous. When you call one, the API responds
+immediately with `204 No Content` (or `200 OK` for fraud warnings). Pay.com
+then creates the risk event and delivers the corresponding webhook to your
+registered endpoint. The dashboard is updated at the same time.
+
+<Callout type="warn">
+Always verify the `pay-signature` header before processing any event.
+Review [Webhook events](/docs/payments/webhooks/webhook-events) for
+signature verification details.
+</Callout>
+
+## Before you start
+
+To run the simulate calls, you need:
+
+- A charge created in test mode. Follow the steps in
+  [Create a charge](/docs/payments/server-to-server-guides/create-a-charge)
+  to get a `chrg_...` ID.
+- A webhook endpoint registered in Pay.com. Read
+  [Webhooks](/docs/payments/webhooks) for instructions on how to configure
+  an endpoint, then subscribe to the events you want to test.
+
+## Simulate a dispute
+
+Use the [Simulate dispute](/api-reference/disputes/simulate-dispute)
+endpoint to create a test dispute on an existing charge. The request body
+is optional. When omitted, Pay.com creates the dispute with
+`status: "open"`. Pass a `status` field to simulate a specific dispute
+state directly. For all supported status values, refer to the
+[Simulate dispute](/api-reference/disputes/simulate-dispute) API reference.
+
+<Tabs items={['open', 'won', 'lost']}>
+<Tab value="open">
+```json
+POST /charges/chrg_692434850019280896/simulate/dispute
+
+{}
+```
+
+Returns `204 No Content`. Pay.com creates a dispute with `status: "open"`
+and delivers a `dispute.open` webhook to your endpoint.
+</Tab>
+<Tab value="won">
+```json
+POST /charges/chrg_692434850019280896/simulate/dispute
+
+{
+  "status": "won"
+}
+```
+
+Returns `204 No Content`. Use this to test the path where the issuing bank
+accepts your defense and the funds are returned.
+</Tab>
+<Tab value="lost">
+```json
+POST /charges/chrg_692434850019280896/simulate/dispute
+
+{
+  "status": "lost"
+}
+```
+
+Returns `204 No Content`. Use this to test the path where the issuing bank
+rejects your defense.
+</Tab>
+</Tabs>
+
+### Webhook payload
+
+When the dispute is created, Pay.com delivers a `dispute.open` event to
+your endpoint. The `evidence_required_by` field shows the deadline to
+submit evidence.
+
+```json
+{
+  "id": "evt_692434889852583936",
+  "resource": "event",
+  "type": "dispute.open",
+  "created": "2026-03-26T18:09:02.560Z",
+  "data": {
+    "id": "dspt_692434889303132160",
+    "resource": "dispute",
+    "amount": 5000,
+    "amount_human_readable": "50.00",
+    "arn": "80597117747",
+    "charge": "chrg_692434850019280896",
+    "chargeback_type": "chargeback",
+    "created": "2026-03-26T18:09:02.414Z",
+    "currency": "usd",
+    "evidence_required_by": "2026-04-02T00:00:00.000Z",
+    "evidences": {
+      "data": [],
+      "url": "/v1/disputes/dspt_692434889303132160/evidences"
+    },
+    "metadata": {},
+    "reason": "consumer_disputes",
+    "reason_code": "4841",
+    "status": "open",
+    "test_mode": true
+  }
+}
+```
+
+Use `data.id` (the `dspt_...` ID) to take action on the dispute. Your
+options are:
+
+- [Get the dispute](/api-reference/disputes/get-dispute-by-id) to inspect
+  its full details, including the response deadline and the linked charge.
+- [Accept the dispute](/api-reference/disputes/accept-dispute) to concede
+  the chargeback when the claim is valid or you lack evidence to defend.
+  This action is irreversible.
+- [Submit evidence](/api-reference/disputes/submit-dispute-evidence) to
+  defend the dispute. Submitting evidence moves the dispute to
+  `evidence_under_review`.
+- [Bulk defend](/api-reference/disputes/bulk-defend-disputes) to apply
+  shared evidence documents across multiple open disputes in one call.
+
+## Simulate a collaboration
+
+Use the
+[Simulate collaboration](/api-reference/collaborations/simulate-collaboration)
+endpoint to create a test collaboration alert on an existing charge. The
+`source` field controls which collaboration service is simulated. The
+`actionable_by` field sets the response deadline.
+
+<Tabs items={['Mastercard Collaboration', 'Ethoca', 'CDRN']}>
+<Tab value="Mastercard Collaboration">
+```json
+POST /charges/chrg_692357623269296128/simulate/collaboration
+
+{
+  "source": "mc_collaboration",
+  "actionable_by": "2026-04-05T10:30:00Z"
+}
+```
+
+Returns `204 No Content`.
+</Tab>
+<Tab value="Ethoca">
+```json
+POST /charges/chrg_692357623269296128/simulate/collaboration
+
+{
+  "source": "ethoca",
+  "actionable_by": "2026-04-05T10:30:00Z"
+}
+```
+
+Returns `204 No Content`.
+</Tab>
+<Tab value="CDRN">
+```json
+POST /charges/chrg_692357623269296128/simulate/collaboration
+
+{
+  "source": "cdrn",
+  "actionable_by": "2026-04-05T10:30:00Z"
+}
+```
+
+Returns `204 No Content`.
+</Tab>
+</Tabs>
+
+### Webhook payloads
+
+When the alert arrives, Pay.com delivers a `collaboration.open` event to
+your endpoint. The `actionable_by` field shows the deadline to respond.
+
+```json
+{
+  "id": "evt_692431062717956096",
+  "resource": "event",
+  "type": "collaboration.open",
+  "created": "2026-03-26T17:53:50.101Z",
+  "data": {
+    "id": "clbr_692431062306915328",
+    "resource": "collaboration",
+    "actionable_by": "2026-04-05T10:30:00.000Z",
+    "amount": 9500,
+    "amount_human_readable": "95.00",
+    "charge": "chrg_692357623269296128",
+    "created": "2026-03-26T17:53:50.001Z",
+    "currency": "usd",
+    "source": "mc_collaboration",
+    "status": "open",
+    "test_mode": true
+  }
+}
+```
+
+Use `data.id` (the `clbr_...` ID) to take action on the collaboration.
+Your options are:
+
+- [Get the collaboration](/api-reference/collaborations/get-collaboration)
+  to inspect its status, amount, and remaining response window.
+- [Refund the collaboration](/api-reference/collaborations/refund-collaboration)
+  to resolve the alert before it escalates to a chargeback. After the
+  refund, Pay.com delivers a `collaboration.resolved` event:
+
+```json
+{
+  "id": "evt_692433893155931136",
+  "resource": "event",
+  "type": "collaboration.resolved",
+  "created": "2026-03-26T18:05:04.929Z",
+  "data": {
+    "id": "clbr_692431062306915328",
+    "resource": "collaboration",
+    "actionable_by": "2026-04-05T10:30:00.000Z",
+    "amount": 9500,
+    "amount_human_readable": "95.00",
+    "charge": "chrg_692357623269296128",
+    "created": "2026-03-26T17:53:50.001Z",
+    "currency": "usd",
+    "source": "mc_collaboration",
+    "status": "resolved",
+    "test_mode": true
+  }
+}
+```
+
+## Simulate a fraud warning
+
+Use the
+[Simulate fraud warning](/api-reference/fraudwarnings/simulate-fraud-warning)
+endpoint to create a test fraud warning on an existing charge. Set
+`actionable` to `true` to simulate a warning where you can still refund the
+charge. Set it to `false` to simulate a warning where the actionable window
+has already passed.
+
+This endpoint returns `200 OK` with a plain-text body of `"OK"`, not
+`204 No Content`.
+
+<Tabs items={['Non-actionable', 'Actionable']}>
+<Tab value="Non-actionable">
+```json
+POST /charges/chrg_692434592824557568/simulate/fraud_warning
+
+{
+  "type": "made_with_lost_card",
+  "input_method": "swiped",
+  "actionable": false,
+  "raw_code": "7523"
+}
+```
+
+Returns `200 OK` with body `"OK"`. The resulting warning has
+`actionable: false`, meaning no further action is possible.
+</Tab>
+<Tab value="Actionable">
+```json
+POST /charges/chrg_692434592824557568/simulate/fraud_warning
+
+{
+  "type": "made_with_stolen_card",
+  "actionable": true
+}
+```
+
+Returns `200 OK` with body `"OK"`. The resulting warning has
+`actionable: true`, meaning you can still refund the charge to prevent a
+formal chargeback.
+</Tab>
+</Tabs>
+
+For the full list of supported `type` values, refer to the
+[Simulate fraud warning](/api-reference/fraudwarnings/simulate-fraud-warning)
+API reference.
+
+### Webhook payload
+
+When the fraud warning is created, Pay.com delivers a `fraud_warning.created`
+event to your endpoint. Check `actionable` first to decide whether to issue
+a refund. When it is `true`, use `data.charge` to retrieve the transaction
+and issue a refund before a formal chargeback is filed.
+
+```json
+{
+  "id": "evt_692434631277939712",
+  "resource": "event",
+  "type": "fraud_warning.created",
+  "created": "2026-03-26T18:08:01.011Z",
+  "data": {
+    "id": "frdwrn_692434592824557568",
+    "resource": "fraud_warning",
+    "actionable": true,
+    "amount": 6000,
+    "amount_human_readable": "60.00",
+    "charge": "chrg_692434592824557568",
+    "created": "2026-03-26T18:08:00.504Z",
+    "currency": "usd",
+    "fraud_type": "made_with_stolen_card",
+    "payment_method": "pm_card_692434600374304768",
+    "payment_method_details": {
+      "card": {
+        "bin": "555555",
+        "brand": "mastercard",
+        "last4": "4444",
+        "exp_month": "12",
+        "exp_year": "2028",
+        "network": "mastercard",
+        "country": "CY"
+      },
+      "type": "card"
+    },
+    "reference": null,
+    "test_mode": true
+  }
+}
+```
+
+## Next steps
+
+- [Disputes](/docs/risk-disputes-fraud/disputes): manage the full chargeback
+  lifecycle when a dispute is filed.
+- [Collaborations](/docs/risk-disputes-fraud/collaborations): understand how
+  pre-dispute alerts work and when to refund.
+- [Fraud warnings](/docs/risk-disputes-fraud/fraud-warnings): learn how to
+  act on fraud signals before they escalate.
+- [Webhook events](/docs/payments/webhooks/webhook-events): configure
+  endpoints and verify payload signatures.
