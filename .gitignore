@@ -25,6 +25,9 @@ yarn-error.log*
 .vercel
 next-env.d.ts
 
+# sync logs
+sync-logs/
+
 # webhook capture — persisted smee.io channel URL (register once in Pay.com dashboard)
 bruno-collection/webhook-capture/.smee-url
 

@@ -4,6 +4,7 @@
     "index",
     "payment-rules",
     "review-rules",
+    "cancel-rules",
     "risk-lists",
     "rule-conditions",
     "test-rules"

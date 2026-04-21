@@ -23,6 +23,7 @@ Two rule types are available:
 | Rule type | When it runs | Available actions |
 | :--- | :--- | :--- |
 | Payment | Before authorization (pre-network) | Block, Require 3DS, 3DS challenge, 3DS exemption, 3DS not required |
+| Cancel | After authorization, before settlement | Void the hold or 3DS charge |
 | Review | After authorization (post-network) | Flag transaction for review, Flag customer for review |
 
 ## Requirements
@@ -279,6 +280,60 @@ GET /v1/charges/chrg_697560887862495232
 
 Flagged transactions and customers also appear in the Pay.com dashboard
 under **Risk Reviews**.
+
+## Cancel outcome
+
+Cancel rules fire after the card network authorizes a hold or a 3DS charge.
+The API returns an error response with `decline_code: "cancelled_by_risk"`.
+The hold object is still created with `status: "failed"`:
+
+```json
+{
+  "error": {
+    "type": "payment_method_error",
+    "code": "card_declined",
+    "decline_code": "cancelled_by_risk",
+    "message": "Test cancel rule",
+    "hold": "hld_700295976266501120",
+    "underlying_network_details": {
+      "network": "visa",
+      "visa": {
+        "auth_code": "483025"
+      }
+    }
+  }
+}
+```
+
+Retrieve the hold with the ID in `error.hold` to see the full record,
+including `risk_assessment_details`:
+
+```json
+{
+  "id": "hld_700295976266501120",
+  "status": "failed",
+  "failure_code": "cancelled_by_risk",
+  "failure_message": "Test cancel rule",
+  "risk_assessment_details": {
+    "outcome_source": "rule",
+    "rule_id": "rl_700293741725877248",
+    "flags": [],
+    "bypassed": []
+  }
+}
+```
+
+A few things to note about cancelled holds:
+
+- `underlying_network_details` is populated and includes an `auth_code`,
+  confirming the card network authorized the hold before the cancel rule
+  voided it. This is different from a blocked charge, where
+  `underlying_network_details` is `null`.
+- `risk_assessment_details` contains `outcome_source: "rule"` and the
+  `rule_id`. There is no `outcome` field.
+- Cancel rules apply to holds and to 3DS charges at the confirm step.
+  They do not fire on direct one-step charges. See
+  [Cancel rules](/docs/risk-disputes-fraud/rules/cancel-rules) for details.
 
 ## Troubleshooting
 

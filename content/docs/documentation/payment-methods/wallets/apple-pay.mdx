@@ -1,0 +1,390 @@
+---
+title: Apple Pay
+description: Let customers pay at checkout with a card saved in Apple Wallet. No card entry, no redirect.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom'
+
+Apple Pay is a digital wallet payment method that lets customers pay at checkout using a
+card saved to their Apple Wallet. It is widely used across the Americas, Europe,
+Asia-Pacific, the Middle East, and parts of Africa.
+
+Enabling Apple Pay removes card entry from checkout. Customers authenticate with Face ID,
+Touch ID, or their device passcode and pay in one step.
+
+<Callout type="info">
+  Apple Pay is available to cardholders whose banks support it in eligible countries. For more details, see Apple’s list of [participating banks](https://support.apple.com/en-us/109524).
+</Callout>
+
+## Payment method properties
+
+This table outlines the key properties and limitations of using Apple Pay, including where it is supported, how it is processed, and transaction constraints.
+
+| Property | Value |
+|---|---|
+| **Payment type** | In-page (no full-page redirect; a native sheet overlays the merchant's checkout page) |
+| **Merchant countries** | Global |
+| **Customer countries** | Global. Customer must have an Apple device with a card added to Apple Wallet. |
+| **Currencies** | All |
+| **Transaction minimum** | $0.01 |
+| **Transaction maximum** | No limit |
+| **Payment confirmation** | Immediate. The charge is authorized and captured at the moment the customer authenticates. |
+| **Settlement timing** | Next business day |
+| **Refunds** | Fully and partially supported|
+| **Disputes** | Fully supported. See [Disputes](#disputes) |
+| **Recurring payments** | Partially supported. See [Recurring payments](#recurring-payments) |
+| **Vaulting / saved credentials** | Not supported. Apple Pay generates a device-specific token per transaction |
+| **3DS / SCA** | Handled automatically. Cryptogram 3DS authentication is performed by the device at the time of payment. |
+| **Redirect required** | No. The Apple Pay sheet appears as a native overlay on the customer's device. |
+
+
+## Customer payment flow
+
+Here's how Apple Pay authorizes a payment from your checkout page:
+
+<Steps>
+<Step>
+### Checkout page rendering
+When the customer reaches the checkout page, Pay.com detects Apple Pay
+availability in their browser and renders the Apple Pay button.
+</Step>
+
+<Step>
+### Payment initiation
+The customer taps or clicks the Apple Pay button.
+</Step>
+
+<Step>
+### Sheet presentation
+An Apple Pay sheet appears, sliding up from the bottom on mobile, or as an
+overlay on desktop Safari. It displays the merchant name, order amount, and
+the customer's default Apple Wallet card.
+</Step>
+
+<Step>
+### Card selection
+The customer confirms their card or selects a different one from their wallet.
+</Step>
+
+<Step>
+### Biometric authentication
+The customer authenticates the payment using their Face ID, or their device passcode.
+</Step>
+
+<Step>
+### Payment confirmation
+The Apple Pay sheet closes and the customer sees a payment confirmation on the page.
+</Step>
+</Steps>
+
+<Callout type="info">
+If authentication fails or the customer cancels, the Apple Pay sheet dismisses without creating a charge. The customer remains on your checkout page.
+</Callout>
+
+## Apple Pay setup and integration
+
+### Before you begin
+
+Make sure the following requirements are configured:
+
+- You must have an active Pay.com merchant account with Apple Pay enabled. Contact your account manager or enable Apple Pay in the Payment methods section of your Pay.com dashboard.
+- Register and verify your domain. See [Apple's documentation on configuring your environment](https://developer.apple.com/documentation/apple_pay_on_the_web/configuring_your_environment) for instructions.
+- Apple Pay on the web requires **Safari on macOS (Sierra or later)** or **Safari on iOS (10 or later)**. It is not supported in Chrome, Firefox, or other non-Safari browsers.
+
+<Callout type="note">
+You do not need a separate Apple Merchant ID or Apple Developer account. Pay.com handles Apple merchant registration, certificate management, and validation on your behalf.
+</Callout>
+
+
+### Dashboard configuration
+
+Apple Pay is configured in your Pay.com dashboard. In some cases it may already be enabled by default, if not follow the steps below to turn it on.
+
+<Steps>
+<Step>
+#### Open account settings
+Click your profile name in the top-right corner of your
+[Pay.com dashboard](https://dashboard.pay.com) and select Settings.
+</Step>
+
+<Step>
+#### Enable Apple Pay
+Navigate to Payment methods and turn on Apple Pay.
+</Step>
+</Steps>
+
+<Callout type="info">
+If Apple Pay is not visible, contact your account
+manager to have it enabled on your account.
+</Callout>
+
+
+
+## Integration paths
+
+Pay.com supports three integration paths for Apple Pay. Choose based on how
+much control you need over the checkout experience.
+
+
+<Tabs items={['SDK', 'API']}>
+<Tab value="SDK">
+
+### Universal SDK
+
+Apple Pay renders automatically within the universal web checkout. No additional
+code is required beyond the standard SDK initialization. See the
+[Get started with the Pay.com SDK](/docs/payments/sdks/integrate-the-pay-com-sdk)
+guide for setup instructions. Use the universal SDK when you want Pay.com to handle the entire payment flow including the UI.
+
+### Headless SDK
+
+Use the Headless SDK when you want to control the user interface and let the payment logic be 
+handled automatically by Pay.com. You render your own Apple Pay button and
+control when the payment sheet appears.
+
+Apple Pay is not available in all browsers. Call `canMakePayments()` after initializing the
+checkout instance and only show the button if the result includes
+`applepay: true`.
+
+```javascript
+const canMakePaymentsResult = await checkout.canMakePayments()
+// Example result: { applepay: true, googlepay: false }
+
+if (canMakePaymentsResult.applepay) {
+  // Show your Apple Pay button
+}
+```
+
+**Trigger the payment when the customer taps the button.**
+
+```javascript
+async function handleApplePay() {
+  await checkout.headless('applepay')
+}
+```
+
+<Callout type="info">
+Apple's Human Interface Guidelines require that you use the official Apple Pay
+button style. Use the CSS property `-apple-pay-button` or Apple's
+[button guidelines](https://developer.apple.com/design/human-interface-guidelines/apple-pay)
+to render the button. Do not substitute a generic button styled to look like
+Apple Pay.
+</Callout>
+
+</Tab>
+<Tab value="API">
+
+Use the native Apple Pay SDK on your frontend to prompt the customer for payment. Once the customer authorizes, the wallet provider returns a payment object to your client-side code. Pass the token data from that object to your backend, then make your request to the `POST /v1/charges` endpoint.
+Pay.com provides two ways to send the wallet data to your backend:
+
+### Pay.com decrypts the payload
+
+Pass the raw encrypted blob returned by the [Apple Pay SDK](https://developer.apple.com/apple-pay/implementation/) directly to
+Pay.com. 
+
+Send a `POST /v1/charges` request with `source_data.type` set to `"applepay"` and pass the full encrypted object from the wallet provider. Pay.com handles decryption of the token and processing of the payment.
+
+<Callout type="info">
+This flow requires a real user payment session on an Apple device. It cannot be tested server-side in isolation, you must trigger an Apple Pay payment from Safari on a real device (or a registered test device in sandbox).
+</Callout>
+
+{/* ```json
+{
+  "amount": 10000,
+  "currency": "usd",
+  "source_data": {
+    "type": "applepay",
+    "applepay": {
+      "signature": "MIAGCSqGSIb3D...",
+      "data": "Yn7rTj0w9c2gfVj1z...",
+      "version": "EC_v1",
+      "header": {
+        "transactionId": "84393b...",
+        "ephemeralPublicKey": "MFkwEw...",
+        "publicKeyHash": "jH0Ox...="
+      }
+    },
+    "billing_details": {
+      "email": "customer@example.com",
+      "phone": "+35797123456",
+      "address": {
+        "line1": "123 Main Street",
+        "city": "San Francisco",
+        "postal_code": "94102",
+        "country": "US"
+      }
+    }
+  }
+}
+``` 
+*/}
+
+
+### You decrypt the payload
+
+Send a `POST /v1/charges` request with `source_data.type` set to `"network_token"` and provide the decrypted token details inside `source_data.network_token`. Amounts are in the smallest currency unit, so `10000` equals $100.00 USD.
+Always pass billing details from the Apple Pay response into
+`source_data.billing_details`. This improves authorization rates by giving
+the issuer address verification data.
+
+The `token`, `expiry_month`, `expiry_year`, `eci`, and `cryptogram` values come from the decrypted `paymentData` object returned by the Apple Pay authorization response on the device. Map the billing address from the Apple Pay `onpaymentauthorized` event to
+Pay.com fields as follows:
+
+| Apple Pay field | Pay.com parameters |
+|:---|:---|
+| `payment.billingContact.addressLines` | `address.line1` |
+| `payment.billingContact.locality` | `address.city` |
+| `payment.billingContact.postalCode` | `address.postal_code` |
+| `payment.billingContact.administrativeArea` | `address.state` |
+| `payment.billingContact.countryCode` | `address.country` |
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+      ```json
+{
+  "amount": 10000,
+  "currency": "usd",
+  "source_data": {
+    "type": "network_token",
+    "network_token": {
+      "token": "4242424242424242",
+      "token_type": "applepay",
+      "expiry_month": "10",
+      "expiry_year": "2028",
+      "three_ds": {
+        "eci": "05",
+        "cryptogram": "AgAAAAAAAIR8CQrXcIhbQAAAAAA="
+      }
+    },
+    "billing_details": {
+      "name": "Jane Smith",
+      "email": "jane.smith@example.com",
+      "address": {
+        "line1": "123 Main Street",
+        "city": "San Francisco",
+        "state": "CA",
+        "postal_code": "94102",
+        "country": "US"
+      }
+    }
+  },
+  "customer_reference_id": "cust-jane-smith-001",
+  "description": "Apple Pay payment for Order #99001",
+  "reference": "order-99001"
+}
+```
+  </Tab>
+
+   <Tab value="Response">
+      ```json
+{
+  "id": "chrg_687257433738839040",
+  "resource": "charge",
+  "amount": 10000,
+  "amount_human_readable": "100.00",
+  "currency": "usd",
+  "status": "succeeded",
+  "paid": false,
+  "payment_method_details": {
+    "type": "card",
+    "card": {
+      "brand": "visa",
+      "last4": "4242",
+      "exp_month": "10",
+      "exp_year": "2028",
+      "wallet": {
+        "type": "applepay"
+      }
+    }
+  },
+  "created": "2026-03-12T11:15:43.025Z",
+  "test_mode": true
+}
+```
+  </Tab>
+</Tabs>
+
+The `payment_method_details.card.wallet.type: "applepay"` field in the
+response confirms Pay.com recognized and processed the payment as an Apple
+Pay transaction.
+
+
+
+</Tab>
+</Tabs>
+
+## Testing
+
+To test Apple Pay through Pay.com checkout, use a real Apple device with a card added to Apple Wallet and your Pay.com test API keys. This lets you simulate successful payments without charging the card.
+
+| Scenario | Test action | Expected result |
+|---|---|---|
+| Successful payment | Authenticate with Face ID or Apple passcode | `status: succeeded`, `wallet.type: "applepay"` in response |
+| Customer cancels | Tap Cancel on the Apple Pay sheet | Sheet dismisses, no charge created. |
+| Unavailable in browser | Open checkout in Chrome or Firefox | Apple Pay button does not render |
+
+## Handling payment events
+
+Subscribe to the following webhook events to track Apple Pay charge outcomes. 
+
+| Webhook event | Trigger condition | Recommended action |
+|---|---|---|
+| `charge.succeeded` | The charge was authorized and captured successfully | Fulfill the order, send a confirmation email |
+| `charge.failed` | The charge was declined by the issuer or by Apple Pay | Notify the customer and prompt them to use a different card or payment method. |
+
+Because Apple Pay confirmation is immediate (synchronous), you will not 
+encounter a `charge.pending` state for standard Apple Pay transactions. The 
+`charge.succeeded` event is the only event you need to fulfill an order.
+
+<Callout type="warn">
+Always verify webhook signatures using the `Pay-Signature` header and your 
+endpoint's secret key (HMAC SHA-256) before acting on any event. See the 
+[Webhooks overview](/payments/webhooks) for verification instructions.
+</Callout>
+
+## Refunds
+
+Apple Pay charges can be refunded in full or partially. Refunds are processed
+against the underlying card, not the Apple Wallet. The customer sees the
+refund credited to the card linked to their Apple Wallet.
+
+See the [refund a charge](/payments/server-to-server-guides/refund-a-charge)
+guide for the full request format, partial refund instructions, and webhook events.
+
+## Disputes
+
+Apple Pay transactions are backed by the customer's underlying card and follow
+that card network's dispute and chargeback rules. When a cardholder contacts
+their bank to challenge a transaction, Pay.com notifies you immediately and
+updates your dashboard.
+
+### Dispute notifications
+
+When a dispute is opened, Pay.com:
+
+- Delivers a `dispute.open` webhook event to your endpoint
+- Updates the Disputes page in your dashboard
+- Shows a response deadline in the `expires_at` field
+
+You must respond before the `expires_at` deadline. If you do not, the dispute
+is automatically resolved in favor of the cardholder.
+
+### Responding to disputes
+
+You have two options when a dispute is opened:
+
+| Action | When to use it |
+| :--- | :--- |
+| **Accept** | The transaction was erroneous, the customer is entitled to a refund, or you lack sufficient evidence to defend. |
+| **Defend** | You have proof of delivery, service usage, customer communication, or the customer's agreement to your terms. |
+
+Because Apple Pay uses a device-specific token (DPAN) rather than the
+customer's real card number, dispute records in Pay.com and on your card
+network statement will reference the underlying card, not the Apple Pay
+wallet.
+
+For the full dispute lifecycle, evidence requirements, and webhook events, see
+the [disputes guide](/payments/disputes).

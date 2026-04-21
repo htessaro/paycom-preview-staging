@@ -4,6 +4,7 @@
   "icon": "Wallet",
   "pages": [
     "index",
-    "cards"
+    "cards",
+    "wallets"
   ]
 }

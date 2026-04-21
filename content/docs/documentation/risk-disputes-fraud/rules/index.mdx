@@ -5,7 +5,7 @@ description: Configure pre- and post-authorization rules to block, flag,
 ---
 
 import { Card, Cards } from 'fumadocs-ui/components/card';
-import { ShieldBan, Eye, ListChecks, BookOpen, Beaker } from 'lucide-react';
+import { ShieldBan, Eye, Ban, ListChecks, BookOpen, Beaker } from 'lucide-react';
 
 Pay.com's rules engine evaluates each charge against conditions you define
 and applies a configured action automatically. Rules run either before
@@ -26,6 +26,12 @@ Explore the guides below to set up and manage rules based on your workflow:
     title="Review rules"
     href="/docs/risk-disputes-fraud/rules/review-rules"
     description="Flag transactions or customers for manual review after authorization without blocking the payment."
+  />
+  <Card
+    icon={<Ban />}
+    title="Cancel rules"
+    href="/docs/risk-disputes-fraud/rules/cancel-rules"
+    description="Void authorized holds and 3DS charges before settlement when conditions you define are met."
   />
   <Card
     icon={<ListChecks />}

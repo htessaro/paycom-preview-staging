@@ -194,8 +194,8 @@ function ViewerPane({
   isFullscreen: boolean
   zoomPercent: number
   showHint: boolean
-  viewportRef: React.RefObject<HTMLDivElement | null>
-  wrapRef: React.RefObject<HTMLDivElement | null>
+  viewportRef: React.RefObject<HTMLDivElement>
+  wrapRef: React.RefObject<HTMLDivElement>
   onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void
   onPointerMove: (e: React.PointerEvent) => void
   onPointerUp: () => void

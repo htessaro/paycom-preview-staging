@@ -2942,6 +2942,31 @@ paths:
                 statement_descriptor_suffix:
                   type: string
                   description: Provides information about the payment that customers can see on their charge statements. Concatenated with the statement descriptor that’s set on the account during onboarding the complete statement descriptor, maximum of 22 characters for the concatenated descriptor.
+      responses:
+        ‘200’:
+          description: Returns the updated payment session object.
+          content:
+            application/json:
+              schema:
+                $ref: ‘#/components/schemas/payment-session’
+        ‘400’:
+          description: Invalid request parameters.
+          content:
+            application/json:
+              schema:
+                $ref: ‘#/components/schemas/validation-error’
+        ‘404’:
+          description: Payment session not found.
+          content:
+            application/json:
+              schema:
+                $ref: ‘#/components/schemas/not-found-error’
+        ‘500’:
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: ‘#/components/schemas/internal-server-error’
   /sessions/payment/{id}/client_details:
     get:
       summary: Retrieve Payment Session Client Details

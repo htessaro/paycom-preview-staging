@@ -1,45 +1,58 @@
-# docs
+# paycom-preview-staging
 
-This is a Next.js application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
+A password-protected preview deployment of the Pay.com documentation site, built with Next.js and Fumadocs.
 
-Run development server:
+## Syncing content from the source repo
+
+Content is not edited here directly. It is synced from the official docs repo (`/home/heitor/repositorios/docs`) using the included script.
+
+### Prerequisites
+
+- The source repo must be on the `staging` branch before running the script.
+- `rsync` must be available (pre-installed on WSL Ubuntu).
+
+### Run the sync
 
 ```bash
-npm run dev
-# or
-pnpm dev
-# or
-yarn dev
+# 1. Make sure the source repo is on staging
+git -C /home/heitor/repositorios/docs checkout staging
+
+# 2. Run the sync from the root of this repo
+./sync-from-source.sh
 ```
 
-Open http://localhost:3000 with your browser to see the result.
+The script prints a summary to the terminal and writes a full file-level log to `sync-logs/sync_YYYYMMDD_HHMMSS.log`.
 
-## Explore
+### What gets synced
 
-In the project, you can see:
+| Source path | Destination | Notes |
+|---|---|---|
+| `content/` | `content/` | All MDX and `meta.json` files |
+| `scripts/` | `scripts/` | Documentation generation script |
+| `src/` | `src/` | App code, components, lib, plugins |
+| `openapi.yaml` | `openapi.yaml` | OpenAPI spec |
+| `reorganized-openapi.yaml` | `reorganized-openapi.yaml` | Reorganized spec |
+| `package.json` | `package.json` | Dependencies |
 
-- `lib/source.ts`: Code for content source adapter, [`loader()`](https://fumadocs.dev/docs/headless/source-api) provides the interface to access your content.
-- `lib/layout.shared.tsx`: Shared options for layouts, optional but preferred to keep.
+### What is never touched
 
-| Route                     | Description                                            |
-| ------------------------- | ------------------------------------------------------ |
-| `app/(home)`              | The route group for your landing page and other pages. |
-| `app/docs`                | The documentation layout and pages.                    |
-| `app/api/search/route.ts` | The Route Handler for search.                          |
+- `src/middleware.ts` — basic auth protection for this staging deployment
+- `next.config.ts` — redirect rules specific to this repo
+- `source.config.ts`, `tsconfig.json`, `.env.local` — local configuration
+- `sync-logs/` — log files from previous syncs
 
-### Fumadocs MDX
+### Log files
 
-A `source.config.ts` config file has been included, you can customise different options like frontmatter schema.
+Each run writes a timestamped log to `sync-logs/`. The log records:
 
-Read the [Introduction](https://fumadocs.dev/docs/mdx) for further details.
+- `[NEW]` — file did not exist in destination and was created
+- `[OVERWRITTEN]` — file existed and was replaced (content differed)
+- `[SKIP]` — file not found in source, destination unchanged
 
-## Learn More
+Files with identical content are silently skipped (rsync checksum match).
 
-To learn more about Next.js and Fumadocs, take a look at the following
-resources:
+### Safety notes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js
-  features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [Fumadocs](https://fumadocs.dev) - learn about Fumadocs
+- The script aborts if the source repo is not on `staging`. Switch the branch first.
+- Re-running the script is safe — only files with changed content are transferred.
+- Files present in the destination but absent from the source are never deleted.

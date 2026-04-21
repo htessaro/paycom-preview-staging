@@ -372,7 +372,7 @@ paths:
               metadata:
                 order_id: '12345'
       responses:
-        '200':
+        '201':
           description: Returns the created payout object.
           content:
             application/json:
@@ -397,10 +397,6 @@ paths:
       tags:
         - Payouts
       parameters:
-        - $ref: '#/components/parameters/created-greater-than-or-equals'
-        - $ref: '#/components/parameters/created-greater-than'
-        - $ref: '#/components/parameters/created-less-than-or-equals'
-        - $ref: '#/components/parameters/created-less-than'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/customer-reference-id'
         - $ref: '#/components/parameters/ending-before'
@@ -468,7 +464,7 @@ paths:
   /payouts/reference/{reference_id}:
     get:
       summary: Retrieve a Payout by Reference
-      description: Retrieves the details of a Payout by reference.
+      description: Retrieves a Payout by the reference string provided at creation.
       operationId: get-payout-by-reference
       tags:
         - Payouts
@@ -6802,17 +6798,17 @@ components:
         has_more:
           type: boolean
           description: True if there are more query results.
-        payouts:
+        data:
           type: array
+          description: List of payout objects.
           items:
             $ref: '#/components/schemas/payout'
     create-payout-request:
       type: object
-      description: Request body for creating a payout.
+      description: Request body for creating a payout. At least one of destination, destination_data, payout_method, or payout_method_data must be provided.
       required:
         - amount
         - currency
-        - destination
       properties:
         amount:
           type: integer
@@ -6826,9 +6822,18 @@ components:
             - usd
         destination:
           type: string
-          description: A string attached to the resource. Often useful for displaying to users.
+          description: ID of a stored payment method to send funds to (pm_card_... or pm_us_bank_account_...). One of destination, destination_data, payout_method, or payout_method_data is required.
           examples:
             - pm_card_202779025452569600
+        destination_data:
+          type: object
+          description: Raw payment details for the payout destination (card, network token, or bank account). One of destination, destination_data, payout_method, or payout_method_data is required.
+        payout_method:
+          type: string
+          description: ID of a stored payout method. One of destination, destination_data, payout_method, or payout_method_data is required.
+        payout_method_data:
+          type: object
+          description: Raw payout method details. One of destination, destination_data, payout_method, or payout_method_data is required.
         reference:
           type: string
           description: A unique string to reference the Payout. Can be used to reconcile the object with your internal systems.

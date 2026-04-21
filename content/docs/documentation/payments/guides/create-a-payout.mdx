@@ -236,6 +236,8 @@ Raw card data passes through your servers. This method requires PCI Level 1 or S
 
 Send funds directly to an Apple Pay DPAN. The `eci` and `cryptogram` values come from the Apple Pay payment authorization response on the device.
 
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
 ```json
 {
   "amount": 10000,
@@ -268,11 +270,88 @@ Send funds directly to an Apple Pay DPAN. The `eci` and `cryptogram` values come
   "description": "Payout via Apple Pay"
 }
 ```
+      </Tab>
+      <Tab value="Response">
+```json
+{
+  "id": "po_687092350123090432",
+  "resource": "payout",
+  "amount": 10000,
+  "amount_human_readable": "100.00",
+  "billing_details": {
+    "address": {
+      "city": "San Francisco",
+      "country": "US",
+      "line1": "123 Main Street",
+      "line2": null,
+      "postal_code": "94102",
+      "state": "CA"
+    },
+    "email": "john.smith@example.com",
+    "name": "John Smith",
+    "phone": null
+  },
+  "calculated_statement_descriptor": "PAYCOM TEST",
+  "cashflow_transaction": null,
+  "created": "2026-03-12T00:19:50.000Z",
+  "currency": "usd",
+  "customer": null,
+  "customer_reference_id": null,
+  "description": "Payout via Apple Pay",
+  "failure_code": null,
+  "failure_message": null,
+  "metadata": {},
+  "payment_method": "pm_card_687092350234512128",
+  "payment_method_details": {
+    "card": {
+      "bin": "424242",
+      "brand": "visa",
+      "cardholder_currency": "usd",
+      "country": "US",
+      "exp_month": "10",
+      "exp_year": "2028",
+      "fingerprint": "bb29cee2a1d61d551ea40c8479c83710eee71d1c28417af075827f51869c6e1d",
+      "funding": "debit",
+      "last4": "4242",
+      "network": "visa",
+      "partial_approval": null,
+      "payout": "not_available",
+      "security_checks": {
+        "address_line1_check": "unchecked",
+        "address_postal_code_check": "unchecked",
+        "cvc_check": "unchecked"
+      },
+      "three_d_secure": null,
+      "token": "tok_card_687092350345634816",
+      "wallet": "apple_pay"
+    },
+    "reference": null,
+    "third_party_tokens": [],
+    "type": "card"
+  },
+  "payout_method_options": {
+    "types": []
+  },
+  "receipt": null,
+  "reference": "payout-order-003",
+  "risk_assessment_details": null,
+  "statement_descriptor_suffix": null,
+  "status": "succeeded",
+  "test_mode": true,
+  "underlying_network_details": {
+    "network": "visa_direct"
+  }
+}
+```
+      </Tab>
+    </Tabs>
   </Tab>
   <Tab value="Google Pay">
 
 Send funds directly to a Google Pay DPAN. The `eci` and `cryptogram` values come from the Google Pay payment authorization response.
 
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
 ```json
 {
   "amount": 10000,
@@ -305,20 +384,155 @@ Send funds directly to a Google Pay DPAN. The `eci` and `cryptogram` values come
   "description": "Payout via Google Pay"
 }
 ```
+      </Tab>
+      <Tab value="Response">
+```json
+{
+  "id": "po_687092480234091136",
+  "resource": "payout",
+  "amount": 10000,
+  "amount_human_readable": "100.00",
+  "billing_details": {
+    "address": {
+      "city": "San Francisco",
+      "country": "US",
+      "line1": "123 Main Street",
+      "line2": null,
+      "postal_code": "94102",
+      "state": "CA"
+    },
+    "email": "john.smith@example.com",
+    "name": "John Smith",
+    "phone": null
+  },
+  "calculated_statement_descriptor": "PAYCOM TEST",
+  "cashflow_transaction": null,
+  "created": "2026-03-12T00:20:05.000Z",
+  "currency": "usd",
+  "customer": null,
+  "customer_reference_id": null,
+  "description": "Payout via Google Pay",
+  "failure_code": null,
+  "failure_message": null,
+  "metadata": {},
+  "payment_method": "pm_card_687092480345612288",
+  "payment_method_details": {
+    "card": {
+      "bin": "424242",
+      "brand": "visa",
+      "cardholder_currency": "usd",
+      "country": "US",
+      "exp_month": "10",
+      "exp_year": "2028",
+      "fingerprint": "bb29cee2a1d61d551ea40c8479c83710eee71d1c28417af075827f51869c6e1d",
+      "funding": "debit",
+      "last4": "4242",
+      "network": "visa",
+      "partial_approval": null,
+      "payout": "not_available",
+      "security_checks": {
+        "address_line1_check": "unchecked",
+        "address_postal_code_check": "unchecked",
+        "cvc_check": "unchecked"
+      },
+      "three_d_secure": null,
+      "token": "tok_card_687092480456734720",
+      "wallet": "google_pay"
+    },
+    "reference": null,
+    "third_party_tokens": [],
+    "type": "card"
+  },
+  "payout_method_options": {
+    "types": []
+  },
+  "receipt": null,
+  "reference": "payout-order-004",
+  "risk_assessment_details": null,
+  "statement_descriptor_suffix": null,
+  "status": "succeeded",
+  "test_mode": true,
+  "underlying_network_details": {
+    "network": "visa_direct"
+  }
+}
+```
+      </Tab>
+    </Tabs>
   </Tab>
   <Tab value="Bank account (ACH)">
 
 Pass a stored `pm_us_bank_account_...` ID in the `destination` field. ACH payouts return `status: pending` immediately. The final result arrives asynchronously via webhooks.
 
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
 ```json
 {
   "amount": 10000,
   "currency": "usd",
-  "destination": "pm_us_bank_account_REPLACE_WITH_BANK_ACCOUNT_PM_ID",
+  "destination": "pm_us_bank_account_685217900123456789",
   "reference": "payout-order-005",
   "description": "Payout via ACH bank transfer"
 }
 ```
+      </Tab>
+      <Tab value="Response">
+```json
+{
+  "id": "po_687093012345678912",
+  "resource": "payout",
+  "amount": 10000,
+  "amount_human_readable": "100.00",
+  "billing_details": {
+    "address": {
+      "city": "San Francisco",
+      "country": "US",
+      "line1": "123 Main Street",
+      "line2": null,
+      "postal_code": "94102",
+      "state": "CA"
+    },
+    "email": "john.smith@example.com",
+    "name": "John Smith",
+    "phone": null
+  },
+  "calculated_statement_descriptor": "PAYCOM TEST",
+  "cashflow_transaction": null,
+  "created": "2026-03-12T00:20:20.000Z",
+  "currency": "usd",
+  "customer": null,
+  "customer_reference_id": null,
+  "description": "Payout via ACH bank transfer",
+  "failure_code": null,
+  "failure_message": null,
+  "metadata": {},
+  "payment_method": "pm_us_bank_account_685217900123456789",
+  "payment_method_details": {
+    "us_bank_account": {
+      "account_holder_type": "individual",
+      "account_type": "checking",
+      "bank_name": "Chase",
+      "last4": "6789",
+      "routing_number": "021000021"
+    },
+    "reference": null,
+    "third_party_tokens": [],
+    "type": "us_bank_account"
+  },
+  "payout_method_options": {
+    "types": []
+  },
+  "receipt": null,
+  "reference": "payout-order-005",
+  "risk_assessment_details": null,
+  "statement_descriptor_suffix": null,
+  "status": "pending",
+  "test_mode": true,
+  "underlying_network_details": null
+}
+```
+      </Tab>
+    </Tabs>
   </Tab>
 </Tabs>
 
@@ -329,7 +543,7 @@ Pass a stored `pm_us_bank_account_...` ID in the `destination` field. ACH payout
 Unlike charges, payouts may return a `pending` status depending on the destination and network. Check the `status` field in the response:
 
 * `succeeded`: The payout was approved and the funds are being sent.
-* `failed`: The payout was declined. No money moved, and `failure_code` and `failure_message` explain the reason.
+* `failed`: The payout was declined. The API returns **HTTP 400** and The `error.type`, `error.decline_code` and  `error.payment_method_details` parameters can be used to determine the reason for decline.
 * `pending`: The request was accepted but is waiting for final bank confirmation. Listen for webhooks for the final result.
 
 </Step>
@@ -348,6 +562,18 @@ Always verify webhook signatures using the `Pay-Signature` header and your endpo
 
 </Step>
 </Steps>
+
+## Testing payouts
+
+In test mode, you can trigger specific payout outcomes by setting `amount`
+to one of these magic values. Pass a stored payment method ID in the
+`destination` field, for example `pm_card_685217824846643200`.
+
+| Amount (minor units) | Outcome |
+| :--- | :--- |
+| `505` | Fails immediately. The API returns HTTP 400 with `error.type: "payment_method_error"` and `status: "failed"`. |
+| `202` | Returns `status: "pending"`, then transitions to `succeeded`. Listen for the `payout.succeeded` webhook for the final result. |
+| `303` | Returns `status: "pending"`, then transitions to `failed`. Listen for the `payout.failed` webhook for the final result. |
 
 ## Next steps
 

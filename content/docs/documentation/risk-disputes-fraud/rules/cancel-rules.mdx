@@ -1,0 +1,334 @@
+---
+title: Cancel rules
+description: Automatically void authorized transactions that meet conditions
+  you define, before the payment settles.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Cancel rules let you automatically void transactions after the card network
+authorizes them but before settlement. When a transaction matches a cancel
+rule's conditions, Pay.com voids the authorization and returns a configurable
+failure message.
+
+## How cancel rules differ from payment rules
+
+Payment rules fire before authorization, so the charge never reaches the
+card network. Cancel rules fire after authorization: the card network
+approves the funds first, then Pay.com voids the authorization.
+
+| | Payment rule (Block) | Cancel rule |
+| :--- | :--- | :--- |
+| Fires | Before the card network | After the card network authorizes |
+| `underlying_network_details` | `null` (charge never sent) | Populated (authorization occurred) |
+| `decline_code` | `fraud` | `cancelled_by_risk` |
+| Applies to | Charges, holds | Charges, holds |
+
+Use a cancel rule when the condition you want to evaluate is only meaningful
+after an authorization has been issued. Use a payment rule with the **Block**
+action if you want to prevent the charge from reaching the card network
+entirely.
+
+## When cancel rules fire
+
+Cancel rules evaluate after authorization. The exact moment depends on the
+transaction type:
+
+| Transaction type | When the cancel rule fires |
+| :--- | :--- |
+| Hold | At `POST /holds`, after the card network authorizes the hold |
+| Direct charge | At `POST /charges`, after authorization but before capture |
+| Charge with 3D Secure | At `POST /charges/{id}/confirm`, after the customer completes the 3DS challenge |
+
+For direct charges, Pay.com processes authorization and capture as two
+internal steps. The cancel rule runs between them. Neither you nor your
+customer sees this intermediate state.
+
+<Callout type="info">
+Cancel rules on direct charges depend on acquirer support. Not all acquirers
+support post-authorization voids on direct charges. Contact your Pay.com
+account team to confirm this is available for your integration.
+</Callout>
+
+<Callout type="info">
+Cancel rules do not apply to off-session charges. Charges created with
+`off_session: true` bypass the rules engine entirely.
+</Callout>
+
+## Conditions
+
+Cancel rules evaluate the same fields as payment rules. For each condition,
+choose a **Field**, an **Operator**, and a **Value**. For the complete list of
+available fields and operators, see [Rule conditions and
+operators](/docs/risk-disputes-fraud/rules/rule-conditions).
+
+## The cancel rules page
+
+Go to **Rules → Cancel** in the Pay.com dashboard to access cancel rules.
+The page has two tabs:
+
+- **Rules**: lists all your cancel rules. Each rule shows its current state
+  (**Enabled** or **Disabled**). From here you can toggle a rule on or off, or
+  use the action menu to view, edit, duplicate, or delete it.
+
+- **Performance**: shows a table of all transactions evaluated against an
+  enabled cancel rule. Each row includes the result (**Hit** when the rule
+  matched and cancelled the transaction, **Miss** when conditions were not met),
+  whether simulation mode was on, the rule name, the rule ID, and the
+  transaction resource type.
+
+## Create a cancel rule
+
+<Steps>
+<Step>
+### Open the rule builder
+
+In **Rules → Cancel**, click **+ Create new rule**.
+
+Give the rule a descriptive name so you can identify it later.
+</Step>
+
+<Step>
+### Configure the logic
+
+Define the conditions the rule evaluates on each transaction. For each
+condition, choose a **Field**, an **Operator**, and a **Value**.
+
+You can combine multiple conditions using **AND** (all conditions must be
+true) or **OR** (any condition must be true).
+
+To match against a set of values, choose the **is in list** operator and
+select a [risk list](/docs/risk-disputes-fraud/rules/risk-lists) you've
+already created.
+</Step>
+
+<Step>
+### Set the failure message
+
+Enter the message returned in `failure_message` when the rule cancels a
+transaction. This message appears on the hold or charge record and is visible
+to you via the API.
+</Step>
+
+<Step>
+### Save the rule
+
+Click **Confirm & Save Rule**. The rule is enabled immediately.
+</Step>
+</Steps>
+
+## Cancel rule outcome
+
+When a cancel rule matches, the API returns an error response with
+`decline_code: "cancelled_by_risk"`. The hold or charge object is still
+created with `status: "failed"`. Retrieve it with the ID in the error
+object to inspect the full record, including `risk_assessment_details`.
+
+### Hold cancelled by a rule
+
+The examples below show a hold cancelled by a rule with condition
+`first name equals TestCancel`.
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```json
+POST /v1/holds
+
+{
+  "amount": 1000,
+  "currency": "usd",
+  "source_data": {
+    "type": "card",
+    "card": {
+      "number": "4722881088414372",
+      "expiry_month": "12",
+      "expiry_year": "2028",
+      "cvv": "123",
+      "name": "TestCancel User"
+    },
+    "billing_details": {
+      "name": "TestCancel User",
+      "email": "customer@example.com",
+      "address": {
+        "line1": "100 Test St",
+        "city": "New York",
+        "state": "NY",
+        "postal_code": "10001",
+        "country": "US"
+      }
+    }
+  },
+  "description": "Hold with cancel rule condition"
+}
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "error": {
+    "type": "payment_method_error",
+    "code": "card_declined",
+    "decline_code": "cancelled_by_risk",
+    "message": "Test cancel rule",
+    "hold": "hld_701530028785011712",
+    "payment_method": "pm_card_701530039697956864",
+    "underlying_network_details": {
+      "network": "visa",
+      "visa": {
+        "auth_code": "140541"
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+The hold object is still created. Retrieve it with the ID in `error.hold`:
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```json
+GET /v1/holds/hld_701530028785011712
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "id": "hld_701530028785011712",
+  "status": "failed",
+  "failure_code": "cancelled_by_risk",
+  "failure_message": "Test cancel rule",
+  "risk_assessment_details": {
+    "outcome_source": "rule",
+    "rule_id": "rl_700293741725877248",
+    "flags": [],
+    "bypassed": []
+  },
+  "underlying_network_details": {
+    "network": "visa",
+    "visa": {
+      "auth_code": "140541"
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+### Direct charge cancelled by a rule
+
+Direct charges behave the same way. The error body returns `error.charge`
+instead of `error.hold`, and you retrieve the cancelled record from
+[`GET /v1/charges/{charge_id}`](/api-reference/charges/get-charge).
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```json
+POST /v1/charges
+
+{
+  "amount": 1000,
+  "currency": "usd",
+  "source_data": {
+    "type": "card",
+    "card": {
+      "number": "4878223840010747",
+      "expiry_month": "12",
+      "expiry_year": "2028",
+      "cvv": "123",
+      "name": "TestCancel User"
+    },
+    "billing_details": {
+      "name": "TestCancel User",
+      "email": "customer@example.com",
+      "address": {
+        "line1": "100 Test St",
+        "city": "New York",
+        "state": "NY",
+        "postal_code": "10001",
+        "country": "US"
+      }
+    }
+  },
+  "description": "Charge with cancel rule condition"
+}
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "error": {
+    "type": "payment_method_error",
+    "code": "card_declined",
+    "decline_code": "cancelled_by_risk",
+    "message": "Test cancel rule",
+    "charge": "chrg_701530061018236928",
+    "payment_method": "pm_card_701530071929782272",
+    "underlying_network_details": {
+      "network": "visa",
+      "visa": {
+        "auth_code": "335158"
+      }
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+Retrieve the charge with the ID in `error.charge`:
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```json
+GET /v1/charges/chrg_701530061018236928
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "id": "chrg_701530061018236928",
+  "status": "failed",
+  "failure_code": "cancelled_by_risk",
+  "failure_message": "Test cancel rule",
+  "risk_assessment_details": {
+    "outcome_source": "rule",
+    "rule_id": "rl_700293741725877248",
+    "flags": [],
+    "bypassed": []
+  },
+  "underlying_network_details": {
+    "network": "visa",
+    "visa": {
+      "auth_code": "335158"
+    }
+  }
+}
+```
+</Tab>
+</Tabs>
+
+A few things to note about cancelled transactions:
+
+- `underlying_network_details` is populated and includes an `auth_code`.
+  The authorization reached the card network and was approved before the
+  cancel rule voided it.
+- `risk_assessment_details` contains `outcome_source: "rule"` and the
+  `rule_id` of the matched rule. Unlike payment rule outcomes, there is no
+  `outcome` field.
+- The hold or charge object is still created and retrievable. Use the ID in
+  `error.hold` or `error.charge` to fetch it.
+
+## Next steps
+
+- [Payment rules](/docs/risk-disputes-fraud/rules/payment-rules): block
+  charges or enforce 3DS before they reach the card network.
+- [Review rules](/docs/risk-disputes-fraud/rules/review-rules): flag
+  transactions or customers for manual review after authorization.
+- [Risk lists](/docs/risk-disputes-fraud/rules/risk-lists): create named
+  collections of values to use in rule conditions.
+- [Test your rules](/docs/risk-disputes-fraud/rules/test-rules): verify that
+  rules fire correctly using test transactions.

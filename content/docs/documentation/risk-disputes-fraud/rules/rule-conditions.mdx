@@ -20,6 +20,17 @@ table below lists the available condition fields:
 | BIN | First six digits of the card number | `source_data.card.number` (derived automatically) |
 | Card country | Issuing country of the card | `source_data.billing_details.address.country` |
 
+## Cancel rule conditions
+
+Cancel rules evaluate the same fields as payment rules, applied at
+authorization time. The table below lists the available condition fields:
+
+| Field | What the rule evaluates | Where the value comes from |
+| :--- | :--- | :--- |
+| First name | First word of the cardholder name | `source_data.billing_details.name` |
+| BIN | First six digits of the card number | `source_data.card.number` (derived automatically) |
+| Card country | Issuing country of the card | `source_data.billing_details.address.country` |
+
 ## Review rule conditions
 
 Review rules evaluate fields that are only available after authorization.
@@ -47,5 +58,7 @@ configured value:
   conditions to block charges or enforce 3DS before authorization.
 - [Review rules](/docs/risk-disputes-fraud/rules/review-rules): use
   post-authorization fields to flag transactions or customers for review.
+- [Cancel rules](/docs/risk-disputes-fraud/rules/cancel-rules): use
+  conditions to void authorized holds and 3DS charges before settlement.
 - [Risk lists](/docs/risk-disputes-fraud/rules/risk-lists): create named
   collections of values to use with the **is in list** operator.

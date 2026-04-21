@@ -22,8 +22,10 @@ confirming.
 
 | Parameter | Required | Description |
 |---|---|---|
-| `destination` | Yes (or `destination_data`) | The ID of a stored payment method to send funds to. |
-| `destination_data` | Yes (or `destination`) | Raw payment details for the payout destination (card, bank account, and so on). |
+| `destination` | Yes (or `destination_data`) | The ID of a stored payment method (`pm_card_...` or `pm_us_bank_account_...`). |
+| `destination_data` | Yes (or `destination`) | Raw payment details for the destination (card, network token, or bank account). Requires PCI-DSS for raw card data. |
+| `payout_method` | Yes (or `payout_method_data`) | The ID of a stored payout method. |
+| `payout_method_data` | Yes (or `payout_method`) | Raw payout method details. |
 | `amount` | Yes | The amount to send in the smallest currency unit. |
 | `currency` | Yes | The three-letter currency code (for example, `usd`, `eur`). |
 | `customer_reference_id` | No | Your internal customer identifier. |
@@ -102,6 +104,12 @@ Pay.com sends webhook events as a payout progresses through its lifecycle:
 | `payout.succeeded` | The payout was completed successfully. |
 | `payout.failed` | The payout failed. |
 | `payout.pending` | The payout was submitted and is awaiting a final result. |
+
+## Retrieve a payout by reference
+
+You can look up a payout by the `reference` string you provided at creation time using
+`GET /v1/payouts/reference/{reference_id}`. This is useful for reconciliation when you know
+your internal reference but not the `po_...` ID.
 
 ## Payouts vs. refunds
 
