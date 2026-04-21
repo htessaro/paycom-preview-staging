@@ -92,7 +92,7 @@ done
 
 # src/ is synced with middleware.ts excluded — that file is custom to this repo
 if [[ -d "$SRC/src" ]]; then
-  sync_path "src/" "$SRC/src/" "$DST/src/" --exclude="/middleware.ts"
+  sync_path "src/" "$SRC/src/" "$DST/src/" --exclude="/proxy.ts"
 else
   echo "  Skipping src/ (not found in source)"
   echo "[SKIP]        src/ — not found in source" >> "$LOG_FILE"
