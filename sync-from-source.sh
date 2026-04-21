@@ -90,9 +90,9 @@ for dir in content scripts; do
   fi
 done
 
-# src/ is synced with middleware.ts excluded — that file is custom to this repo
+# middleware.ts and proxy.ts are excluded — both are custom to this staging repo
 if [[ -d "$SRC/src" ]]; then
-  sync_path "src/" "$SRC/src/" "$DST/src/" --exclude="/proxy.ts"
+  sync_path "src/" "$SRC/src/" "$DST/src/" --exclude="/middleware.ts" --exclude="/proxy.ts"
 else
   echo "  Skipping src/ (not found in source)"
   echo "[SKIP]        src/ — not found in source" >> "$LOG_FILE"
