@@ -280,15 +280,22 @@ export async function OPTIONS() {
 }
 
 export async function GET() {
-  const pages = source.getPages();
+  const toolsMap = Object.fromEntries(
+    TOOLS.map((t) => [t.name, t]),
+  );
+
   return Response.json(
     {
-      name: SERVER_INFO.name,
-      version: SERVER_INFO.version,
-      protocolVersion: SERVER_INFO.protocolVersion,
-      endpoint: '/mcp',
-      totalDocs: pages.length,
-      tools: TOOLS.map((t) => t.name),
+      server: {
+        name: SERVER_INFO.name,
+        version: SERVER_INFO.version,
+        transport: 'http',
+      },
+      capabilities: {
+        tools: toolsMap,
+        resources: [],
+        prompts: [],
+      },
     },
     { headers: CORS_HEADERS },
   );
