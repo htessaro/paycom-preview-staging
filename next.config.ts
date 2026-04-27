@@ -5,6 +5,7 @@ const withMDX = createMDX();
 
 const config: NextConfig = {
   reactStrictMode: true,
+  transpilePackages: ['@writechoice/fumadocs-mcp'],
   async rewrites() {
     return [
       {
