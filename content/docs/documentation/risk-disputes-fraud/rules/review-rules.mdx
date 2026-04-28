@@ -93,24 +93,26 @@ You can enable ANI verification within the
 [Charge](/api-reference/charges/create-charge),
 [Hold](/api-reference/holds/create-hold),
 [Payment Session](/api-reference/paymentsessions/create-ps), and
-[Setup Session](/api-reference/setupsessions) flows. Pass `request_ani:
-true` and an `accepted_ani_results` array in `payment_method_options.card`:
+[Setup Session](/api-reference/setupsessions) flows. Pass `name_verification.enabled: true` 
+and an `accepted_results` array in `payment_method_options.card`:
 
 ```json
 {
   "payment_method_options": {
     "card": {
-      "request_ani": true,
-      "accepted_ani_results": ["match", "partial_match"]
+      "name_verification": {
+        "enabled": true,
+        "accepted_results": ["match", "partial_match"]
+      }
     }
   }
 }
 ```
 
-If the ANI result is not in your `accepted_ani_results` array, the
-transaction is stopped with `status: "blocked"` and `failure_code:
-"name_mismatch"`. By default, all results are accepted and no transactions
-are blocked.
+If the ANI result is not in your `accepted_results` array, the charge
+returns a `card_declined` error with `decline_code: "name_mismatch"`. By
+default, all results are accepted and no transactions are blocked.
+
 
 The possible results are listed in the table below:
 
@@ -133,7 +135,7 @@ available under `underlying_network_details`:
     "network": "visa",
     "visa": {
       "ani": {
-        "status": "01",
+        "status": "00",
         "full_name": "50",
         "first_name": "01",
         "middle_name": "01",
@@ -143,6 +145,23 @@ available under `underlying_network_details`:
   }
 }
 ```
+
+The `full_name`, `first_name`, `middle_name`, and `last_name` fields use
+the following match codes:
+
+| Code | Description |
+| :--- | :--- |
+| `01` | Match |
+| `50` | Partial Match |
+| `99` | No Match |
+
+The `status` field indicates whether the name check was performed:
+
+| Code | Description |
+| :--- | :--- |
+| `00` | Name match performed |
+| `01` | Name match not performed |
+| `02` | Name match not supported |
 
 ## The review rules page
 
@@ -201,6 +220,8 @@ Click **Confirm & Save Rule**. The rule is enabled immediately.
 
 ## Next steps
 
+- [Risk reviews](/docs/risk-disputes-fraud/risk-reviews): approve or decline
+  transactions flagged by this rule using the API.
 - [Payment rules](/docs/risk-disputes-fraud/rules/payment-rules): block
   charges or enforce 3DS before they reach the card network.
 - [Risk lists](/docs/risk-disputes-fraud/rules/risk-lists): create named

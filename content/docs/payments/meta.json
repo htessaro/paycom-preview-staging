@@ -1,0 +1,13 @@
+{
+  "title": "Payments",
+  "root": true,
+  "icon": "CreditCard",
+  "pages": [
+    "index",
+    "02-payment-lifecycle-in-pay-com",
+    "03-get-started",
+    "04-payment-concepts",
+    "05-server-to-server-guides",
+    "06-sdks"
+  ]
+}

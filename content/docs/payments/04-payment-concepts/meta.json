@@ -1,0 +1,10 @@
+{
+  "title": "Payment Concepts",
+  "pages": [
+    "01-workspace-and-settlement-accounts",
+    "02-sessions",
+    "03-charges",
+    "04-holds",
+    "05-3d-secure"
+  ]
+}

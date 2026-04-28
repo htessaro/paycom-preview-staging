@@ -2768,7 +2768,7 @@ paths:
                 order_id: '12345'
                 source: website
       responses:
-        '200':
+        '201':
           description: Returns the created payment session object.
           content:
             application/json:
@@ -4083,7 +4083,7 @@ paths:
             schema:
               $ref: '#/components/schemas/assessments-request'
       responses:
-        '200':
+        '201':
           description: Returns the assessment object.
           content:
             application/json:
@@ -4943,8 +4943,8 @@ paths:
           required: true
           schema:
             type: string
-            pattern: ^rv_\d{18,20}$
-            example: rv_296645958265997312
+            pattern: ^rvw_\d{18,20}$
+            example: rvw_699932201537505280
           description: The unique identifier of the risk review.
       responses:
         '200':
@@ -4954,14 +4954,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/risk-review'
               example:
-                id: rv_296645958265997312
-                resource: risk_review
+                id: rvw_699932201537505280
+                resource: review
                 type: transaction
                 status: pending_review
-                created: '2024-01-15T10:30:00Z'
-                merchant_id: mrch_296645958265997312
-                transaction_id: chrg_296645958265997312
-                reason: High risk score detected
+                created: '2026-04-16T10:40:40.959Z'
+                expires: '2026-04-19T10:40:40.959Z'
+                reference: chrg_699932115092898816
+                reviewer_identifier: null
+                reviewer_origin: null
+                status_reason: null
+                test_mode: true
         '400':
           description: Invalid request parameters.
           content:
@@ -4992,8 +4995,8 @@ paths:
           required: true
           schema:
             type: string
-            pattern: ^rv_\d{18,20}$
-            example: rv_296645958265997312
+            pattern: ^rvw_\d{18,20}$
+            example: rvw_699932201537505280
           description: The unique identifier of the risk review.
       requestBody:
         required: true
@@ -5037,14 +5040,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/risk-review'
               example:
-                id: rv_296645958265997312
-                resource: risk_review
+                id: rvw_699932201537505280
+                resource: review
                 type: transaction
                 status: approved
-                created: '2024-01-15T10:30:00Z'
-                merchant_id: mrch_296645958265997312
-                transaction_id: chrg_296645958265997312
-                reason: High risk score detected
+                created: '2026-04-16T10:40:40.959Z'
+                expires: '2026-04-19T10:40:40.959Z'
+                reference: chrg_699932115092898816
+                reviewer_identifier: john.doe@company.com
+                reviewer_origin: manual
+                status_reason: Customer verified via phone call
+                test_mode: true
         '400':
           description: Invalid request parameters.
           content:
@@ -5065,8 +5071,8 @@ paths:
                 $ref: '#/components/schemas/internal-server-error'
   /risk/review/reference/{reference_id}:
     get:
-      summary: Retrieve a Risk Review by Reference
-      description: Retrieves a risk review by its reference identifier.
+      summary: Retrieve Risk Reviews by Charge Reference
+      description: Retrieves risk reviews associated with a charge ID. Returns a list envelope.
       operationId: get-risk-review-by-reference
       tags:
         - Risk
@@ -5076,24 +5082,27 @@ paths:
           required: true
           schema:
             type: string
-            example: order_12345
-          description: The reference identifier associated with the risk review.
+            example: chrg_699932115092898816
+          description: The charge ID (chrg_...) to retrieve associated reviews for.
       responses:
         '200':
-          description: Returns the risk review object.
+          description: Returns a list of risk review objects for the given charge.
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/risk-review'
               example:
-                id: rv_296645958265997312
-                resource: risk_review
-                type: transaction
-                status: pending_review
-                created: '2024-01-15T10:30:00Z'
-                merchant_id: mrch_296645958265997312
-                transaction_id: chrg_296645958265997312
-                reason: High risk score detected
+                resource: reviews
+                data:
+                  - id: rvw_699932201537505280
+                    resource: review
+                    type: transaction
+                    status: pending_review
+                    created: '2026-04-16T10:40:40.959Z'
+                    expires: '2026-04-19T10:40:40.959Z'
+                    reference: chrg_699932115092898816
+                    reviewer_identifier: null
+                    reviewer_origin: null
+                    status_reason: null
+                    test_mode: true
         '400':
           description: Invalid request parameters.
           content:
@@ -8438,7 +8447,6 @@ components:
       description: Subscription interval.
       enum:
         - day
-        - week
         - month
         - year
     subscription-retries-settings:
@@ -8808,6 +8816,11 @@ components:
           type: string
           example: cust_ext_abc123
           description: A unique identifier for your customer, This should be a customer ID that identifies the customer in your system.
+        customer_email:
+          type: string
+          format: email
+          example: john.smith@example.com
+          description: Email address of the customer associated with this subscription.
         ended_at:
           type: string
           format: date-time
@@ -12061,6 +12074,7 @@ components:
               type: object
               required:
                 - id
+                - authentication_context
               properties:
                 id:
                   type: string
@@ -12071,6 +12085,7 @@ components:
               type: object
               required:
                 - id
+                - authentication_context
               properties:
                 id:
                   type: string
@@ -12854,13 +12869,13 @@ components:
         id:
           type: string
           description: Unique identifier for the Risk Review.
-          example: rv_296645958265997312
+          example: rvw_699932201537505280
         resource:
           type: string
           enum:
-            - risk_review
+            - review
           description: The resource type.
-          example: risk_review
+          example: review
         type:
           type: string
           enum:
@@ -12880,23 +12895,34 @@ components:
           type: string
           format: date-time
           description: Time at which the review was created.
-          example: '2024-01-15T10:30:00Z'
-        merchant_id:
+          example: '2026-04-16T10:40:40.959Z'
+        expires:
           type: string
-          description: The ID of the merchant associated with this review.
-          example: mrch_296645958265997312
-        transaction_id:
+          format: date-time
+          description: Time at which the review expires if not resolved.
+          example: '2026-04-19T10:40:40.959Z'
+        reference:
           type: string
-          description: The ID of the transaction being reviewed (if applicable).
-          example: chrg_296645958265997312
-        reason:
+          description: The ID of the charge being reviewed.
+          example: chrg_699932115092898816
+        reviewer_identifier:
           type: string
-          description: The reason the review was triggered.
-          example: High risk score detected
-        metadata:
-          type: object
-          description: Additional metadata about the review.
-          additionalProperties: true
+          nullable: true
+          description: Identifier of the person or system that resolved the review.
+          example: john.doe@company.com
+        reviewer_origin:
+          type: string
+          nullable: true
+          description: The source of the review decision.
+          example: manual
+        status_reason:
+          type: string
+          nullable: true
+          description: The reason provided when the review was resolved.
+          example: Customer verified via phone call
+        test_mode:
+          type: boolean
+          description: Indicates if the review is from a test environment.
       required:
         - id
         - resource

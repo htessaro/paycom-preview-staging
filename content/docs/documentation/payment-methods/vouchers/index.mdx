@@ -1,0 +1,92 @@
+---
+title: Vouchers
+description: Accept prepaid voucher payments. Customers pay with a PIN purchased at a retail outlet or online, with no card or bank account required.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+A voucher is a prepaid payment method where the customer buys the voucher with cash at a retail outlet or online, then redeems the voucher at checkout by entering a PIN. Pay.com supports prepaid voucher methods for merchants who want to reach customers without requiring the customer to provider
+card details or have a bank account.
+
+Voucher payments are prepaid and guaranteed. There are no payment reversals.
+
+## How it works
+
+When a customer selects a voucher method at checkout, they authenticate using a PIN from a physical or digital voucher they purchased in advance:
+
+1. The customer purchases a voucher at a retail point of sale or online and receives a PIN.
+2. At your checkout page, the customer selects the voucher method and clicks **Pay**.
+3. Depending on the method, either a redirect or an in-page pop-up opens on a hosted payment page where the customer enters their PIN.
+4. The voucher provider verifies the PIN and available balance in real time.
+5. On success, the payment is authorized and captured immediately. Pay.com updates the charge status and sends a webhook event to your endpoint.
+6. The customer is returned to your page with a confirmation.
+
+Voucher methods may differ in how PIN entry is presented. Some redirect the customer to a hosted page, while others open an in-page pop-up.
+
+## When to offer vouchers
+
+Vouchers are most valuable for merchants in industries where customers prefer to stay anonymous. iGaming, online gambling, video gaming, and digital content platforms see the highest demand, because their customer base leans toward users who do not want to link a card or bank account to a gaming or entertainment service.
+
+Vouchers also serve unbanked and underbanked customers, those who do not hold a credit or debit card and cannot use card-based or bank-transfer methods. Vouchers are distributed through retail outlets across many markets, which means customers can fund a voucher with cash.
+
+Because voucher payments are guaranteed and can’t be reversed, merchants in high-fraud industries benefit from the predictability of settlement. The trade-off is that vouchers do not support refunds, disputes, or recurring payments. They are one-time, prepaid transactions.
+
+Vouchers may not be the right choice for merchants who need subscription billing, stored credentials, or the ability to issue refunds. If your business model requires any of those capabilities, vouchers cannot serve as a primary payment method.
+
+## Available payment methods
+
+The following voucher methods are supported by Pay.com. Contact your account manager to confirm availability for your merchant account.
+
+| Payment method | Checkout experience | Primary markets |
+|---|---|---|
+| **Neosurf** | Redirect to a Neosurf-hosted page for PIN entry | Europe, Australia, Canada |
+| **Paysafecard** | In-page pop-up for PIN entry, no redirect | Europe, Americas, Oceania |
+
+## Key properties
+
+Voucher methods share the following operational properties. Differences between methods are noted where they apply.
+
+| Property | Value |
+|---|---|
+| **Payment confirmation** | Immediate. Voucher methods return a synchronous `succeeded` status once the PIN is accepted. |
+| **Settlement timing** | Varies by method. See individual method pages. |
+| **Refund support** | Not supported. Voucher payments are prepaid and non-refundable. |
+| **Disputes** | Not supported. Because there are no chargebacks, standard dispute workflows do not apply. |
+| **Recurring payments** | Not supported. Vouchers are single-use, one-time instruments. |
+| **3DS / SCA** | Not applicable. No card is involved. The PIN serves as the customer authenticator. |
+| **Redirect required** | Varies by method. See individual method pages. |
+| **Pay.com products supported** | Web SDK, REST API |
+
+## Regulatory and geographic considerations
+
+**Country-specific availability**
+
+Voucher method availability varies by market. Each method has its own distribution network and geographic reach. Confirm exact merchant eligibility with your Pay.com account manager before enabling a voucher method.
+
+**Strong Customer Authentication (SCA)**
+
+Voucher payments are outside the scope of PSD2 SCA requirements because no card account is involved. The PIN entered by the customer at checkout replaces card-based authentication. Pay.com does not apply 3DS processing to voucher transactions.
+
+**Compliance obligations for the merchant**
+
+Each voucher method must be explicitly enabled on your Pay.com account before it appears at checkout. Contact your account manager to make sure it has been enabled on your account. No separate merchant agreement with the voucher provider is required, as Pay.com manages the integration on your behalf.
+
+## Product compatibility
+
+| | Web SDK | REST API | Payout | Recurring payments |
+|---|---|---|---|---|
+| **Neosurf** | ✓ | ✓ | ✗ | ✗ |
+| **Paysafecard** | ✓ | ✓ | ✗ | ✗ |
+
+**Web SDK:** Both methods are supported through the universal Web SDK, which renders the voucher option automatically when the method is enabled on your account, and through the headless SDK, which lets you trigger the payment flow programmatically from your own UI.
+
+**REST API:** Both methods use a two-step API flow. First, create a charge with the voucher method type. Then create a linked authentication session to get the URL for the hosted payment page. See the individual method pages for request and response examples.
+
+**Payout and Recurring payments:** Voucher methods do not support payouts to customers or recurring charges. They are single-use, prepaid instruments.
+
+## Next steps
+
+Select a voucher method below and follow its guide to go from account setup to a working integration, including payment confirmation and testing.
+
+- [Neosurf](./neosurf): Enable Neosurf on your account, configure the redirect flow, and accept PIN-based voucher payments via the SDK or REST API.
+- [Paysafecard](./paysafecard): Enable paysafecard on your account, configure the in-page pop-up, and accept PIN-based voucher payments via the SDK or REST API.

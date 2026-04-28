@@ -1,0 +1,42 @@
+---
+title: Choose your integration
+description: Compare our API and SDK integration paths to find the right balance between customization and PCI compliance
+---
+
+Selecting the right integration is a critical decision that balances your desired level of user experience customization with your organizational PCI compliance requirements.
+
+Pay.com offers four primary integration paths to accommodate different business needs and technical capabilities.
+
+The following summary provides a high-level overview of each integration type based on technical control and security requirements:
+
+* **API (Server-to-Server):** Offers maximum customization but requires the highest level of PCI compliance.
+* **Universal SDK:** Provides a complete, pre-built UI managed by Pay.com, requiring minimal PCI compliance.
+* **Headless SDK:** Combines the security benefits of an SDK with the flexibility to build your own custom user interface.
+* **Tokenization Only SDK:** A specialized flow used strictly for capturing and storing card details for later backend processing.
+
+## Detailed integration options
+Each integration path is designed to address specific operational and security profiles.
+
+### API (Server-to-Server)
+The API integration is intended for merchants who wish to maintain total control over the checkout experience on their own servers.
+* Merchants retain full control over the user interface and payment logic.
+* High-level PCI compliance is required as sensitive card details are handled directly on the merchant's servers.
+* This path is best suited for large organizations with robust security infrastructure and complex backend requirements.
+
+### Universal SDK
+This is our most managed solution, offering the quickest path to going live.
+* Pay.com provides a pre-built UI to streamline the implementation process.
+* PCI scope is significantly reduced because Pay.com handles the collection of all sensitive data.
+* This is the ideal choice for businesses seeking a secure, "out-of-the-box" experience with minimal development effort.
+
+### Headless SDK
+The Headless SDK provides the underlying logic and security of our SDK without the pre-built user interface.
+* Merchants can build a custom UI while the SDK manages secure data transmission in the background.
+* Sensitive data never touches the merchant's servers, keeping the business out of the primary PCI scope.
+* This option serves merchants who want a bespoke checkout design without the burden of high-level compliance.
+
+### Tokenization Only SDK
+This integration focuses solely on the secure capture and storage of payment methods.
+* Customization is focused exclusively on the card capture interaction.
+* The SDK securely tokenizes card details for safe storage with minimal compliance impact.
+* This is designed for businesses that need to save customer details for recurring billing or later transactions.

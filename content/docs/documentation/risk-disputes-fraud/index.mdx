@@ -8,18 +8,55 @@ import {
   Handshake,
   AlertTriangle,
   ShieldCheck,
+  ClipboardCheck,
+  ScanSearch,
+  Fingerprint,
 } from 'lucide-react';
 
-Pay.com provides a full set of tools for managing payment risk. Use them to block
-suspicious transactions before they happen, act on early fraud signals before they
-escalate, and manage the formal chargeback process when disputes do arise.
+Pay.com's risk tools work in layers. You can score transactions before charging
+them, block or authenticate charges automatically using rules, act on early fraud
+signals before they escalate, and manage the full chargeback lifecycle when
+disputes arise. For a conceptual overview of how all tools fit together and when
+to use each one, see
+[Risk management overview](/docs/paycom-concepts/risk-management-overview).
+
+Evaluate transactions and define how Pay.com handles them:
 
 <Cards>
+  <Card
+    icon={<ScanSearch />}
+    title="Risk assessments"
+    href="/docs/risk-disputes-fraud/risk-assessments"
+    description="Score a payment before charging it and decide how to proceed based on the result."
+  />
   <Card
     icon={<ShieldCheck />}
     title="Rules"
     href="/docs/risk-disputes-fraud/rules"
-    description="Configure payment and review rules to block, flag, or authenticate charges based on conditions you define."
+    description="Configure rules to block, cancel, flag, or authenticate charges based on conditions you define."
+  />
+</Cards>
+
+Act on flagged transactions and early fraud signals:
+
+<Cards>
+  <Card
+    icon={<ClipboardCheck />}
+    title="Risk reviews"
+    href="/docs/risk-disputes-fraud/risk-reviews"
+    description="Approve or decline flagged transactions programmatically via the review API."
+  />
+  <Card
+    icon={<ClipboardCheck />}
+    title="Risk reviews"
+    href="/docs/risk-disputes-fraud/risk-reviews"
+    description="Approve or decline flagged transactions programmatically via the review API."
+  />
+  <Card
+    icon={<Fingerprint />}
+    title="Standalone 3DS authentication"
+    href="/docs/risk-disputes-fraud/standalone-3ds-authentication"
+    description="Authenticate cardholders before charging to shift fraud liability and reduce disputes."
   />
   <Card
     icon={<AlertTriangle />}
@@ -27,6 +64,11 @@ escalate, and manage the formal chargeback process when disputes do arise.
     href="/docs/risk-disputes-fraud/fraud-warnings"
     description="Monitor card network fraud reports and act on them before they escalate into formal chargebacks."
   />
+</Cards>
+
+Resolve and defend against chargebacks:
+
+<Cards>
   <Card
     icon={<Handshake />}
     title="Collaborations"

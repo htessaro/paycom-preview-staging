@@ -1,0 +1,115 @@
+---
+title: Digital Wallets
+description: Accept Apple Pay and Google Pay on your checkout page. Customers pay with one tap, with no card entry or redirect.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+A digital wallet stores a tokenized version of the customer's payment credentials and authenticates                                                                                             
+using a biometric or device passcode. Pay.com supports Apple Pay and Google Pay. When a customer selects                                                                                        
+either wallet at checkout, an in-page payment sheet appears.                                                                                                                        
+
+The wallet passes a cryptographic payment token to Pay.com instead of the underlying card number.                                                                                               
+Your integration never handles raw card credentials. Wallets reduce checkout friction most on mobile,                                                                                           
+where eliminating manual card entry reduces drop-off.   
+
+## How it works
+
+When a customer selects a wallet at checkout, the entire flow happens on your page. See how it works below:
+
+1. The customer selects Apple Pay or Google Pay at checkout.
+2. An in-page payment sheet opens. The customer does not leave your page.
+3. The customer authenticates using a biometric (Face ID, Touch ID, or fingerprint) or their device passcode.
+4. The wallet generates a cryptographic token (a network token with a transaction-specific cryptogram) and passes it to Pay.com. Your integration never receives the underlying card number.
+5. Pay.com processes the payment. Confirmation is immediate and synchronous.
+
+## When to offer digital wallets
+
+Wallets work best for merchants with mobile-heavy checkout traffic. Apple Pay and Google Pay have wide global
+adoption and provide a one-gesture checkout experience. Apple Pay is available on Apple devices (iPhone, iPad,
+and Mac with Safari); Google Pay works on Android and Chrome on any platform. Customers need at least one card
+saved to their wallet before checkout.
+
+Wallet payments collapse checkout from several steps to a single biometric gesture. Customers pay without
+typing a card number, expiry date, or CVV. The conversion benefit is most significant on mobile, where typing
+accuracy is lower and form abandonment is higher.
+
+Coverage varies by device and region. If your primary market has low wallet adoption you may add integration
+complexity without a meaningful conversion gain. Support for recurring payments and merchant-initiated charges
+is also limited. Before enabling wallets for subscriptions or saved-credential flows, confirm that the specific
+wallet supports each of the following:
+
+- Token creation for future use
+- Merchant-initiated charges without re-authentication
+- Automatic token updates when the underlying card is replaced
+
+## Available payment methods
+
+The following table summarizes each wallet's platform support, authentication method, and recurring payment capability:
+
+| Payment method | Merchant countries | Currencies | Customer countries | Transaction limits | Recurring support |
+|---|---|---|---|---|---|
+| **Apple Pay** | Global | All | Global | — | Partial |
+| **Google Pay** | Global | All | Global | — | Partial |
+
+## Key properties
+
+Both wallets share the following behavior and integration properties:
+
+| Property | Value |
+|---|---|
+| **Payment confirmation** | Immediate. Both wallets return a synchronous `succeeded` status. |
+| **Settlement timing** | Next business day |
+| **Refund support** | Full and partial |
+| **Disputes** | Supported via the standard card chargeback process. Time window is card-network-dependent. |
+| **Recurring payments** | Partial (see individual method pages) |
+| **3DS / SCA** | Handled automatically. Apple Pay and Google Pay Cryptogram 3DS authenticate at the device level; no additional 3DS challenge is triggered. Google Pay `PAN_ONLY` may trigger a challenge, which Pay.com handles via the SDK. |
+| **Redirect required** | No. Both wallets display an in-page sheet. |
+| **Pay.com products supported** | Web SDK, REST API |
+
+## Regulatory and geographic considerations
+
+Wallet payment availability and compliance requirements vary by region and configuration. Review the following considerations before going live:
+
+**Strong Customer Authentication (SCA)**
+
+Apple Pay and Google Pay using the Cryptogram 3DS credential authenticate the customer at the device level via 
+biometrics or device passcode. This satisfies the SCA requirement under PSD2 for transactions in the European 
+Economic Area. No additional 3DS challenge is required. Pay.com passes the ECI indicator and wallet cryptogram 
+directly to the issuer. For Google Pay `PAN_ONLY` transactions, which do not include device-level authentication, 
+Pay.com's Agnostic 3DS layer applies automatically when using the SDK.
+
+**Compliance obligations**
+
+Apple Pay requires domain verification before the payment sheet will load in Safari. This step is independent of your Pay.com integration. Complete it before going live.
+
+Google Pay requires you to set your gateway to `paycom` and your `gatewayMerchantId` to 
+`mrchnt_{your_merchant_id}` in your Google Pay configuration object.
+
+Both methods must be explicitly enabled in your Pay.com dashboard under **Settings → Payment Methods → 
+Add Configuration Set** before they become available at checkout. This step requires Pay.com to activate the feature on your account.
+
+## Product compatibility
+
+The following table shows which Pay.com products support wallet payments and how each integration path works:
+
+| | Web SDK | REST API | Payout | Recurring payments |
+|---|---|---|---|---|
+| **Apple Pay** | ✓ ¹ | ✓ ² | ✗ | ✗ |
+| **Google Pay** | ✓ ¹ | ✓ ² | ✗ | ✗ |
+
+¹ **Web SDK** supports two integration paths:
+- **Universal component:** Renders all activated payment methods automatically. No additional configuration required 
+beyond enabling the wallet in your dashboard.
+- **Headless SDK:** Use `checkout.headless('applepay')` or `checkout.headless('googlepay')`. Requires Apple Pay 
+merchant identifier or Google Pay merchant ID setup. See individual method pages.
+
+² **REST API:** Create a charge with `source_data.type: "network_token"` and include the wallet token payload 
+obtained from the Apple Pay or Google Pay session.
+
+## Next steps
+
+Choose the wallet you want to integrate first and follow its guide.
+
+- [Apple Pay](#): Domain registration, dashboard configuration, and SDK or REST API integration
+- [Google Pay](#): `gatewayMerchantId` setup, Cryptogram 3DS vs `PAN_ONLY`, and SDK or REST API integration

@@ -1,0 +1,14 @@
+{
+  "title": "Server-to-Server Guides",
+  "pages": [
+    "01-create-a-charge",
+    "02-create-a-charge-with-3ds",
+    "03-create-a-charge-with-a-wallet",
+    "04-verify-a-payment-method",
+    "05-hold-and-capture-funds",
+    "06-create-recurring-charges",
+    "07-cancel-a-hold",
+    "08-refund-a-charge",
+    "09-create-a-payout"
+  ]
+}

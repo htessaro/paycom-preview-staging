@@ -1,0 +1,235 @@
+---
+title: Category page guide
+description: Structure and content requirements for category-level payment
+  method pages, such as Digital Wallets or Bank Transfers.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+This guide defines the structure and content requirements for **category-level
+payment method pages** — pages that describe a type of payment method such as
+Digital Wallets, Buy Now Pay Later, Bank Transfers, or Cards.
+
+Each category page serves as the parent for all specific payment method pages
+that fall under it. It helps a merchant or developer answer three questions
+before they write any code:
+
+1. What is this type of payment method and how does it work?
+2. Is it right for my business and my customers?
+3. Which specific methods are available and how do they compare?
+
+Fields marked `{{like_this}}` are candidates for database-driven rendering.
+Fields marked `[[like_this]]` are editorial and must be written by hand.
+
+---
+
+## Section ordering
+
+Every category page follows this structure. Sections marked **Conditional**
+may be omitted only when their stated condition is not met.
+
+| # | Section | Required |
+|---|---|---|
+| 1 | Page title and description | Always |
+| 2 | How it works | Always |
+| 3 | When to offer this payment method | Always |
+| 4 | Available payment methods | Always |
+| 5 | Key properties | Always |
+| 6 | Regulatory and geographic considerations | Conditional |
+| 7 | Product compatibility | Always |
+| 8 | Next steps | Always — last section |
+
+---
+
+## 1. Page title and description
+
+<Callout type="info">Always include.</Callout>
+
+The H1 title is the plain name of the category: `Digital Wallets`,
+`Buy Now Pay Later`, `Bank Transfers`. Don't add the word "payments" unless
+it is part of the commonly used name.
+
+Below the title, write one sentence completing this thought: what the category
+is and the single strongest reason a merchant would enable it. Keep it under
+25 words. This is not a tagline — it is a factual orientation sentence.
+
+---
+
+## 2. How it works
+
+<Callout type="info">Always include.</Callout>
+
+Explain the payment flow from the customer's point of view. The developer
+needs to understand what the customer experiences before they can build a
+correct integration.
+
+Write a numbered list of 3–6 steps describing what happens from the moment
+the customer selects this payment method at checkout to the moment the
+merchant receives confirmation. Focus on customer-facing actions and system
+events, not API calls — those belong in the specific method pages.
+
+If the flow differs significantly between methods in this category (for
+example, redirect-based versus in-page), note that briefly and link to the
+relevant specific pages rather than trying to cover all variants here.
+
+**Include in this section:**
+
+- The trigger: what the customer clicks or selects
+- Any authentication or redirect step (for example, OTP, bank login, biometric)
+- Where confirmation happens and how quickly
+- Whether the payment is synchronous (instant confirmation) or asynchronous (pending state)
+
+**Do not include in this section:**
+
+- API parameters or request bodies
+- SDK method names
+- Webhook event names
+
+---
+
+## 3. When to offer this payment method
+
+<Callout type="info">Always include.</Callout>
+
+This section helps the developer decide whether to enable a payment method, or
+justify that decision to a product manager. Write 2–4 short paragraphs or a
+combination of prose and bullet list covering these four areas:
+
+**Business fit:** What types of merchants or business models benefit most from
+this category. Be specific. "Subscription businesses" or "high-AOV retail" is
+more useful than "online merchants."
+
+**Customer fit:** Which customer segments are most likely to have and prefer
+this method. Include geography where relevant.
+
+**Conversion impact:** If there is a widely accepted claim about conversion
+lift for this method (for example, wallet payments reduce checkout steps),
+include it as a general statement. Don't fabricate statistics.
+
+**When it may not be the right choice:** One short paragraph on scenarios
+where this category is less useful — for example, if it requires a redirect
+that breaks a native app flow, or if it only covers one region the merchant
+doesn't serve.
+
+---
+
+## 4. Available payment methods
+
+<Callout type="info">Always include.</Callout>
+
+This table is the primary navigation layer for the category. It lists every
+specific payment method that belongs to this category and is supported by
+Pay.com. Include enough detail per row that a developer can choose which
+method to integrate without opening every individual page.
+
+One row per payment method. Use these columns:
+
+| Column | What to put in it |
+|---|---|
+| **Payment method** | Name and logo (logo is optional in the initial version) |
+| **Merchant countries** | Comma-separated ISO 3166-1 alpha-2 codes, or "Global" if broadly available. List merchant-side countries, not customer-side. |
+| **Currencies** | ISO 4217 currency codes |
+| **Customer countries** | Where the end customer must be located to use this method |
+| **Transaction limits** | Min and max in the method's primary currency. Use "—" if no limit. |
+| **Recurring support** | Yes / No / Partial (with a footnote if Partial) |
+| **Link** | Link to the specific method page |
+
+When a category has more than 10 methods, group the table by geography or
+subcategory rather than listing all methods in a single flat table.
+
+<Callout type="info">
+This table is the highest-priority candidate for database-driven rendering.
+Each row maps to one record in the payment method database.
+</Callout>
+
+---
+
+## 5. Key properties
+
+<Callout type="info">Always include.</Callout>
+
+A scannable reference block that lets a developer quickly check the most
+important operational properties of the category as a whole, before reading
+individual method pages.
+
+Present as a two-column table. Include all of the following properties. Use
+`Varies by method` only when the variance is genuinely significant and can't
+be summarized in the cell.
+
+| Property | What to document |
+|---|---|
+| **Payment confirmation** | Immediate / Delayed / Asynchronous. Explain what "delayed" means for order fulfillment if relevant. |
+| **Settlement timing** | How long until funds reach the merchant. If it varies by method, link to the specific pages. |
+| **Refund support** | Full and partial / Full only / Not supported. If partial varies by method, note it. |
+| **Disputes** | Whether the merchant can raise or respond to disputes, and the general window. |
+| **Recurring payments** | Whether this category supports subscription or stored-credential payments. |
+| **3DS / SCA** | Whether Strong Customer Authentication applies to this category. |
+| **Redirect required** | Whether the payment flow requires the customer to leave the merchant's page. |
+| **Pay.com products supported** | Which Pay.com products work with this category (for example, Checkout, Invoicing, Subscriptions). |
+
+---
+
+## 6. Regulatory and geographic considerations
+
+<Callout type="info">
+Include when any method in this category is subject to regional regulations,
+compliance requirements, or country-specific rules. This is true for almost
+every category — err on the side of including it.
+
+Omit only when the category has no meaningful geographic or regulatory
+constraints.
+</Callout>
+
+Cover these sub-topics as applicable. Each sub-topic should be a short
+paragraph, not a bullet list — these are nuanced points that need context.
+
+**Strong Customer Authentication (SCA):** If the category is in scope for SCA
+under PSD2 (European Economic Area payments), state this clearly. Explain what
+it means in practice: does Pay.com handle 3DS automatically, or does the
+merchant need to configure something?
+
+**Country-specific restrictions:** If certain methods in the category are only
+available in specific countries, or are blocked in others, call this out at
+the category level and link to the specific method pages for full detail.
+
+**Currency and settlement regulations:** If there are local rules affecting
+how settlement works in certain markets (for example, India's RBI requirements
+or Brazil's instant payment rules), mention them briefly here.
+
+**Compliance obligations for the merchant:** If the merchant has any
+obligations beyond integrating the API (such as displaying specific logos,
+accepting specific terms of service, or submitting to an approval process),
+include that here.
+
+---
+
+## 7. Product compatibility
+
+<Callout type="info">Always include.</Callout>
+
+Answers the question "Can I use this with the Pay.com product I'm already
+using?" A merchant on Hosted Checkout needs a different answer than one using
+the API directly.
+
+Present as a table mapping the category against Pay.com's products. Use ✓ for
+supported, ✗ for unsupported, and a numbered footnote for partial support.
+
+Include these columns: Web SDK, REST API, Payout, Recurring payments.
+
+Use numbered footnotes below the table to explain partial support. For
+example: "¹ Supported only for one-time payments, not for
+`setup_future_usage`."
+
+---
+
+## 8. Next steps
+
+<Callout type="info">Always include. Always the last section on the page.</Callout>
+
+Navigation to action. After reading the category page, the developer knows
+what they want — now they need to know where to go. Write two to three
+sentences of orientation, then a structured list of links grouped by path
+type, not by payment method.
+
+If the category has a quickstart guide, link it first and label it clearly.
+Don't repeat information already on this page — this section is navigation only.

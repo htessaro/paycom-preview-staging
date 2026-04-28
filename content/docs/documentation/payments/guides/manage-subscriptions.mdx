@@ -1,0 +1,233 @@
+---
+title: Manage subscriptions
+description: Retrieve subscription status, handle failed charges, update payment
+  methods, and cancel subscriptions using the Pay.com API.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Once a subscription is active, Pay.com handles billing automatically. This
+guide covers the management operations you'll need: retrieving the current
+state, responding to failed charges, updating a customer's payment method,
+and canceling when needed.
+
+## Requirements
+
+Before you can manage subscriptions, you need:
+
+- A subscription ID (`sub_...`). Follow the
+  [create a subscription](/documentation/payments/guides/create-a-subscription)
+  guide to create one.
+- A stored payment method set up for off-session use if you plan to update
+  the billing card. See
+  [save a payment method](/documentation/payments/guides/save-a-payment-method).
+
+## Retrieve a subscription
+
+Send a `GET` request to [`/v1/subscriptions/{subscription_id}`](/docs/api-reference/subscriptions/get-subscription) to get the
+current state of a subscription:
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+    ```
+    GET /v1/subscriptions/sub_684790996696828928
+    ```
+  </Tab>
+  <Tab value="Response">
+    ```json
+    {
+      "id": "sub_684790996696828928",
+      "resource": "subscription",
+      "status": "active",
+      "customer_reference_id": "cust-john-smith-001",
+      "payment_method": "pm_card_684790996696828928",
+      "payment_method_type": "card",
+      "current_period_start": "2026-04-01T00:00:00.000Z",
+      "current_period_end": "2026-05-01T00:00:00.000Z",
+      "latest_charge": "chrg_685125114794084352",
+      "reference": "sub-john-smith-monthly-001"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+The `status` field reflects the current billing state. See
+[Subscriptions](/documentation/paycom-concepts/subscriptions) for a full
+description of each status and what causes each transition.
+
+## Handle a failed charge
+
+When a scheduled charge fails, the subscription moves to `unpaid` and Pay.com
+automatically retries based on the retry settings in the subscription package.
+Each failed attempt fires a `subscription.attempted` event. If all retries are
+used up, Pay.com ends the subscription and fires `subscription.canceled`.
+
+You can also trigger a manual retry using the existing payment method or a
+different one. The retry endpoint only accepts subscriptions in `failed` or
+`unpaid` status.
+
+<Tabs items={['Retry with existing card', 'Retry with new card']}>
+  <Tab value="Retry with existing card">
+    Send a `POST` request to [`/v1/subscriptions/{subscription_id}/retry`](/docs/api-reference/subscriptions/retry-subscription)
+    with no body or an empty JSON object (`{}`) to retry with the payment
+    method currently on the subscription:
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+        `POST /v1/subscriptions/sub_684790996696828928/retry`
+      </Tab>
+      <Tab value="Response">
+        ```json
+        {
+          "id": "sub_684790996696828928",
+          "resource": "subscription",
+          "status": "active",
+          "latest_charge": "chrg_685125114794084353"
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Tab>
+
+  <Tab value="Retry with new card">
+    Include the new `pm_card_...` ID in the body. Set
+    `update_payment_method: true` to also update the subscription's billing
+    card for all future charges. Set it to `false` to use the new card only
+    for this retry, then revert to the previous one.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+        ```json
+        {
+          "payment_method": "pm_card_685125114794084354",
+          "update_payment_method": true
+        }
+        ```
+      </Tab>
+      <Tab value="Response">
+        ```json
+        {
+          "id": "sub_684790996696828928",
+          "resource": "subscription",
+          "status": "active",
+          "payment_method": "pm_card_685125114794084354",
+          "latest_charge": "chrg_685125114794084355"
+        }
+        ```
+      </Tab>
+    </Tabs>
+
+    A successful retry returns `status: active`. A failed retry returns
+    `status: unpaid`.
+  </Tab>
+</Tabs>
+
+Subscribe to these events to automate retry and recovery logic:
+
+- `subscription.attempted`: fires for each failed retry attempt.
+- `subscription.active`: fires when a retry succeeds and the subscription
+  recovers.
+
+## Update a payment method
+
+To replace the billing card on an active subscription, send a `PATCH` request
+to [`/v1/subscriptions/{subscription_id}`](/docs/api-reference/subscriptions/patch-subscription) with the new payment method ID. The
+card must already be stored for off-session use.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+    ```json
+    {
+      "payment_method": "pm_card_685125114794084354"
+    }
+    ```
+  </Tab>
+  <Tab value="Response">
+    ```json
+    {
+      "id": "sub_684790996696828928",
+      "resource": "subscription",
+      "status": "active",
+      "payment_method": "pm_card_685125114794084354"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+See [save a payment method](/documentation/payments/guides/save-a-payment-method)
+for how to store a new card for off-session use before updating.
+
+## Cancel a subscription
+
+Canceling a subscription stops future billing without immediately ending
+access. Send a `POST` request to [`/v1/subscriptions/{subscription_id}/cancel`](/docs/api-reference/subscriptions/cancel-subscription).
+You can cancel at the end of the current billing period or on a specific
+future date.
+
+<Tabs items={['End of period', 'On a specific date']}>
+  <Tab value="End of period">
+    Send an empty body. The subscription stays `active` until the current
+    period ends, then Pay.com cancels it automatically.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+        `POST /v1/subscriptions/sub_684790996696828928/cancel`
+
+        ```json
+        {}
+        ```
+      </Tab>
+      <Tab value="Response">
+        ```json
+        {
+          "id": "sub_684790996696828928",
+          "resource": "subscription",
+          "status": "active",
+          "cancel_at_period_end": true,
+          "current_period_end": "2026-05-01T00:00:00.000Z",
+          "ended_at": null
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Tab>
+
+  <Tab value="On a specific date">
+    Include a `cancel_at` date to schedule cancellation at a specific point
+    in time, regardless of billing period boundaries.
+
+    <Tabs items={['Request', 'Response']}>
+      <Tab value="Request">
+        ```json
+        {
+          "cancel_at": "2026-06-15T00:00:00.000Z"
+        }
+        ```
+      </Tab>
+      <Tab value="Response">
+        ```json
+        {
+          "id": "sub_684790996696828928",
+          "resource": "subscription",
+          "status": "active",
+          "cancel_at": "2026-06-15T00:00:00.000Z",
+          "ended_at": null
+        }
+        ```
+      </Tab>
+    </Tabs>
+  </Tab>
+</Tabs>
+
+In both cases the subscription does not end immediately. The `ended_at` field
+is set when the cancellation actually takes effect. The `cancellation_reason`
+field records why it ended: `cancellation_requested` (manual),
+`charge_failed` (retries exhausted), `charge_disputed` (dispute action), or
+`ended` (auto-cancel interval expired).
+
+## Next steps
+
+- [Create a subscription](/documentation/payments/guides/create-a-subscription): set up a subscription package and create a subscription.
+- [Save a payment method](/documentation/payments/guides/save-a-payment-method): store a card for off-session use before updating a subscription's billing method.
+- [Subscriptions](/documentation/paycom-concepts/subscriptions): conceptual reference for subscription statuses, lifecycle, and package configuration.

@@ -1,0 +1,315 @@
+---
+title: Paysafecard
+description: Accept paysafecard prepaid payments. Customers pay with a 16-digit PIN purchased at a retail outlet, no card, bank account, or personal data required.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom'
+import paymentMethodConfig from './payment-method-config.png'
+
+Paysafecard is a prepaid cash voucher that lets customers pay online without a credit card or bank account. Customers buy a paysafecard voucher with cash at a retail point of sale or online, receive a 16-digit PIN, and enter it at checkout to pay instantly. It is widely used across Europe, particularly in DACH markets, and is popular in iGaming, video gaming, and digital content verticals.
+
+Enabling paysafecard gives your checkout access to customers who prefer cash-backed payments, do not hold a card, or want to keep their banking information private. Every transaction is prepaid and guaranteed — there are no chargebacks.
+
+<Callout type="info">
+Paysafecard is issued by Paysafe Prepaid Services Limited (regulated by the Central Bank of Ireland) in the EEA, and by Prepaid Services Company Limited (regulated by the FCA, FRN 900021) in the UK.
+</Callout>
+
+## Payment method properties
+
+| Property | Value |
+|---|---|
+| **Payment type** | Paysafe-hosted pop-up for PIN entry |
+| **Merchant countries** | Global |
+| **Customer countries** | Argentina, Australia, Austria, Belgium, Brazil, Canada, Croatia, Cyprus, Czechia, Denmark, Finland, France, Georgia, Germany, Gibraltar, Greece, Hungary, Ireland, Italy, Liechtenstein, Lithuania, Luxembourg, Malta, Mexico, Netherlands, New Zealand, Norway, Poland, Portugal, Romania, Slovakia, Slovenia, Spain, Sweden, Switzerland, UK, Uruguay |
+| **Processing currencies** | ARS, AUD, BRL, CAD, CHF, CZK, DKK, EUR, GBP, HUF, INR, MXN, NOK, NZD, PLN, RON, SEK, TRY, USD, ZAR |
+| **Settlement currencies** | AUD, BRL, CAD, CHF, CZK, DKK, EUR, GBP, HUF, MXN, NOK, NZD, PLN, RON, SEK, TRY, USD, ZAR |
+| **Transaction minimum** | [[PLACEHOLDER — confirm with Pay.com]] |
+| **Transaction maximum** | [[PLACEHOLDER — confirm with Pay.com]] |
+| **Payment confirmation** | Immediate |
+| **Settlement timing** | [[PLACEHOLDER — confirm with Pay.com]] |
+| **Refunds** | Not supported |
+| **Disputes** | Not supported |
+| **Recurring payments** | Not supported |
+| **Vaulting / saved credentials** | Not supported |
+| **3DS / SCA** | Not supported. No card is involved; the PIN is the authenticator |
+| **Redirect required** | No — PIN entry takes place in a Paysafe-hosted pop-up on your checkout page |
+
+## Customer payment flow
+
+When a customer selects paysafecard at checkout, Pay.com opens a Paysafe-hosted pop-up where the customer enters their voucher PIN. No card or bank information is required.
+
+<Steps>
+<Step>
+### Select paysafecard
+The customer selects paysafecard on your checkout page and clicks or taps to proceed.
+</Step>
+
+<Step>
+### Enter the PIN
+A Paysafe-hosted pop-up opens. The customer types their 16-digit PIN from their physical or digital voucher, or logs in to their my paysafecard account to use a stored balance. The my paysafecard account is a digital wallet that lets customers pool the balance of multiple vouchers and pay amounts that exceed the value of a single PIN.
+</Step>
+
+<Step>
+### Instant verification
+Paysafe verifies the PIN and available balance in real time. If the voucher has sufficient funds, the payment is authorized immediately. If the PIN is invalid, expired, or has insufficient balance, the pop-up returns an error and the customer remains on your checkout page. No charge is created. The customer can re-enter a different PIN.
+</Step>
+
+<Step>
+### Payment complete
+The pop-up closes and the customer sees a confirmation on your checkout page. After the payment completes, the charge is immediately captured. There is no separate authorization-and-capture step.
+
+<Callout type="warn">
+If the customer closes the pop-up without completing payment, the charge remains in `pending` status until the session expires, at which point it moves to `failed` and a `charge.failed` webhook event is sent to your endpoint. Do not fulfill the order until you receive a `charge.succeeded` event.
+</Callout>
+</Step>
+</Steps>
+
+## Before you begin
+
+**Account prerequisites:**
+
+- You must have an active Pay.com merchant account with paysafecard enabled. Contact your account manager or enable paysafecard in the Payment methods section of your Pay.com dashboard.
+- You do not need a separate paysafecard or Paysafe merchant account. Pay.com manages the paysafecard integration on your behalf.
+
+**Technical prerequisites:**
+
+- No additional SDK or library is required beyond the standard Pay.com integration.
+- The paysafecard PIN entry pop-up is served by Paysafe's servers. Ensure your Content Security Policy allows `*.paysafecard.com` as a `frame-src` directive value.
+
+## Configuration
+Before you can accept paysafecard payments, the payment method must be enabled on your Pay.com account and made visible at checkout. The following sections walk you through enabling paysafecard from your Pay.com dashboard.
+
+### Dashboard configuration
+
+paysafecard is enabled on your account by your account manager and should already be visible in your dashboard. Follow the steps below to select or deselect paysafecard as an active payment method at checkout.
+
+<Callout type="info">
+If you cannot see paysafecard in your dashboard, contact your account manager to have it enabled on your account before continuing with the steps below.
+</Callout>
+
+<Steps>
+<Step>
+#### Open your account settings
+Click your profile name in the top-right corner of your [Pay.com dashboard](https://dashboard.pay.com) and select **Settings**.
+</Step>
+
+<Step>
+#### Navigate to payment methods configuration
+In the settings menu, go to **Payment methods configuration**.
+</Step>
+
+<Step>
+#### Open the default configuration
+Select the **Default configuration** step. You will see all the payment methods currently configured on your account and visible to your customers at checkout.
+</Step>
+
+<Step>
+#### Enter edit mode
+Click the **Edit** button in the top-right corner of the page to modify the configuration.
+</Step>
+
+<Step>
+#### Enable paysafecard at checkout
+In the **Payment method types** section, click **Select payment methods**. Toggle paysafecard on to make it available at checkout, or toggle it off to hide it from your customers.
+</Step>
+</Steps>
+
+<ImageZoom src={paymentMethodConfig} alt="Payment methods configuration in the Pay.com dashboard" />
+
+### Session parameters
+
+This section applies to the **SDK integration path only**. If you are using
+the API path, skip to [Integration paths](#integration-paths), no payment
+session is required.
+
+For the SDK, create a payment session on your server before loading the SDK.
+Include `"paysafecard"` in the `payment_method_types` array to make it
+available at checkout.
+
+```json
+{
+  "amount": 1000,
+  "currency": "eur",
+  "payment_method_types": ["card", "paysafecard"]
+}
+```
+
+Pass the `client_secret` and `id` from the response to your front-end to initialize
+the SDK. Pay.com renders the paysafecard option automatically once the session
+is loaded.
+
+## Integration paths
+
+<Tabs items={['SDK', 'API']}>
+<Tab value="SDK">
+
+### Universal SDK
+
+paysafecard renders automatically within the universal web checkout when it is included in the `payment_method_types` array of your payment session. No additional code is required beyond the standard SDK initialization. See the [Get started with the Pay.com SDK](/docs/payments/sdks/integrate-the-pay-com-sdk) guide for setup instructions.
+
+### Headless SDK
+
+Use the Headless SDK when you want to control the user interface and trigger the paysafecard pop-up programmatically.
+
+Check whether paysafecard is available for the current session after initializing the checkout instance:
+
+```javascript
+const canMakePaymentsResult = await checkout.canMakePayments()
+// Example result: { paysafecard: true }
+
+if (canMakePaymentsResult.paysafecard) {
+  // Show your paysafecard payment option
+}
+```
+
+**Trigger the paysafecard pop-up when the customer selects the method:**
+
+```javascript
+async function handlePaysafecard() {
+  await checkout.headless('paysafecard')
+}
+```
+
+Pay.com opens the Paysafe-hosted pop-up and handles the result. Once the customer completes or dismisses the pop-up, it fires `onSuccess` if the payment was completed or `onFailure` if the PIN was rejected, the voucher had insufficient balance, or the customer closed the pop-up without paying.
+
+</Tab>
+<Tab value="API">
+
+Initiating a paysafecard payment via the API takes two steps: create the charge, then create a linked authentication session to get the URL for the paysafecard-hosted payment page.
+
+**Step 1 — Create the charge**
+
+Send a [`POST /v1/charges`](/docs/api-reference/endpoints/charges/create-charge) request with `source_data.type` set to `"paysafecard"`. The customer's country is required in `source_data.billing_details.address.country` to route the transaction correctly.
+
+<Callout type="info">
+Amounts are in the smallest currency unit. `1000` equals €10.00 EUR.
+</Callout>
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+```json
+{
+  "amount": 1000,
+  "currency": "eur",
+  "source_data": {
+    "type": "paysafecard",
+    "billing_details": {
+      "address": {
+        "country": "DE"
+      }
+    }
+  },
+  "customer_reference_id": "cust-001",
+  "description": "Order #12345",
+  "reference": "order-12345"
+}
+```
+  </Tab>
+  <Tab value="Response">
+```json
+{
+  "id": "chrg_702527627532959744",
+  "resource": "charge",
+  "amount": 1000,
+  "amount_human_readable": "10.00",
+  "currency": "eur",
+  "status": "requires_authentication",
+  "payment_method_details": {
+    "type": "paysafecard"
+  },
+  "failure_code": null,
+  "failure_message": null,
+  "customer_reference_id": "cust-001",
+  "description": "Order #12345",
+  "reference": "order-12345",
+  "created": "2026-04-23T14:34:00.213Z",
+  "test_mode": true
+}
+```
+  </Tab>
+</Tabs>
+
+The charge is created with `status: "requires_authentication"`. Use the returned charge `id` in the next step.
+
+**Step 2 — Create a linked authentication session**
+
+Send a [`POST /v1/sessions/authentication/linked`](/docs/api-reference/endpoints/authenticationsessions/create-linked-authentication-session) request with the charge ID, `confirm: true`, and the `return_url` the customer is redirected to after completing payment.
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+```json
+{
+  "resource": "chrg_702527627532959744",
+  "confirm": true,
+  "return_url": "https://your-site.com/payment/complete"
+}
+```
+  </Tab>
+  <Tab value="Response">
+```json
+{
+  "id": "sca_702527663947909120",
+  "resource": "authentication_session",
+  "amount": 1000,
+  "amount_human_readable": "10.00",
+  "currency": "eur",
+  "status": "open",
+  "return_url": "https://your-site.com/payment/complete",
+  "url": "https://alternatives.dev.pay.com/authenticate?client_secret=...",
+  "payment_method_details": {
+    "type": "paysafecard"
+  },
+  "reference": "order-12345",
+  "created": "2026-04-23T14:34:07.427Z",
+  "test_mode": true
+}
+```
+  </Tab>
+</Tabs>
+
+Pass the `url` from the response to your pop-up or redirect handler to load the Paysafe-hosted payment page. Once the customer completes PIN entry, Paysafe posts the result back to Pay.com, which updates the charge status and sends a webhook event to your endpoint.
+
+</Tab>
+</Tabs>
+
+## Testing
+
+Test your paysafecard integration using your [Pay.com test API key](/docs/api-reference/get-started/authentication). The base URL and endpoints are the same as production, only the API key determines whether a transaction is a test. No real funds are moved.
+
+<Callout type="info">
+Pay.com provides the test PINs you need to simulate each scenario below.
+Contact your Pay.com account manager if you haven't received them.
+</Callout>
+
+### Test scenarios
+
+| Scenario | Test action | Expected result |
+|---|---|---|
+| Successful payment | Enter a valid test PIN with sufficient balance | Charge `status: "succeeded"`. `charge.succeeded` webhook fires. SDK `onSuccess` callback fires. |
+| Insufficient balance | Enter a test PIN whose balance is lower than the charge amount | Charge `status: "failed"` and `charge.failed` webhook fires. SDK `onFailure` callback fires. |
+| Invalid PIN | Enter an incorrect or malformed PIN | Charge `status: "failed"` and `charge.failed` webhook fires. SDK `onFailure` callback fires. |
+| Expired voucher | Enter a test PIN for an expired voucher | Charge `status: "failed"` and `charge.failed` webhook fires. SDK `onFailure` callback fires. |
+| Missing country | Omit `billing_details.address.country` from the charge request | Request rejected immediately with `400 invalid_parameters`. No charge is created. |
+
+## Handling payment events
+
+Subscribe to the following webhook events to track paysafecard charge outcomes.
+
+| Webhook event | Trigger condition | Recommended action |
+|---|---|---|
+| `charge.succeeded` | The PIN was accepted and the charge captured successfully | Fulfill the order and send a confirmation to the customer |
+| `charge.failed` | The PIN was rejected, the voucher had insufficient balance, or the voucher was expired | Notify the customer and prompt them to use a different voucher or payment method |
+| `charge.pending` | The charge has been initiated but the customer has not yet completed PIN entry | Wait for `charge.succeeded` or `charge.failed` before fulfilling the order. This state persists until the customer completes or abandons the pop-up, or the session expires and the charge moves to `failed`. |
+
+<Callout type="warn">
+Always verify webhook signatures using the `Pay-Signature` header and your endpoint's secret key (HMAC SHA-256) before acting on any event. See the [Webhooks overview](/payments/webhooks) for verification instructions.
+</Callout>
+
+## Next steps
+
+- [Webhooks overview](/docs/payments/webhooks) — verify webhook signatures and handle delivery retries
+- [Create a charge](/docs/api-reference/endpoints/charges/create-charge) — full API reference for `POST /v1/charges`
+- [Create a linked authentication session](/docs/api-reference/endpoints/authenticationsessions/create-linked-authentication-session) — full API reference for `POST /v1/sessions/authentication/linked`

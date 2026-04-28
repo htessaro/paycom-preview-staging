@@ -47,7 +47,7 @@ When a request fails (4xx or 5xx), Pay.com returns a JSON payload with an
 | `type` | string | The category of error. One of `api_error`, `payment_method_error`, `idempotency_error`, or `invalid_request_error`. |
 | `code` | string | A short string identifying the specific error, for example `card_declined` or `resource_missing`. |
 | `message` | string | A human-readable description of the error. For `payment_method_error`, this message can be shown to the customer. |
-| `decline_code` | string | Present on `payment_method_error` when the card issuer provides a reason for the decline, for example `insufficient_funds`. |
+| `decline_code` | string | Present on `payment_method_error` when the card issuer provides a reason for the decline, for example `insufficient_funds`. See [Error codes](/api-reference/reference/failure-codes) for the full list. |
 | `params` | array | Present on validation errors. Each item has a `path` and `message` describing which field failed and why. |
 | `charge` | string | The ID of the charge involved, when the error relates to a charge. |
 | `hold` | string | The ID of the hold involved, when the error relates to a hold. |

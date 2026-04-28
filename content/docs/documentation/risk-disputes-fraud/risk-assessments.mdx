@@ -1,0 +1,187 @@
+---
+title: Risk assessments
+description: Score a payment before charging it and decide whether to proceed,
+  require 3DS, or block the transaction.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Pay.com's risk engine evaluates every transaction automatically when you
+process charges through the gateway. The risk assessment API gives you direct
+access to that same engine before you create a charge, you send the card data
+and Pay.com runs the engine and returns a risk score and a recommended outcome,
+and you act on it in your code.
+
+Use the standalone API when you need to make a decision before a charge is
+created, for example to route a high-risk customer to a different checkout path
+or to step up to 3DS before initiating the charge.
+
+<Callout type="info">
+Risk assessments require the Standalone Risk feature to be enabled on your
+account. Contact Pay.com support to enable it.
+</Callout>
+
+## Request an assessment
+
+Send a `POST` request to
+[`/v1/risk/assessments`](/api-reference/risk/assess-payment) with the card
+data and the amount you intend to charge. Amounts are in the currency's
+smallest unit, for example `10000` for $100.00 USD.
+
+<Callout type="info">
+The `authentication_context` field is required inside the `card` object, even
+if you pass an empty object.
+</Callout>
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```json
+{
+  "risk_session_id": "a4f82c91-3e17-4b09-91dc-b2c3dc25f604",
+  "amount": 10000,
+  "currency": "usd",
+  "source_data": {
+    "type": "card",
+    "card": {
+      "number": "4242424242424242",
+      "expiry_month": "12",
+      "expiry_year": "2028",
+      "cvv": "123",
+      "name": "John Smith",
+      "authentication_context": {}
+    },
+    "billing_details": {
+      "name": "John Smith",
+      "email": "john.smith@example.com"
+    }
+  },
+  "options": {
+    "risk_score_thresholds": [
+      { "start": 0,  "end": 29,  "outcome": "allow" },
+      { "start": 30, "end": 59,  "outcome": "require_three_ds" },
+      { "start": 60, "end": 79,  "outcome": "three_ds_challenge" },
+      { "start": 80, "end": 100, "outcome": "block" }
+    ]
+  }
+}
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "id": "rsk_700306303280480256",
+  "resource": "risk_assessment",
+  "amount": 10000,
+  "amount_human_readable": "100.00",
+  "currency": "usd",
+  "created": "2026-04-17T11:27:14.843Z",
+  "test_mode": false,
+  "score": 42,
+  "outcome": "require_three_ds",
+  "outcome_source": "score",
+  "rule_id": null,
+  "flags": [
+    "ip_outside_us"
+  ],
+  "billing_details": {
+    "name": "John Smith",
+    "email": "john.smith@example.com"
+  },
+  "payment_method_details": {
+    "type": "card_token"
+  },
+  "options": {
+    "risk_score_thresholds": [
+      { "start": 0,  "end": 29,  "outcome": "allow" },
+      { "start": 30, "end": 59,  "outcome": "require_three_ds" },
+      { "start": 60, "end": 79,  "outcome": "three_ds_challenge" },
+      { "start": 80, "end": 100, "outcome": "block" }
+    ]
+  }
+}
+```
+</Tab>
+</Tabs>
+
+The endpoint returns `201 Created` on success.
+
+<Callout type="info">
+`score` and `outcome` are not returned in test mode. Use a production API key
+to receive scored responses.
+</Callout>
+
+## Custom score thresholds
+
+The `options.risk_score_thresholds` field lets you map score ranges to
+outcomes. Each entry defines a `start`, an `end`, and an `outcome`. Pay.com
+evaluates the score against your ranges and sets `outcome` to the matching
+entry's value.
+
+Boundaries are inclusive on both ends. Adjacent ranges must not share a
+boundary value. For example, if one range ends at `29`, the next must start
+at `30`.
+
+```json
+// Correct: non-overlapping, adjacent ranges
+[
+  { "start": 0,  "end": 29,  "outcome": "allow" },
+  { "start": 30, "end": 59,  "outcome": "require_three_ds" },
+  { "start": 60, "end": 79,  "outcome": "three_ds_challenge" },
+  { "start": 80, "end": 100, "outcome": "block" }
+]
+```
+
+The valid `outcome` values are:
+
+| Outcome | Meaning |
+|---|---|
+| `allow` | The transaction looks low risk. Proceed with the charge. |
+| `require_three_ds` | Elevated risk. Initiate 3DS authentication before charging. |
+| `three_ds_challenge` | High risk. Initiate 3DS and expect an interactive challenge. |
+| `block` | Do not proceed with this transaction. |
+
+If you omit `options.risk_score_thresholds`, the API accepts the request but
+returns no `outcome`. To receive an outcome, you must provide thresholds.
+
+## Reading the response
+
+The response object includes several fields that help you understand the
+assessment result.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Unique identifier for the assessment (`rsk_...`). |
+| `score` | integer | Risk score from 0 (lowest risk) to 100 (highest risk). Not returned in test mode. |
+| `outcome` | string | Recommended action based on the score and your thresholds. Not returned in test mode or when thresholds are omitted. |
+| `outcome_source` | string | What determined the outcome. `"score"` means no rule matched and the score-to-threshold mapping produced the outcome. `"rule"` means a rule matched and produced the outcome. |
+| `rule_id` | string | The ID of the rule that set the outcome when `outcome_source` is `"rule"`. `null` otherwise. |
+| `flags` | array | Signals that contributed to the score, for example `"ip_outside_us"`. Empty when no signals were detected. |
+| `amount` | integer | The amount you submitted, in the currency's smallest unit. |
+| `currency` | string | Lowercase ISO 4217 currency code. |
+| `payment_method_details` | object | Details about the card used in the assessment. |
+| `options` | object | The thresholds you submitted. `risk_score_thresholds` is an empty array when omitted. |
+| `test_mode` | boolean | `true` if the assessment was created with a test API key. |
+
+## Acting on the outcome
+
+In standalone mode, you must implement these actions in your code. The Pay.com
+gateway does not apply them automatically when you use the assessment API. Use
+the `outcome` to decide what to do next before creating the charge.
+
+| Outcome | What to do |
+|---|---|
+| `allow` | Proceed with [`POST /v1/charges`](/api-reference/charges/create-charge). |
+| `require_three_ds` | Start a 3DS authentication flow, then charge using the resulting authentication token. |
+| `three_ds_challenge` | Start a 3DS flow and handle the interactive challenge before charging. |
+| `block` | Do not create the charge. Inform the user that the transaction was declined. |
+
+## Next steps
+
+- [Risk reviews](/docs/risk-disputes-fraud/risk-reviews): handle transactions
+  flagged for manual review after a charge succeeds.
+- [Rules](/docs/risk-disputes-fraud/rules): rules run as part of every
+  assessment. Configure them in the dashboard to control which outcomes the
+  engine returns.
+- [Risk assessments API reference](/api-reference/risk/assess-payment): see the
+  full endpoint and parameter reference.

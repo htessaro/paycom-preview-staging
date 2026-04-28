@@ -4,10 +4,13 @@
   "icon": "ShieldAlert",
   "pages": [
     "index",
-    "disputes",
-    "collaborations",
+    "risk-assessments",
+    "rules",
+    "risk-reviews",
+    "standalone-3ds-authentication",
     "fraud-warnings",
-    "test-risk-events",
-    "rules"
+    "collaborations",
+    "disputes",
+    "test-risk-events"
   ]
 }

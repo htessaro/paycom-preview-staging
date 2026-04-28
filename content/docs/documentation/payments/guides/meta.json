@@ -5,6 +5,8 @@
     "create-a-charge-with-3ds",
     "save-a-payment-method",
     "create-recurring-charges",
+    "create-a-subscription",
+    "manage-subscriptions",
     "hold-and-capture-funds",
     "cancel-a-hold",
     "refund-a-charge",

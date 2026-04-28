@@ -1,0 +1,98 @@
+---
+title: AI assistant integration
+description: Connect your AI coding tool to Pay.com documentation for real-time answers about the API, SDKs, and payment flows.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Pay.com provides an MCP (Model Context Protocol) server that lets AI coding tools search and read Pay.com documentation directly. Once connected, your AI assistant can answer questions about the API, SDKs, and payment flows using up-to-date content from this site.
+
+The MCP server is available at [`https://docs.pay.com/mcp`](https://docs.pay.com/mcp).
+
+## Connect your tool
+
+<Tabs items={['Claude', 'Claude Code', 'Cursor', 'VS Code / Windsurf']}>
+<Tab value="Claude">
+
+Go to [Connectors](https://claude.ai/settings/connectors) in your Claude settings and do the following:
+
+1. Select **Add custom connector**.
+2. Fill in the details:
+   - **Name**: `Pay.com Docs`
+   - **URL**: `https://docs.pay.com/mcp`
+3. Select **Add**.
+
+With the connector added, open a new chat, select the attachments button (the plus icon), and select **Pay.com Docs**.
+
+</Tab>
+<Tab value="Claude Code">
+
+Run the following command to add the MCP server:
+
+```bash
+claude mcp add --transport http pay-com-docs https://docs.pay.com/mcp
+```
+
+Verify the connection by listing your configured servers:
+
+```bash
+claude mcp list
+```
+
+See the [Claude Code MCP documentation](https://docs.anthropic.com/en/docs/claude-code/mcp#installing-mcp-servers) for more details.
+
+</Tab>
+<Tab value="Cursor">
+
+1. Press `Cmd+Shift+P` (`Ctrl+Shift+P` on Windows) to open the command palette.
+2. Search for "Open MCP settings" and select **Add custom MCP** to open the `mcp.json` file.
+3. Add the following entry:
+
+```json
+{
+  "mcpServers": {
+    "pay-com-docs": {
+      "url": "https://docs.pay.com/mcp"
+    }
+  }
+}
+```
+
+In Cursor's chat, ask "What tools do you have available?" to confirm the connection. See [MCP in Cursor](https://docs.cursor.com/context/model-context-protocol) for more details.
+
+</Tab>
+<Tab value="VS Code / Windsurf">
+
+**VS Code**
+
+Create a `.vscode/mcp.json` file in your project and add:
+
+```json
+{
+  "servers": {
+    "pay-com-docs": {
+      "type": "http",
+      "url": "https://docs.pay.com/mcp"
+    }
+  }
+}
+```
+
+See the [VS Code MCP documentation](https://code.visualstudio.com/docs/copilot/chat/mcp-servers) for more details.
+
+**Windsurf**
+
+Create a `.windsurf/mcp.json` file in your project and add:
+
+```json
+{
+  "mcpServers": {
+    "pay-com-docs": {
+      "url": "https://docs.pay.com/mcp"
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>

@@ -6,6 +6,7 @@ import { StatusFlow } from '@/components/mdx/status-flow';
 import { SequenceFlow } from '@/components/mdx/sequence-flow';
 import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
 import { Diagram } from '@/components/diagrams';
+import { FailureCodesTable } from '@/components/mdx/failure-codes-table';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
@@ -16,6 +17,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     StatusFlow,
     SequenceFlow,
     Diagram,
+    FailureCodesTable,
     ...components,
   };
 }

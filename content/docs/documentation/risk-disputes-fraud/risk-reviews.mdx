@@ -1,0 +1,250 @@
+---
+title: Risk reviews
+description: Approve or decline transactions flagged for manual review using
+  the risk reviews API.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+A risk review is created when a charge matches a [review rule](/docs/risk-disputes-fraud/rules/review-rules)
+configured in the dashboard. The charge succeeds immediately, the review doesn't
+block the payment. Instead, it flags the transaction so you can investigate and
+then approve or decline it via the API.
+
+<Callout type="info">
+Risk reviews require the Standalone Risk feature to be enabled on your account.
+Contact Pay.com support to enable it.
+</Callout>
+
+## Requirements
+
+- Standalone Risk enabled on your account (contact Pay.com support)
+- A [review rule](/docs/risk-disputes-fraud/rules/review-rules) configured in
+  the dashboard
+- A webhook endpoint registered in the Pay.com dashboard, subscribed to the
+  `review.transaction.created` event
+
+## How it works
+
+<Steps>
+<Step>
+## Configure a review rule
+
+Create a review rule in the Pay.com dashboard that targets the transactions you
+want to flag. When a charge matches the rule, Pay.com creates a review
+automatically after the charge succeeds.
+
+See [Review rules](/docs/risk-disputes-fraud/rules/review-rules) to learn which conditions you can target and how to set them up.
+</Step>
+<Step>
+## Receive the webhook
+
+Pay.com sends a `review.transaction.created` event to your endpoint
+approximately 3-15 seconds after the charge is created. The `data.id` field
+contains the review ID you'll use in the following steps.
+
+```json
+{
+  "id": "evt_701808188143438848",
+  "resource": "event",
+  "type": "review.transaction.created",
+  "created": "2026-04-21T14:55:11.021Z",
+  "data": {
+    "id": "rvw_701808188000832512",
+    "resource": "review",
+    "created": "2026-04-21T14:55:10.987Z",
+    "expires": "2026-04-24T14:55:10.987Z",
+    "reference": "chrg_701808118295692288",
+    "reviewer_identifier": null,
+    "reviewer_origin": null,
+    "status": "pending_review",
+    "status_reason": null,
+    "test_mode": true,
+    "type": "transaction"
+  }
+}
+```
+
+The `data.reference` field contains the ID of the charge that triggered the
+review. Always verify the `pay-signature` header before processing the event.
+See [Webhook events](/docs/payments/webhooks/webhook-events).
+</Step>
+<Step>
+## Retrieve the review
+
+Use the review ID from the webhook to fetch the full review object. If you
+don't have the review ID, you can look it up by charge ID instead.
+
+**If you have the review ID:**
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```http
+GET /v1/risk/review/rvw_701808188000832512
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "id": "rvw_701808188000832512",
+  "resource": "review",
+  "created": "2026-04-21T14:55:10.987Z",
+  "expires": "2026-04-24T14:55:10.987Z",
+  "reference": "chrg_701808118295692288",
+  "reviewer_identifier": null,
+  "reviewer_origin": null,
+  "status": "pending_review",
+  "status_reason": null,
+  "test_mode": true,
+  "type": "transaction"
+}
+```
+</Tab>
+</Tabs>
+
+**If you only have the charge ID** (returns a list):
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```http
+GET /v1/risk/review/reference/chrg_701808118295692288
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "resource": "reviews",
+  "data": [
+    {
+      "id": "rvw_701808188000832512",
+      "resource": "review",
+      "created": "2026-04-21T14:55:10.987Z",
+      "expires": "2026-04-24T14:55:10.987Z",
+      "reference": "chrg_701808118295692288",
+      "reviewer_identifier": null,
+      "reviewer_origin": null,
+      "status": "pending_review",
+      "status_reason": null,
+      "test_mode": true,
+      "type": "transaction"
+    }
+  ]
+}
+```
+</Tab>
+</Tabs>
+</Step>
+<Step>
+## Resolve the review
+
+After investigating the transaction, call
+[`PUT /v1/risk/review/{review_id}`](/api-reference/risk/resolve-risk-review)
+to approve or decline it. Both `status` and `status_reason` are required.
+
+The optional `reviewer_identifier` and `reviewer_origin` fields let you record
+who performed the review and from where.
+
+**To approve:**
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```json
+{
+  "status": "approved",
+  "status_reason": "Customer verified via phone call",
+  "reviewer_identifier": "agent@yourcompany.com",
+  "reviewer_origin": "manual"
+}
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "id": "rvw_701808188000832512",
+  "resource": "review",
+  "created": "2026-04-21T14:55:10.987Z",
+  "expires": "2026-04-24T14:55:10.987Z",
+  "reference": "chrg_701808118295692288",
+  "reviewer_identifier": "agent@yourcompany.com",
+  "reviewer_origin": "manual",
+  "status": "approved",
+  "status_reason": "Customer verified via phone call",
+  "test_mode": true,
+  "type": "transaction"
+}
+```
+</Tab>
+</Tabs>
+
+**To decline:**
+
+<Tabs items={['Request', 'Response']}>
+<Tab value="Request">
+```json
+{
+  "status": "declined",
+  "status_reason": "Suspicious transaction pattern",
+  "reviewer_identifier": "agent@yourcompany.com",
+  "reviewer_origin": "manual"
+}
+```
+</Tab>
+<Tab value="Response">
+```json
+{
+  "id": "rvw_701808188000832512",
+  "resource": "review",
+  "created": "2026-04-21T14:55:10.987Z",
+  "expires": "2026-04-24T14:55:10.987Z",
+  "reference": "chrg_701808118295692288",
+  "reviewer_identifier": "agent@yourcompany.com",
+  "reviewer_origin": "manual",
+  "status": "declined",
+  "status_reason": "Suspicious transaction pattern",
+  "test_mode": true,
+  "type": "transaction"
+}
+```
+</Tab>
+</Tabs>
+
+Resolving a review does not affect the linked charge. The charge status
+remains `succeeded` whether you approve or decline. Declining is an internal
+record-keeping action. To reverse the funds, issue a refund separately.
+
+<Callout type="warn">
+  Reviews expire 3 days after creation and can no longer be resolved after that. Attempting to update an already-resolved review also returns a `400` error.
+</Callout>
+</Step>
+</Steps>
+
+## The review object
+
+The review object represents a flagged transaction and tracks its status from creation to resolution. It is returned by
+[`GET /v1/risk/review/{review_id}`](/api-reference/risk/get-risk-review) and
+included in the `review.transaction.created` webhook payload.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Unique identifier for the review (`rvw_...`). |
+| `resource` | string | Always `"review"`. |
+| `created` | string | ISO 8601 timestamp when the review was created. |
+| `expires` | string | ISO 8601 timestamp when the review expires, 3 days after `created`. |
+| `reference` | string | The ID of the charge that triggered the review. |
+| `status` | string | Current status: `pending_review`, `approved`, or `declined`. |
+| `status_reason` | string | The reason provided when the review was resolved. `null` until resolved. |
+| `reviewer_identifier` | string | Identity of the person who resolved the review. `null` until resolved. |
+| `reviewer_origin` | string | Source of the resolution, for example `"manual"`. `null` until resolved. |
+| `type` | string | Always `"transaction"`. |
+| `test_mode` | boolean | `true` if the review was created in test mode. |
+
+## Next steps
+
+- [Review rules](/docs/risk-disputes-fraud/rules/review-rules): configure the
+  rules that trigger reviews.
+- [Risk assessments](/docs/risk-disputes-fraud/risk-assessments): score a
+  payment before charging it to decide how to proceed.
+- [Risk reviews API reference](/api-reference/risk/get-risk-review): see the
+  full technical reference for all review endpoints.

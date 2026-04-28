@@ -1,0 +1,486 @@
+---
+title: Standalone 3DS authentication
+description: Authenticate cardholders independently of a payment to reduce
+  fraud and shift liability before you process a charge.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+Standalone 3DS authentication lets you verify a cardholder's identity before
+creating a charge. Unlike [charge-linked 3DS](/docs/paycom-concepts/3d-secure),
+authentication is fully decoupled from payment: you run the 3DS session first,
+collect the Electronic Commerce Indicator (ECI) and cryptogram (CAVV), then
+pass those values to the charge endpoint.
+
+## When to use standalone 3DS
+
+Use standalone authentication when you need to separate authentication from
+authorization:
+
+- **Subscription setup:** Authenticate a card once during enrollment, then
+  charge it repeatedly without re-running 3DS for each transaction.
+- **Deferred charges:** Verify a cardholder now and charge them later, for
+  example for a pre-order or a quote-to-invoice workflow.
+- **Liability shift before retry:** Authenticate before re-attempting a
+  declined authorization to shift fraud liability to the issuer.
+- **Split processing:** Authenticate with Pay.com and authorize through a
+  separate processor by passing the ECI and CAVV you receive.
+
+## Choose your flow
+
+Standalone 3DS supports two integration patterns:
+
+| Flow | How it works | Best for |
+|---|---|---|
+| **Two-step (default)** | The first API call creates the session. A second call sends the session to the issuer to start authentication. Between the two calls, you can optionally run device fingerprinting in the browser. | When you need fingerprinting or want full control over timing |
+| **One-step** | A single API call creates the session and starts issuer authentication immediately. No second call needed. | Simpler integrations where you expect a frictionless outcome |
+
+The `submit` parameter in the request controls which flow Pay.com uses:
+
+| `submit` value | Behaviour |
+|---|---|
+| `"never"` | Two-step (default). Creates the session; you call the Submit endpoint separately. |
+| `"always"` | One-step. Pay.com submits the session immediately, skipping fingerprinting. |
+| `"if_fingerprinting_not_supported"` | One-step when possible. Auto-submits when the issuer does not support fingerprinting; falls back to two-step when it does. |
+
+## Requirements
+
+Before you start:
+
+- [Configure your environment](/docs/api-reference/environments) and
+  [retrieve your API credentials](/docs/api-reference/authentication).
+- Collect the cardholder's browser details in your frontend (user agent,
+  screen dimensions, timezone offset, and color depth).
+- Make sure your `return_url` is reachable from the cardholder's browser.
+  Pay.com redirects there after a challenge completes.
+
+## Two-step flow
+
+The steps below cover the two-step flow. For the one-step pattern, see
+[One-step flow](#one-step-flow).
+
+<Steps>
+<Step>
+### Create an authentication session
+
+Send a `POST` request to [`/v1/authentication/session/independent`](/api-reference/endpoints/authenticationsessionsindependent/create-sca) with the
+card data, browser details, and flow options. The `amount` value is in the
+smallest currency unit (for example, `10000` = $100.00 USD).
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+```json
+{
+  "payment": true,
+  "amount": 10000,
+  "currency": "usd",
+  "payment_method_data": {
+    "type": "card",
+    "card": {
+      "number": "4200350000000801",
+      "expiry_year": "2027",
+      "expiry_month": "11",
+      "cvv": "123",
+      "name": "Jane Smith"
+    }
+  },
+  "authentication_options": {
+    "type": "three_ds",
+    "return_url": "https://example.com/3ds-complete",
+    "three_ds": {
+      "channel": {
+        "type": "browser",
+        "browser": {
+          "customer_ip_address": "203.0.113.45",
+          "browser_details": {
+            "accept_header": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "javascript_enabled": true,
+            "language": "en-US",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "screen_width": 1920,
+            "screen_height": 1080,
+            "timezone_offset": "-300",
+            "java_enabled": false,
+            "color_depth": 24
+          }
+        }
+      },
+      "flow_indicator": {
+        "type": "frictionless"
+      },
+      "submit": "never"
+    }
+  }
+}
+```
+  </Tab>
+  <Tab value="Response">
+```json
+{
+  "id": "sca_702198783584240640",
+  "resource": "independent_authentication_session",
+  "status": "requires_submission",
+  "fingerprint_url": "https://sca.pay.com/fingerprint?client_secret=...",
+  "result": null,
+  "url": null,
+  "authentication_details": {},
+  "amount": 10000,
+  "currency": "usd",
+  "type": "payment",
+  "return_url": "https://example.com/3ds-complete",
+  "created": "2026-04-22T16:47:18.466Z"
+}
+```
+  </Tab>
+</Tabs>
+
+Save the session `id` (the `sca_...` value). You need it for the
+[Submit the session](#submit-the-session) and
+[Retrieve the authentication result](#retrieve-the-authentication-result) steps.
+If the response includes a `fingerprint_url`, move to the next step.
+If it is `null`, skip directly to [Submit the session](#submit-the-session).
+
+<Callout type="info">
+`flow_indicator.type` tells the issuer your preferred outcome. Set it to
+`"frictionless"` to avoid a challenge, or `"challenge"` to require one. The
+issuer makes the final decision and may still return a challenge even when
+`"frictionless"` is set.
+</Callout>
+
+<Callout type="info">
+For card setup flows (for example, subscription enrollment without an initial
+charge), set `payment` to `false`. The `amount` field is not required in that
+case.
+</Callout>
+</Step>
+<Step>
+### Collect device fingerprint (optional)
+
+If the session creation response includes a `fingerprint_url`, the issuer
+supports device fingerprinting. Load the URL in a hidden iframe on your page
+before calling [Submit the session](#submit-the-session). The iframe collects
+browser and device signals that the issuer uses to assess risk and improve
+frictionless rates.
+
+```html
+<iframe
+  src="FINGERPRINT_URL"
+  width="0"
+  height="0"
+  style="display:none"
+></iframe>
+```
+
+Listen for the completion signal before calling [Submit the session](#submit-the-session):
+
+```js
+window.addEventListener('message', (event) => {
+  if (event.data?.type === 'three_ds_method_complete') {
+    submitSession();
+  }
+});
+```
+
+<Callout type="info">
+Fingerprinting is optional. You can send the Submit request without waiting
+for the iframe to complete. The issuer still processes the session with less
+device data.
+</Callout>
+</Step>
+<Step>
+### Submit the session
+
+Send a `POST` request to [`/v1/authentication/{id}/submit`](/api-reference/endpoints/authenticationsessionsindependent/post-sca-by-id). No request body
+is needed.
+
+<Tabs items={['Request', 'Response: frictionless', 'Response: challenge']}>
+  <Tab value="Request">
+```bash
+POST /v1/authentication/sca_702198783584240640/submit
+```
+  </Tab>
+  <Tab value="Response: frictionless">
+```json
+{
+  "id": "sca_702198783584240640",
+  "status": "succeeded",
+  "result": "authenticated",
+  "authentication_details": {
+    "three_ds": {
+      "eci": "05",
+      "cavv": "AJl/s+JE6SlVFGK2oT6/rDYnBXY=",
+      "authentication_flow": "frictionless",
+      "protocol_version": "2.2.0",
+      "status_reason": null
+    }
+  },
+  "url": null
+}
+```
+  </Tab>
+  <Tab value="Response: challenge">
+```json
+{
+  "id": "sca_702199298703492096",
+  "status": "requires_authentication",
+  "result": null,
+  "url": "https://sca.pay.com/authenticate?client_secret=...",
+  "authentication_details": {}
+}
+```
+  </Tab>
+</Tabs>
+
+Route based on the `status` field in the response:
+
+| Status | Meaning | Next action |
+|---|---|---|
+| `succeeded` | Frictionless authentication passed | [Retrieve the result](#retrieve-the-authentication-result) to confirm and collect ECI and CAVV |
+| `failed` | Frictionless authentication denied | Do not proceed with the charge; check `authentication_details.three_ds.status_reason` |
+| `requires_authentication` | Issuer needs a challenge | Move to the next step |
+| `error` | Processing error | Check `authentication_details` for the reason |
+</Step>
+<Step>
+### Handle a challenge
+
+If Submit returns `status: "requires_authentication"`, render the challenge
+`url` in an iframe on your page. The iframe displays the issuer's verification
+UI, for example an OTP screen or a biometric prompt. Size the iframe to at
+least 600 x 400 pixels.
+
+```html
+<iframe
+  src="CHALLENGE_URL"
+  width="600"
+  height="400"
+></iframe>
+```
+
+When the cardholder completes the challenge, the issuer redirects the iframe
+to your `return_url`. Detect that redirect, then call Retrieve.
+
+<Callout type="warn">
+Render the challenge URL inside an iframe only, not in a new browser tab or
+window. The issuer's completion notification depends on the iframe context.
+Opening the URL as a standalone page will prevent the session from updating
+after the challenge completes.
+</Callout>
+</Step>
+<Step>
+### Retrieve the authentication result
+
+Send a `GET` request to [`/v1/authentication/{id}`](/api-reference/endpoints/authenticationsessionsindependent/get-sca-independent-by-id) to read the final outcome.
+Call this endpoint after Submit returns `succeeded` or `failed` (to confirm),
+or after the cardholder completes the challenge and is redirected to your
+`return_url`.
+
+<Tabs items={['Request', 'Response: authenticated', 'Response: denied']}>
+  <Tab value="Request">
+```bash
+GET /v1/authentication/sca_702198783584240640
+```
+  </Tab>
+  <Tab value="Response: authenticated">
+```json
+{
+  "id": "sca_702198783584240640",
+  "status": "succeeded",
+  "result": "authenticated",
+  "authentication_details": {
+    "three_ds": {
+      "eci": "05",
+      "cavv": "AJl/s+JE6SlVFGK2oT6/rDYnBXY=",
+      "authentication_flow": "frictionless",
+      "ds_transaction_id": "6ee32fb8-b8d7-4ba8-9f85-ab8d4d59fa39",
+      "protocol_version": "2.2.0",
+      "status_reason": null
+    }
+  }
+}
+```
+  </Tab>
+  <Tab value="Response: denied">
+```json
+{
+  "id": "sca_702198966019686400",
+  "status": "failed",
+  "result": "denied",
+  "authentication_details": {
+    "three_ds": {
+      "eci": "07",
+      "cavv": null,
+      "authentication_flow": "frictionless",
+      "status_reason": "01"
+    }
+  }
+}
+```
+  </Tab>
+</Tabs>
+
+Use `result` to decide what to do next:
+
+- `authenticated`: Collect `eci` and `cavv` from
+  `authentication_details.three_ds`. Pass both values to your charge request
+  to trigger liability shift. See
+  [External 3DS](/docs/paycom-concepts/3d-secure#external-3ds) for details on
+  how to include pre-authenticated data in a charge.
+- `denied`: The cardholder failed authentication. Do not proceed with the
+  charge.
+- `abandoned`: The cardholder closed the challenge without completing it.
+- `processing_error`: A system error occurred. Retry or contact support.
+
+<Callout type="info">
+Subscribe to authentication session webhook events to receive status updates
+asynchronously instead of polling. See the
+[webhook events reference](/api-reference/webhooks/webhook-events) for the
+full list of events.
+</Callout>
+</Step>
+</Steps>
+
+## One-step flow
+
+Set `submit` to `"always"` in the [`POST /v1/authentication/session/independent`](/api-reference/endpoints/authenticationsessionsindependent/create-sca)
+request. Pay.com creates and immediately submits the session in a single call,
+skipping device fingerprinting. The issuer still decides the outcome: it may
+return a frictionless result or require a challenge, the same as in the
+two-step flow.
+
+<Tabs items={['Request', 'Response: frictionless', 'Response: challenge']}>
+  <Tab value="Request">
+```json
+{
+  "payment": true,
+  "amount": 10000,
+  "currency": "usd",
+  "payment_method_data": {
+    "type": "card",
+    "card": {
+      "number": "4200350000000801",
+      "expiry_year": "2027",
+      "expiry_month": "11",
+      "cvv": "123",
+      "name": "Jane Smith"
+    }
+  },
+  "authentication_options": {
+    "type": "three_ds",
+    "return_url": "https://example.com/3ds-complete",
+    "three_ds": {
+      "channel": {
+        "type": "browser",
+        "browser": {
+          "customer_ip_address": "203.0.113.45",
+          "browser_details": {
+            "accept_header": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "javascript_enabled": true,
+            "language": "en-US",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "screen_width": 1920,
+            "screen_height": 1080,
+            "timezone_offset": "-300",
+            "java_enabled": false,
+            "color_depth": 24
+          }
+        }
+      },
+      "flow_indicator": {
+        "type": "frictionless"
+      },
+      "submit": "always"
+    }
+  }
+}
+```
+  </Tab>
+  <Tab value="Response: frictionless">
+```json
+{
+  "id": "sca_702199073985266688",
+  "status": "succeeded",
+  "result": "authenticated",
+  "authentication_details": {
+    "three_ds": {
+      "eci": "05",
+      "cavv": "AJnRxE8vBtNV9JFTIqTA8BW1fLI=",
+      "authentication_flow": "frictionless",
+      "protocol_version": "2.2.0"
+    }
+  },
+  "fingerprint_url": null
+}
+```
+  </Tab>
+  <Tab value="Response: challenge">
+```json
+{
+  "id": "sca_702199298703492096",
+  "status": "requires_authentication",
+  "result": null,
+  "url": "https://sca.pay.com/authenticate?client_secret=...",
+  "authentication_details": {},
+  "fingerprint_url": null
+}
+```
+  </Tab>
+</Tabs>
+
+Route based on the `status` field in the response:
+
+| Status | Meaning | Next action |
+|---|---|---|
+| `succeeded` | Frictionless authentication passed | [Retrieve the result](#retrieve-the-authentication-result) to confirm and collect ECI and CAVV |
+| `failed` | Frictionless authentication denied | Do not proceed with the charge |
+| `requires_authentication` | Issuer requires a challenge | Follow the steps in [Handle a challenge](#handle-a-challenge). Call [Retrieve the authentication result](#retrieve-the-authentication-result) after the cardholder is redirected to your `return_url` |
+| `error` | Processing error | Check `authentication_details` for the reason |
+
+You can also use `submit: "if_fingerprinting_not_supported"` to auto-submit
+only when the issuer does not offer device fingerprinting (that is, when
+`fingerprint_url` is `null` in the response). When fingerprinting is
+available, the session falls back to the two-step flow: the response returns
+`status: "requires_submission"` and you must call
+[`POST /v1/authentication/{id}/submit`](/api-reference/endpoints/authenticationsessionsindependent/post-sca-by-id)
+to continue.
+
+## Test your integration
+
+Use the following values in the staging environment to exercise each outcome.
+
+**Test card:**
+
+| Field | Value |
+|---|---|
+| Card number | `4200350000000801` |
+| Expiry | `11/2027` |
+| CVV | `123` |
+
+**Challenge OTP codes** (entered by the cardholder in the challenge iframe,
+not sent via the API):
+
+| Code | Outcome |
+|---|---|
+| `1234` | Success (`result: "authenticated"`) |
+| `3333` | Failure (`result: "denied"`) |
+
+To trigger a frictionless failure without a challenge, add `"name": "fake"`
+to `payment_method_data.card` in the session creation request.
+
+<Callout type="info">
+When testing the challenge flow, host the iframe inside a page served from
+the same origin as your `return_url`. Opening the challenge URL directly in
+a browser tab will prevent the session status from updating after the
+challenge completes.
+</Callout>
+
+## Next steps
+
+- [3D Secure](/docs/paycom-concepts/3d-secure): understand how Pay.com's
+  agnostic 3DS layer works and when to use standalone versus charge-linked
+  authentication.
+- [Create a charge with 3DS](/docs/payments/guides/create-a-charge-with-3ds):
+  run 3DS as part of the charge creation flow.
+- [Risk assessments](/docs/risk-disputes-fraud/risk-assessments): score a
+  payment before charging it and combine risk signals with 3DS authentication.

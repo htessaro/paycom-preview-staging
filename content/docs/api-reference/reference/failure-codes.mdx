@@ -1,0 +1,32 @@
+---
+title: Error codes
+description: Complete reference for all processing outcome codes returned by Pay.com, including approvals, partial approvals, and declines.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+Every payment attempt Pay.com processes ends with an outcome code. Your
+integration receives this code in the API response and can use it to
+drive error handling, customer-facing messaging, and retry logic.
+
+## Fields
+
+Each code entry includes the following fields.
+
+| Field | Description |
+| :--- | :--- |
+| `errorCode` | The code identifier returned in the API response. |
+| `dashboardMessage` | The label shown in the Pay.com dashboard. |
+| `endUserMessage` | A suggested customer-facing message you can display in your UI. |
+| `fallbackable` | Whether Pay.com can automatically retry the attempt through a different processor. |
+
+<Callout type="info">
+The `endUserMessage` values are suggestions. You can adapt the wording
+to match your product's tone, but the meaning must stay accurate.
+</Callout>
+
+## All error codes
+
+Use the search box to filter by code name, message, or description text.
+
+<FailureCodesTable />

@@ -7,6 +7,8 @@ import { Callout } from 'fumadocs-ui/components/callout'
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
 import { Step, Steps } from 'fumadocs-ui/components/steps'
 import { ImageZoom } from 'fumadocs-ui/components/image-zoom'
+import dashboardConfig from './dashboard-config.png'
+
 
 Apple Pay is a digital wallet payment method that lets customers pay at checkout using a
 card saved to their Apple Wallet. It is widely used across the Americas, Europe,
@@ -26,16 +28,16 @@ This table outlines the key properties and limitations of using Apple Pay, inclu
 | Property | Value |
 |---|---|
 | **Payment type** | In-page (no full-page redirect; a native sheet overlays the merchant's checkout page) |
-| **Merchant countries** | Global |
+| **Merchant countries** | Australia, Austria, Belgium, Brazil, Bulgaria,Canada,Croatia,Cyprus,Czech Republic, Denmark, Estonia, Faroe Islands, Finland, France, Germany, Greece, Guernsey, Hong Kong, Hungary, Iceland,I Ireland, Italy, Japan, Jersey, Latvia, Liechtenstein, Lithuania, Luxembourg, Malta, Monaco, Netherlands, New Zealand, Norway, Poland, Portugal, Romania, Singapore, Slovakia, Slovenia, Spain, Sweden, Switzerland, UK, US, United Arab Emirates, Vatican City |
 | **Customer countries** | Global. Customer must have an Apple device with a card added to Apple Wallet. |
-| **Currencies** | All |
+| **Currencies** | AUD, BRL, CAD, CHF, CNY, CZK, DKK, EUR, GBP, HKD, HUF, INR, JPY, MXN, MYR, NOK, NZD, PHP, PLN, RON, SEK, SGD, THB, TWD, USD |
 | **Transaction minimum** | $0.01 |
 | **Transaction maximum** | No limit |
 | **Payment confirmation** | Immediate. The charge is authorized and captured at the moment the customer authenticates. |
 | **Settlement timing** | Next business day |
 | **Refunds** | Fully and partially supported|
 | **Disputes** | Fully supported. See [Disputes](#disputes) |
-| **Recurring payments** | Partially supported. See [Recurring payments](#recurring-payments) |
+| **Recurring payments** | Fully supported. See [Recurring payments](#recurring-payments) |
 | **Vaulting / saved credentials** | Not supported. Apple Pay generates a device-specific token per transaction |
 | **3DS / SCA** | Handled automatically. Cryptogram 3DS authentication is performed by the device at the time of payment. |
 | **Redirect required** | No. The Apple Pay sheet appears as a native overlay on the customer's device. |
@@ -115,6 +117,8 @@ Click your profile name in the top-right corner of your
 Navigate to Payment methods and turn on Apple Pay.
 </Step>
 </Steps>
+
+<ImageZoom src={dashboardConfig} alt="apple pay dashboard configuration" />
 
 <Callout type="info">
 If Apple Pay is not visible, contact your account
@@ -388,3 +392,89 @@ wallet.
 
 For the full dispute lifecycle, evidence requirements, and webhook events, see
 the [disputes guide](/payments/disputes).
+
+## Recurring payments
+
+When Pay.com processes an Apple Pay
+transaction, it decrypts the device-specific token (DPAN) and stores the
+underlying card used for the payment as a standard payment method (`pm_card_...`). This stored
+card behaves identically to any other saved card on Pay.com and can be used
+for both merchant-initiated charges and subscription billing.
+
+<Callout type="info">
+  The `pm_card_...` ID is available in the charge response regardless of
+  which Apple Pay integration path you used — Universal SDK, Headless SDK,
+  or directly via the API using either the encrypted Apple Pay payload or a
+  decrypted network token.
+</Callout>
+
+### Retrieve the stored payment method ID
+
+How you retrieve the `pm_card_...` ID depends on the integration path used
+for the initial Apple Pay payment.
+
+<Tabs items={['SDK', 'API']}>
+  <Tab value="SDK">
+    Retrieve the `pm_card_...` ID from the `onSuccess` callback after the
+    customer completes the initial Apple Pay payment:
+
+```js
+    const checkout = pay.checkout({
+      clientSecret: '{client_secret}',
+      onSuccess: (payment) => {
+        const paymentMethodId = payment.payment_method
+        // Store paymentMethodId against the customer in your database
+      },
+      onFailure: (error) => {
+        console.error(error.message)
+      },
+    })
+```
+  </Tab>
+  <Tab value="API">
+    On the initial Apple Pay charge request, include
+    `"setup_future_usage": "off_session"` inside your `source_data` object.
+    This tells the issuing bank that the card will be used for future
+    merchant-initiated transactions.
+
+    The charge response returns the values you need for all future recurring
+    charges:
+
+```json
+    {
+      "id": "chrg_687257433738839040",
+      "payment_method": "pm_card_687257443142470656",
+      "underlying_network_id": "2858e1b8-c453-4ef9-8940-18c2e159725b",
+      "status": "succeeded"
+    }
+```
+
+    Store both the `payment_method` ID and the `underlying_network_id`
+    against the customer record in your database. You will need these for
+    future recurring charges.
+  </Tab>
+</Tabs>
+
+###  Create recurring charges or subscriptions
+
+Once you have the `pm_card_...` ID, you can use it to charge the customer
+without them being present. There are two paths depending on your billing
+model:
+
+- **Recurring charges** — trigger each charge manually using the stored
+`pm_card_...` ID with `"off_session": true`. See the
+[recurring charges guide](/docs/payments/server-to-server-guides/create-recurring-charges)
+for the full request format, all targeting methods, response handling, and
+webhook events.
+
+- **Subscriptions** — attach the stored `pm_card_...` ID to a subscription
+package and let Pay.com manage the billing schedule automatically. See the
+[subscriptions guide](/docs/payments/sdks/create-recurring-charges-using-sessions)
+for the full setup instructions.
+
+<Callout type="warn">
+ Apple Pay generates a new device-specific token on every
+  transaction. Recurring charges are made against the underlying card that
+  Pay.com extracts during the initial payment, not against the Apple Pay
+  wallet itself.
+</Callout>

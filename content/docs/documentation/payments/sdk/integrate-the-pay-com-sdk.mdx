@@ -62,7 +62,8 @@ Before you begin, generate a public API key from your [dashboard](https://pay.co
               body: JSON.stringify({
                 currency: "usd",
                 amount: 2000,
-                customer_reference_id: "927071e4-464c-4f5d-a079-4aa097f922ca"
+                customer_reference_id: "927071e4-464c-4f5d-a079-4aa097f922ca",
+                payment_method_types: ["card"]
               })
             });
 
@@ -71,6 +72,15 @@ Before you begin, generate a public API key from your [dashboard](https://pay.co
 
       <Callout type="warn">
         `amount` is in **minor units**. Divide by 100 to get the display value. For example, passing `2000` will charge $20.00.
+      </Callout>
+
+      <Callout type="info">
+        `payment_method_types` controls which payment methods appear at checkout.
+        Card, Apple Pay, and Google Pay are included when you pass `"card"`.
+        Alternative payment methods such as Neosurf and paysafecard must be
+        added explicitly, for example `["card", "neosurf"]`. Each payment
+        method page lists the value to use. Only methods enabled on your
+        account can be included.
       </Callout>
 
       A successful response returns a short-lived `client_secret` and session `id`:

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { BookOpen, CreditCard, Wallet, Network, ShieldAlert, Code, ArrowRight } from 'lucide-react';
+import { BookOpen, CreditCard, Wallet, Network, ShieldAlert, Code, ArrowRight, Sparkles } from 'lucide-react';
 
 export default function HomePage() {
   const tabs = [
@@ -73,6 +73,22 @@ export default function HomePage() {
             </div>
           </Link>
         ))}
+      </div>
+
+      <div className="mt-6">
+        <Link
+          href="/documentation/introduction/mcp"
+          className="flex items-center gap-4 rounded-xl border border-fd-border bg-fd-card p-5 hover:shadow-lg transition-shadow duration-200"
+        >
+          <Sparkles className="w-7 h-7 text-fd-primary shrink-0" />
+          <div className="flex flex-col gap-1">
+            <h2 className="text-base font-semibold">AI-powered help</h2>
+            <p className="text-sm text-fd-muted-foreground leading-relaxed">
+              Give your AI coding tool direct access to Pay.com documentation for real-time answers about the API, SDKs, and payment flows.
+            </p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-fd-muted-foreground ml-auto shrink-0" />
+        </Link>
       </div>
     </div>
   );

@@ -1,0 +1,238 @@
+---
+title: Subscriptions
+description: Learn how Pay.com subscriptions automate recurring billing
+  using reusable packages, off-session payment methods, and configurable
+  schedules.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion'
+import { SequenceFlow } from '@/components/mdx/sequence-flow'
+
+A subscription automates recurring billing by charging a customer's stored
+payment method on a defined schedule. Pay.com manages the full billing
+cycle: charging on time, retrying failed payments, and tracking state as it
+changes.
+
+Pay.com models subscriptions with two objects: a **subscription package**
+defines the billing terms shared across all subscribers, and a
+**subscription** links a specific customer and payment method to a package.
+
+<Callout type="info">
+Subscriptions require a stored payment method set up for off-session use.
+See [Save a payment method](/documentation/payments/guides/save-a-payment-method)
+for setup instructions.
+</Callout>
+
+## Subscriptions vs. recurring payments
+
+Both models use stored payment methods to charge customers without them
+being present. The difference is in who manages the schedule.
+
+| | Recurring payments | Subscriptions |
+|---|---|---|
+| **Charge trigger** | You call `POST /v1/charges` | Pay.com charges automatically |
+| **Schedule** | Your system | Defined on the package |
+| **Retry logic** | You implement | Configured on the package |
+| **Webhook events** | `charge.succeeded`, `charge.failed` | `subscription.charged`, `subscription.unpaid`, and others |
+| **Use when** | You need full control over timing and amount | You want Pay.com to manage the billing lifecycle |
+
+
+## Subscription packages
+
+A subscription package is a reusable billing template. You define it once
+and attach any number of customers to it. When you create a subscription,
+it takes a snapshot of the package settings at that moment. Changes to the
+package afterwards only affect new subscriptions.
+
+<Accordions type="multiple">
+  <Accordion title="Billing schedule and amount" id="package-schedule">
+  The `schedule` defines billing frequency using `interval` and
+  `interval_count`.
+
+  | Billing frequency | `interval` | `interval_count` |
+  |---|---|---|
+  | Monthly | `month` | `1` |
+  | Quarterly | `month` | `3` |
+  | Annual | `year` | `1` |
+  | Every 14 days | `day` | `14` |
+
+  The `amount` can be **fixed** or **dynamic**:
+
+  - **Fixed**: charges the same value every cycle, expressed in the smallest
+    currency unit (for example, `1999` for $19.99 USD).
+  - **Dynamic**: Pay.com calls a URL you provide before each charge and your
+    server returns the amount. Use this for metered or usage-based pricing.
+  </Accordion>
+
+  <Accordion title="Trial periods" id="package-trials">
+  A trial period delays the first real charge. During the trial, the
+  subscription has `trialing` status and no payment is collected. Once the
+  trial ends, Pay.com charges the customer and moves the subscription to
+  `active`.
+
+  Trial periods use the same `interval` and `interval_count` structure as
+  the billing schedule. A 14-day trial is `interval: "day"`,
+  `interval_count: 14`.
+  </Accordion>
+
+  <Accordion title="Failure handling" id="package-failure">
+  When a scheduled charge fails, the subscription moves to `unpaid` and
+  Pay.com begins retrying. The `retries` setting controls how many attempts
+  to make and how far apart they are.
+
+  Once all retries are used up, Pay.com acts on the `failure` setting:
+
+  - `cancel`: the subscription ends automatically.
+  - `pause`: billing is suspended. The `pause` setting then controls whether
+    the pending charge is discarded (`void`) or kept for collection when
+    billing resumes (`draft`).
+
+  Example package with three daily retries that cancels on exhaustion:
+
+  ```json
+  {
+    "settings": {
+      "retries": { "count": 3, "interval": "day", "interval_count": 1 },
+      "failure": "cancel"
+    }
+  }
+  ```
+  </Accordion>
+
+  <Accordion title="Dispute and fraud handling" id="package-disputes">
+  When a dispute or fraud warning is raised against a subscription charge,
+  the package responds automatically. You configure an action independently
+  for the subscription that triggered the event and for any other active
+  subscriptions the same customer holds.
+
+  | Action | Effect |
+  |---|---|
+  | `cancel_immediately` | Cancels the subscription right away. |
+  | `cancel_end_of_term` | Cancels at the end of the current billing period. |
+  | `pause_immediately` | Suspends billing right away. |
+  | `pause_end_of_term` | Suspends billing at the end of the current period. |
+  | `do_nothing` | No automatic action. |
+  </Accordion>
+
+  <Accordion title="Billing cycle limit" id="package-cycle-limit">
+  Set `max_billing_cycles` on the package to end the subscription
+  automatically after a fixed number of charges. When the subscription
+  completes its final cycle, it moves to `canceled` status with
+  `cancellation_reason: ended`.
+
+  Leave `max_billing_cycles` unset for a subscription that runs
+  indefinitely until canceled manually or by a failure action.
+  </Accordion>
+
+  <Accordion title="Per-subscription overrides" id="package-overrides">
+  Any package setting can be overridden for a specific subscriber by passing
+  a `settings` object when creating the subscription. The override applies
+  only to that subscription. The subscription object includes an `overwritten`
+  boolean on its `settings` field, set to `true` when any package default has
+  been changed for that subscription.
+  </Accordion>
+</Accordions>
+
+
+## Billing lifecycle
+
+The diagram below shows the full subscription flow from setup through
+billing cycles, failure handling, and cancellation:
+
+<SequenceFlow
+  actors={[
+    { id: 'server', label: 'Your Server', color: 'blue' },
+    { id: 'api', label: 'Pay.com API', color: 'purple' },
+  ]}
+  messages={[
+    { from: 'server', to: 'api', label: 'POST /v1/subscriptions/packages', note: 'Define amount, currency, schedule' },
+    { from: 'api', to: 'server', label: '{ id: subpkg_... }', style: 'dashed' },
+    { from: 'server', to: 'api', label: 'POST /v1/subscriptions', note: 'Link customer + payment method' },
+    { from: 'api', to: 'server', label: 'status: active (or trialing)', style: 'dashed' },
+
+    { from: 'api', to: 'server', label: 'Webhook: subscription.charged', style: 'dashed', note: 'Billing date reached', group: 'cycle: success' },
+
+    { from: 'api', to: 'server', label: 'Webhook: subscription.unpaid', style: 'dashed', note: 'Charge failed', group: 'cycle: failed' },
+    { from: 'api', to: 'server', label: 'Webhook: subscription.attempted', style: 'dashed', note: 'Per retry', group: 'cycle: failed' },
+    { from: 'api', to: 'server', label: 'Webhook: subscription.active', style: 'dashed', note: 'Retry succeeded', group: 'cycle: recovered' },
+    { from: 'api', to: 'server', label: 'Webhook: subscription.canceled', style: 'dashed', note: 'Retries exhausted', group: 'cycle: canceled' },
+
+    { from: 'server', to: 'api', label: 'POST /v1/subscriptions/{id}/cancel', group: 'cancel: manual' },
+    { from: 'api', to: 'server', label: 'cancel_at_period_end: true', style: 'dashed', group: 'cancel: manual' },
+    { from: 'api', to: 'server', label: 'Webhook: subscription.canceled', style: 'dashed', note: 'At period end', group: 'cancel: manual' },
+  ]}
+/>
+
+A subscription moves through these statuses as billing events occur:
+
+<Accordions type="multiple">
+  <Accordion title="Subscription statuses" id="subscription-status-reference">
+  | Status | Meaning |
+  |---|---|
+  | `trialing` | In the trial period; no charge has been collected yet. |
+  | `active` | Billing normally. Pay.com charges on each scheduled date and advances the current period. |
+  | `unpaid` | A scheduled charge failed. Pay.com is retrying based on the package retry settings. |
+  | `paused` | Billing is suspended, either after retries are exhausted with `failure: pause`, or after a dispute action. |
+  | `canceled` | The subscription has ended. No further charges will be made. |
+  | `failed` | The initial `charge_at_creation` charge was declined. Terminal state; create a new subscription to retry. |
+  </Accordion>
+</Accordions>
+
+For a complete list of subscription webhook events, see the
+[webhook events](/docs/api-reference/webhooks/webhook-events#subscriptions)
+reference.
+
+## Cancellation
+
+A subscription does not end the moment you cancel it. You choose when the
+cancellation takes effect:
+
+| Method | Request | When it ends |
+|---|---|---|
+| End of period | `POST /v1/subscriptions/{id}/cancel` with an empty body | At the end of the current billing period |
+| Specific date | `POST /v1/subscriptions/{id}/cancel` with `cancel_at` | On the date you specify |
+
+`cancel_at` accepts an ISO 8601 datetime string (for example,
+`2026-12-31T00:00:00Z`).
+
+`ended_at` is set and `subscription.canceled` fires when the cancellation
+actually takes effect, not when you make the cancel request. Scheduling a
+future cancellation does not fire a webhook until that date is reached.
+
+The `cancellation_reason` field records why the subscription ended:
+
+| Value | Cause |
+|---|---|
+| `cancellation_requested` | Manual cancellation |
+| `charge_failed` | Retries exhausted |
+| `charge_disputed` | Dispute action triggered cancellation |
+| `ended` | The subscription reached its `max_billing_cycles` limit. |
+
+## Initial charge behavior
+
+By default, creating a subscription does not trigger an immediate charge.
+Pay.com waits for the first scheduled billing date. Set
+`charge_at_creation: true` to attempt a charge immediately on creation.
+
+<Callout type="warn">
+If the charge is declined, the subscription enters a `failed` status and
+cannot be recovered. Create a new subscription with a valid payment method
+instead.
+</Callout>
+
+## Refunds
+
+Subscription charges are refunded the same way as any other charge. Use
+`POST /v1/refunds` with the charge ID from the billing event. Full and
+partial refunds are both supported. See [Refunds](/documentation/paycom-concepts/refunds)
+for details.
+
+## Next steps
+
+- [Create a subscription](/documentation/payments/guides/create-a-subscription):
+  set up a subscription package and attach a customer's stored payment method.
+- [Manage subscriptions](/documentation/payments/guides/manage-subscriptions):
+  retrieve status, handle failed charges, update payment methods, and cancel.
+- [Webhook events](/docs/api-reference/webhooks/webhook-events#subscriptions):
+  full reference of subscription events.

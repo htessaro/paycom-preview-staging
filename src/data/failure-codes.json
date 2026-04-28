@@ -1,0 +1,44 @@
+{
+  "failureCodeMessages": [
+    {
+      "errorCode": "approved",
+      "endUserMessage": "Payment approved successfully.",
+      "dashboardMessage": "Approved.",
+      "description": "The transaction was successfully approved.",
+      "fallbackable": false,
+      "internal": false
+    },
+    {
+      "errorCode": "partial_amount_approved",
+      "endUserMessage": "Your attempt was approved partially due to insufficient balance.",
+      "dashboardMessage": "Partial amount approved.",
+      "description": "The customer's bank approved the transaction partially due to insufficient balance",
+      "fallbackable": false,
+      "internal": false
+    },
+    {
+      "errorCode": "completed_partially",
+      "endUserMessage": "Your bank approved the transaction partially due to insufficient balance.",
+      "dashboardMessage": "Completed partially.",
+      "description": "The transaction was approved with a partial amount due to insufficient balance.",
+      "fallbackable": false,
+      "internal": false
+    },
+    {
+      "errorCode": "authentication_abandoned",
+      "endUserMessage": "The authentication process was not completed in time. Please retry the attempt.",
+      "dashboardMessage": "Authentication abandoned.",
+      "description": "The customer did not finish the authentication step.\nRequest to retry the attempt.",
+      "fallbackable": false,
+      "internal": false
+    },
+    {
+      "errorCode": "authentication_failure",
+      "endUserMessage": "The required authentication step failed. Please try again or use a different payment method.",
+      "dashboardMessage": "Authentication failure.",
+      "description": "The customer failed the required authentication step (for example, 3D Secure challenge failed). Request to retry the attempt or use a different payment method.",
+      "fallbackable": false,
+      "internal": false
+    }
+  ]
+}

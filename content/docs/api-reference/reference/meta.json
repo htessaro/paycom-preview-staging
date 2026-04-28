@@ -4,6 +4,7 @@
   "icon": "FlaskConical",
   "pages": [
     "index",
-    "testing-cards"
+    "testing-cards",
+    "failure-codes"
   ]
 }

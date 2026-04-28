@@ -1,7 +1,6 @@
 {
   "title": "Rules",
   "pages": [
-    "index",
     "payment-rules",
     "review-rules",
     "cancel-rules",

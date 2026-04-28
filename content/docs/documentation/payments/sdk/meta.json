@@ -3,7 +3,6 @@
   "pages": [
     "pay-com-sdks-overview",
     "integrate-the-pay-com-sdk",
-    "tokenize-a-card",
-    "manage-subscription-lifecycle"
+    "tokenize-a-card"
   ]
 }

@@ -1,8 +1,87 @@
 ---
 title: Payment Methods
-description: Supported payment methods and integrations.
+description: Payment methods supported by Pay.com, organized by type, with capability details and guidance on choosing the right method.
 ---
 
-# Payment Methods
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Card, Cards } from 'fumadocs-ui/components/card'
+import { Smartphone, Banknote, RefreshCcw, Layout } from 'lucide-react'
 
-Explore the various payment methods we support globally, including credit cards, digital wallets, and alternative payment methods.
+Pay.com supports digital wallets and prepaid vouchers at checkout. The right mix depends on your target geography, your customers' preferred payment habits, and which capabilities your business needs, such as refunds, recurring billing, or keeping customers on your page during checkout.
+
+## Digital wallets
+
+A digital wallet stores a tokenized version of the customer's payment credentials and authenticates using a biometric or device passcode. No card number is typed at checkout. The wallet passes a cryptographic token to Pay.com, so your integration never handles raw card data.
+
+Wallets work best for merchants with mobile-heavy checkout traffic. Eliminating manual card entry reduces form abandonment, especially on mobile.
+
+| Payment method | Checkout experience | Primary markets |
+|---|---|---|
+| [**Apple Pay**](/documentation/payment-methods/wallets/apple-pay) | In-page sheet, no redirect | Global |
+| [**Google Pay**](/documentation/payment-methods/wallets/google-pay) | In-page sheet, no redirect | Global |
+
+See [Digital wallets](./wallets) for setup, configuration, and integration guides.
+
+## Prepaid vouchers
+
+A prepaid voucher is a PIN-based payment instrument the customer buys with cash at a retail outlet or online before reaching your checkout. No card or bank account is needed. Voucher payments are immediate and guaranteed. There are no chargebacks.
+
+Vouchers are most valuable for merchants in iGaming, online gaming, and digital content platforms, where customers often prefer anonymous, cash-backed payments.
+
+| Payment method | Checkout experience | Primary markets |
+|---|---|---|
+| [**Neosurf**](/documentation/payment-methods/vouchers/neosurf) | Redirect to Neosurf-hosted page | Europe, Australia, Canada |
+| [**PaysafeCard**](/documentation/payment-methods/vouchers/paysafecard) | In-page pop-up, no redirect | Europe, Americas, Oceania |
+
+See [Prepaid vouchers](./vouchers) for setup, configuration, and integration guides.
+
+## Capability comparison
+
+Use this table to compare key properties across all supported payment methods before choosing which to integrate.
+
+| Method | Type | Confirmation | Refunds | Recurring payments | 3DS / SCA | Integration paths |
+|---|---|---|---|---|---|---|
+| [**Apple Pay**](/documentation/payment-methods/wallets/apple-pay) | Wallet | Immediate | Full and partial | Yes | Automatic (device-level) | Web SDK, REST API |
+| [**Google Pay**](/documentation/payment-methods/wallets/google-pay) | Wallet | Immediate | Full and partial | Yes | Automatic | Web SDK, REST API |
+| [**Neosurf**](/documentation/payment-methods/vouchers/neosurf) | Voucher | Immediate | No | No | Not applicable | Web SDK, REST API |
+| [**PaysafeCard**](/documentation/payment-methods/vouchers/paysafecard) | Voucher | Immediate | No | No | Not applicable | Web SDK, REST API |
+
+## How to choose
+
+Use these scenarios to identify the right payment method for your integration.
+
+<Cards>
+  <Card
+    icon={<Smartphone />}
+    title="Mobile-first checkout"
+    description="Digital wallets reduce checkout to a single biometric gesture. Apple Pay and Google Pay deliver the biggest conversion benefit when most of your checkout traffic comes from mobile devices."
+  />
+  <Card
+    icon={<Banknote />}
+    title="Unbanked or privacy-conscious customers"
+    description="Prepaid vouchers serve customers who don't hold a card or bank account and prefer cash-backed, anonymous payments. If your platform targets iGaming, online gaming, or digital content, vouchers are likely to be in high demand."
+  />
+  <Card
+    icon={<RefreshCcw />}
+    title="Refunds or recurring billing"
+    description="Only digital wallets support refunds and recurring charges. Voucher payments are prepaid and non-refundable. If your business needs subscription billing or the ability to refund customers, wallets are the right choice."
+  />
+  <Card
+    icon={<Layout />}
+    title="Keeping customers on your page"
+    description="Google Pay, PaysafeCard, and Apple Pay all complete without a full-page redirect. Neosurf redirects the customer to a Neosurf-hosted page for PIN entry. If a no-redirect checkout is a requirement, either exclude Neosurf or account for the redirect in your checkout design."
+  />
+</Cards>
+
+## Enabling payment methods
+
+All payment methods must be enabled on your Pay.com account before they appear at checkout. Go to **Settings → Payment methods configuration** in your [Pay.com dashboard](https://dashboard.pay.com) and toggle on the methods you want to offer.
+
+<Callout type="info">
+If a payment method isn't visible in your dashboard, contact your account manager to have it enabled on your account.
+</Callout>
+
+## Next steps
+
+- [Digital wallets](./wallets) — Apple Pay and Google Pay setup, configuration, and integration
+- [Prepaid vouchers](./vouchers) — Neosurf and PaysafeCard setup, configuration, and integration

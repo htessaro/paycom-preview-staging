@@ -1,0 +1,11 @@
+{
+  "title": "Introduction",
+  "root": true,
+  "icon": "BookOpen",
+  "pages": [
+    "index",
+    "how-payments-work",
+    "supported-payment-methods",
+    "choose-your-integration"
+  ]
+}

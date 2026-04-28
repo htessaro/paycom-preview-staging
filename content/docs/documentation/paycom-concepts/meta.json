@@ -5,8 +5,11 @@
   "pages": [
     "index",
     "payment-lifecycle-overview",
+    "risk-management-overview",
     "sessions-vs-transactions",
     "transactions",
+    "subscriptions",
+    "3d-secure",
     "workspaces-and-settlement-accounts"
   ]
 }

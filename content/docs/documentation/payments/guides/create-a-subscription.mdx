@@ -1,0 +1,172 @@
+---
+title: Create a subscription
+description: Set up automated recurring billing by creating a subscription package and attaching a customer's stored payment method to it.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+
+A Pay.com subscription automates recurring billing by charging a
+customer's stored payment method on a defined schedule. You define the
+billing terms once in a subscription package, then create a subscription
+to link a specific customer and payment method to that package.
+
+## Requirements
+
+Before you begin, make sure you have the following set up:
+
+- A stored payment method set up for off-session use (`pm_card_xxx`)
+  associated with a customer. See
+  [save a payment method](/documentation/payments/guides/save-a-payment-method).
+- [Retrieve your API credentials](/docs/api-reference/authentication)
+  from your dashboard.
+
+<Steps>
+
+<Step>
+## Create a subscription package
+
+A subscription package is a reusable billing template. It defines how
+much to charge, how often, and in which currency. You create it once and
+reuse it across as many customers as you need.
+
+Send a `POST` request to
+[`/v1/subscriptions/packages`](/docs/api-reference/subscriptionpackages/create-subscription-package)
+with the following parameters:
+
+| Parameter | Description |
+|---|---|
+| `settings.amount` | `{ "type": "fixed", "amount": 1999 }` for a flat charge per cycle, or `{ "type": "dynamic", "dynamic_amount_url": "https://..." }` for variable billing. Amounts are in the smallest currency unit: `1999` equals $19.99 USD. |
+| `settings.currency` | Three-letter ISO currency code in lowercase (for example, `usd`). |
+| `settings.schedule` | Object with `interval` (`day`, `month`, or `year`) and `interval_count` (number of intervals between charges). |
+| `reference` | Your internal identifier for this package. |
+| `description` | A human-readable label for the package. |
+| `settings.initial_term_extension` | Optional. Delays the first billing date by extending the initial period. Uses the same `interval` and `interval_count` structure as `schedule`. |
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+    ```json
+    {
+      "reference": "pkg-monthly-premium",
+      "description": "Monthly Premium Plan",
+      "settings": {
+        "amount": {
+          "type": "fixed",
+          "amount": 1999
+        },
+        "currency": "usd",
+        "schedule": {
+          "interval": "month",
+          "interval_count": 1
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab value="Response">
+    ```json
+    {
+      "id": "subpkg_684787299547876352",
+      "resource": "subscription_package",
+      "active": true,
+      "reference": "pkg-monthly-premium",
+      "description": "Monthly Premium Plan",
+      "settings": {
+        "amount": {
+          "type": "fixed",
+          "amount": 1999
+        },
+        "currency": "usd",
+        "schedule": {
+          "interval": "month",
+          "interval_count": 1
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Store the `id` from the response (`subpkg_...`). You'll use it when
+creating subscriptions in the next step.
+
+</Step>
+
+<Step>
+## Create the subscription
+
+A subscription links a customer and their stored payment method to the
+package you created. Once active, Pay.com charges the customer on the
+schedule defined in the package.
+
+Send a `POST` request to
+[`/v1/subscriptions`](/docs/api-reference/subscriptions/create-subscription)
+with the following parameters:
+
+| Parameter | Description |
+|---|---|
+| `customer_reference_id` | Your internal customer identifier. |
+| `payment_method` | The stored payment method ID (`pm_card_xxx`). |
+| `subscription_package` | The subscription package ID (`subpkg_xxx`) from step 1. |
+| `charge_at_creation` | Optional. If `true`, Pay.com attempts a charge immediately. If it succeeds, the subscription becomes `active`. If it fails, the subscription enters a `failed` status that cannot be recovered. Default: `false`. |
+| `reference` | Your internal identifier for this subscription. |
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+    ```json
+    {
+      "customer_reference_id": "cust-jane-doe-001",
+      "payment_method": "pm_card_684790996696828928",
+      "subscription_package": "subpkg_684787299547876352",
+      "reference": "sub-jane-doe-premium-001"
+    }
+    ```
+  </Tab>
+  <Tab value="Response">
+    ```json
+    {
+      "id": "sub_684790996696828928",
+      "resource": "subscription",
+      "status": "active",
+      "customer_reference_id": "cust-jane-doe-001",
+      "payment_method": "pm_card_684790996696828928",
+      "payment_method_type": "card",
+      "subscription_package": "subpkg_684787299547876352",
+      "reference": "sub-jane-doe-premium-001",
+      "current_period_start": "2026-04-23T00:00:00.000Z",
+      "current_period_end": "2026-05-23T00:00:00.000Z",
+      "created": "2026-04-23T10:00:00.000Z"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+By default, Pay.com doesn't charge the customer immediately. The first
+charge happens on the first scheduled billing date. Set
+`charge_at_creation: true` if the card was stored without an
+accompanying payment (for example, using a tokenization session) and you
+want to verify it works right away.
+
+</Step>
+
+</Steps>
+
+## Listen for webhooks
+
+Pay.com charges subscriptions in the background on your behalf. Subscribe
+to [subscription webhook events](/docs/api-reference/webhooks/webhook-events#subscriptions)
+to automate responses to billing state changes in your backend.
+
+<Callout type="warn">
+Always verify webhook signatures using the `Pay-Signature` header and
+your endpoint's signing secret before acting on any event. See
+[Verify webhook signatures](/api-reference/webhooks#verify-webhook-signatures)
+for the full verification steps.
+</Callout>
+
+## Next steps
+
+- Read [manage subscriptions](/documentation/payments/guides/manage-subscriptions)
+  to handle renewals, failed charges, payment method updates, and
+  cancellations.

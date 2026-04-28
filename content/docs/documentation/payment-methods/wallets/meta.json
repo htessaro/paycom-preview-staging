@@ -1,7 +1,6 @@
 {
   "title": "Wallets",
   "pages": [
-    "wallets",
     "apple-pay",
     "google-pay"
   ]
