@@ -1,34 +1,56 @@
 ---
 title: How payments work
-description: Understand the transaction lifecycle, smart routing, and various payment interfaces managed by Pay.com
+description: How Pay.com routes transactions through multiple acquirers, handles authorization, and manages the full payment lifecycle for merchants.
 ---
 
-Pay.com handles the technical behind-the-scenes processing to get your business up and running. This guide covers how our system manages payment methods, routing, and user experience.
+import { Callout } from 'fumadocs-ui/components/callout'
 
-You decide which payment methods to accept through the **Pay Dashboard**, where you can add or remove them at any time. 
-Pay.com allows you to accept a wide variety of methods, including:
-* **Cards:** Credit and debit cards.
-* **Transfers:** ACH transfers.
-* **Digital Wallets:** PayPal, Google Pay, Apple Pay, and others.
+When a customer pays through your checkout, Pay.com acts as the central layer between your business, your acquiring banks, and the card networks. Its job is to find the fastest path to an approved transaction, handle authentication where required, and report the final result back to you.
 
-## Transaction lifecycle and routing
-Once a payment is created, Pay.com manages the internal statuses and routing to ensure the merchant is informed of the final transaction state.
+## Smart routing and orchestration
 
-Our smart routing system is designed to handle failed cards and technical updates:
-* **Status Management:** The system updates and tracks statuses such as "expired" for failed attempts.
-* **Final State:** Pay.com ensures the merchant receives the final transaction state for every payment.
+Pay.com connects your business to multiple acquiring banks simultaneously. When a payment comes in, the platform's routing logic selects the acquirer most likely to approve it at the best rate, based on factors like card type, geography, transaction amount, and historical approval patterns.
 
-## Payment options
-Customers can complete transactions through multiple interfaces:
+```
+Your checkout
+      │
+      ▼
+  Pay.com
+      │
+      ├──► Acquirer A ──► Card network ──► Customer's bank
+      │                                         │
+      ├──► Acquirer B (failover)                │
+      │                                    Approved / Declined
+      └──► Acquirer C (failover)                │
+                                                ▼
+                                          Pay.com returns result
+                                          to your checkout
+```
 
-### 1. Checkout page
-A branded, seamless checkout experience automatically optimized for the customer's device and preferred payment service provider. It features the highest level of PCI-DSS compliance and visible security logos.
+If the selected acquirer is unavailable or declines the transaction, Pay.com retries automatically with the next best option. This failover happens fast enough that the customer doesn't notice. From your business's perspective, you get a single result: approved or declined.
 
-### 2. Pay links
-Direct links created by the merchant and sent via email or text. Clicking the link takes the customer to a personalized checkout page to complete the transaction.
+This is what makes multi-acquirer orchestration different from a traditional single-acquirer gateway. A gateway that routes through only one acquirer fails entirely when that acquirer has an outage or an unusually high decline rate. Pay.com routes around those failures automatically.
 
-### 3. Virtual terminal
-For businesses accepting payments over the phone, credit card details can be entered manually into the virtual terminal.
+Most merchants rely on Pay.com to configure their routing setup. More advanced merchants use the Pay.com dashboard to define their own routing rules and traffic splits. For a deeper look at orchestration configuration, see the [orchestration](/documentation/orchestration) section.
 
+## Payment methods
 
+Pay.com supports three broad categories of payment methods. You select which to offer from the Pay.com dashboard, and the platform manages the underlying provider relationships. You can add or remove methods at any time without changing your integration code.
 
+- **Cards** — Visa, Mastercard, American Express, and other major networks, globally. Includes 3DS2 authentication and automatic card updating when cards expire.
+- **Digital wallets** — Apple Pay and Google Pay, completing without a redirect. Best for mobile-heavy checkout traffic.
+- **Alternative payment methods** — a growing set of regional and local methods, including prepaid vouchers, bank redirects, and Buy Now Pay Later options.
+
+Pay.com also supports outbound payments (payouts) to cards and select wallets. Payout availability varies by method and market.
+
+For a full list of supported methods with capability details and setup guides, see the [payment methods](/documentation/payment-methods) section.
+
+## Transaction lifecycle
+
+Every payment in Pay.com moves through a defined set of states from creation to settlement. Key points in the lifecycle:
+
+- **Authorization** — the acquirer checks with the card network and issuing bank that funds are available
+- **Capture** — funds are moved from the customer's account (immediate by default, or deferred if you use a hold-and-capture flow)
+- **Settlement** — cleared funds are transferred to your account on your settlement schedule
+
+For a complete walkthrough of transaction states and how holds, refunds, and disputes affect them, see [payment lifecycle overview](/documentation/paycom-concepts/payment-lifecycle-overview).

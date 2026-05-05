@@ -1,33 +1,63 @@
 ---
 title: Welcome to Pay.com
-description: Get started with our unified payment gateway, core features, and the 5-step onboarding process to go live
+description: Pay.com is a payment gateway and orchestration platform. Connect once and accept payments from every major method, acquirer, and market.
 ---
 
-**Pay.com** is a unified payment gateway and processor that enables businesses to accept online payments securely. Whether you are a developer seeking granular control or a business owner looking for a "plug-and-play" solution, our platform scales with your needs.
+import { Card, Cards } from 'fumadocs-ui/components/card'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Wallet, Network, Plug, ShieldCheck, BarChart2, Zap } from 'lucide-react'
 
-### Flexible integration methods
-Our ecosystem is built around three primary integration paths, allowing you to choose the level of technical involvement that suits your workflow:
+Pay.com is a payment gateway and orchestration platform that gives businesses access to a global ecosystem of payment methods, acquiring banks, and fraud tools through a single integration.
 
-* **REST API**: Build a fully automated experience by managing sessions, customers, and payments directly through your backend.
-* **Client SDK**: Accelerate frontend development by invoking secure payment sessions and managing client secrets with minimal configuration.
-* **Merchant Dashboard**: Utilize a no-code interface to manually configure your account, style checkout pages, and monitor real-time transaction data.
+The traditional approach to payment acceptance means maintaining separate relationships with a gateway, a processor, and each payment method provider. Pay.com replaces all of that with one connection. You integrate once, and the platform handles routing, compliance, and payment method support behind the scenes.
 
-### Core features and benefits
-We prioritize transparency and security to help you streamline global commerce. By leveraging our **PCI DSS Level 1** compliant infrastructure, you can bypass the complexity of traditional merchant accounts and go live quickly.
+<Callout type="info">
+**Connect once. Works everywhere.** One Pay.com integration gives your business access to every supported payment method, all your acquiring relationships, and the routing logic that keeps your authorization rates high — without any additional integrations.
+</Callout>
 
-* **Fast Onboarding:** A dedicated team assists with a quick signup process.
-* **Modular System:** As your business grows, additional capabilities can be added to the system.
-* **Global Reach:** Accept payments from customers worldwide shortly after setup.
-* **Customizable checkout**: Align the payment experience with your brand aesthetics using our styling tools.
-* **Pay links**: Generate secure, shareable links for email, SMS, or WhatsApp to collect payments without a website.
-* **Real-time analytics**: Track growth and performance through an intuitive data dashboard.
-* **Transparent pricing**: Operate with a predictable flat-fee structure and no hidden costs.
+## What Pay.com includes
 
-## Onboarding process
-Setting up your account is a streamlined five-step journey from initial contact to your first transaction:
+<Cards>
+  <Card
+    icon={<Wallet />}
+    title="Payment methods"
+    href="/documentation/payment-methods"
+    description="Cards, digital wallets, and alternative payment methods across global markets."
+  />
+  <Card
+    icon={<Network />}
+    title="Smart routing and orchestration"
+    href="/documentation/introduction/how-payments-work"
+    description="Multi-acquirer routing that maximizes authorization rates automatically."
+  />
+  <Card
+    icon={<Plug />}
+    title="Flexible integration"
+    href="/documentation/introduction/choose-your-integration"
+    description="Four integration paths, from hosted checkout to direct server API."
+  />
+  <Card
+    icon={<ShieldCheck />}
+    title="Risk and compliance"
+    href="/documentation/introduction/risk-and-compliance"
+    description="3DS authentication, fraud rules, dispute management, and PCI DSS coverage."
+  />
+  <Card
+    icon={<BarChart2 />}
+    title="Reporting and analytics"
+    href="/documentation/reporting-reconciliation"
+    description="Transaction-level visibility, approval rates, and settlement data."
+  />
+  <Card
+    icon={<Zap />}
+    title="Get started"
+    href="/documentation/introduction/get-started"
+    description="How to go from initial contact to your first live transaction."
+  />
+</Cards>
 
-1. **Contact sales**: Visit [Pay.com](https://pay.com/) to initiate your account request via our [Contact Sales](https://pay.com/contact-sales) page.
-2. **Verify your identity**: Click the activation link sent to your email to begin the business registration process.
-3. **Submit documentation**: Complete a brief form regarding your business model and provide the necessary compliance documents.
-4. **Application review**: Our team will audit your submission to ensure everything meets regulatory standards.
-5. **Go live**: Once approved, you can immediately begin processing payments and exploring the API.
+## About this section
+
+This section gives decision makers a complete picture of what Pay.com does, how it works, and what sets it apart before involving a technical team. If you're a developer who already has credentials and is ready to integrate, the [API reference](/api-reference/get-started) and [payment guides](/documentation/payments/guides/create-a-charge) are the fastest path forward.
+
+Pay.com documentation is built for both human readers and AI tools. Every page is available as plain markdown by appending `.md` to any URL, and the Pay.com [MCP server](/documentation/introduction/mcp) lets AI coding assistants query documentation directly.

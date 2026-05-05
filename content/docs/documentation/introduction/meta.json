@@ -4,9 +4,11 @@
   "icon": "BookOpen",
   "pages": [
     "index",
+    "why-pay-com",
     "how-payments-work",
-    "supported-payment-methods",
+    "risk-and-compliance",
     "choose-your-integration",
+    "get-started",
     "mcp"
   ]
 }

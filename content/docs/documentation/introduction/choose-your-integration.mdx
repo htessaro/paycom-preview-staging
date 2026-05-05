@@ -1,42 +1,63 @@
 ---
 title: Choose your integration
-description: Compare our API and SDK integration paths to find the right balance between customization and PCI compliance
+description: Compare Pay.com's four integration paths to find the right balance of UI control, time to market, and PCI compliance for your business.
 ---
 
-Selecting the right integration is a critical decision that balances your desired level of user experience customization with your organizational PCI compliance requirements.
+import { Callout } from 'fumadocs-ui/components/callout'
 
-Pay.com offers four primary integration paths to accommodate different business needs and technical capabilities.
+Pay.com offers four integration paths. The right one depends on how much control you want over the customer-facing checkout experience and what PCI compliance your business already has in place.
 
-The following summary provides a high-level overview of each integration type based on technical control and security requirements:
+All four paths share the same underlying platform and token vault, so you can start with one approach and move to another later without re-integrating.
 
-* **API (Server-to-Server):** Offers maximum customization but requires the highest level of PCI compliance.
-* **Universal SDK:** Provides a complete, pre-built UI managed by Pay.com, requiring minimal PCI compliance.
-* **Headless SDK:** Combines the security benefits of an SDK with the flexibility to build your own custom user interface.
-* **Tokenization Only SDK:** A specialized flow used strictly for capturing and storing card details for later backend processing.
+## Quick comparison
 
-## Detailed integration options
-Each integration path is designed to address specific operational and security profiles.
+| Integration | Who builds the checkout UI | PCI scope | Best for |
+| :--- | :--- | :--- | :--- |
+| **Universal SDK** | Pay.com | Minimal | Fastest time to market; no design customization needed |
+| **Headless SDK** | You | Minimal | Full brand control without taking on full PCI compliance |
+| **Server-to-Server API** | You | Full (PCI required) | Maximum backend control; large organizations with existing compliance |
+| **Tokenization Only** | You (card capture only) | Minimal | Storing cards for recurring charges or anonymous checkouts |
 
-### API (Server-to-Server)
-The API integration is intended for merchants who wish to maintain total control over the checkout experience on their own servers.
-* Merchants retain full control over the user interface and payment logic.
-* High-level PCI compliance is required as sensitive card details are handled directly on the merchant's servers.
-* This path is best suited for large organizations with robust security infrastructure and complex backend requirements.
+## Universal SDK
 
-### Universal SDK
-This is our most managed solution, offering the quickest path to going live.
-* Pay.com provides a pre-built UI to streamline the implementation process.
-* PCI scope is significantly reduced because Pay.com handles the collection of all sensitive data.
-* This is the ideal choice for businesses seeking a secure, "out-of-the-box" experience with minimal development effort.
+Pay.com renders the entire payment UI. Your team adds the SDK to your page and Pay.com handles everything else: the form, the styling, the validation, and the submission.
 
-### Headless SDK
-The Headless SDK provides the underlying logic and security of our SDK without the pre-built user interface.
-* Merchants can build a custom UI while the SDK manages secure data transmission in the background.
-* Sensitive data never touches the merchant's servers, keeping the business out of the primary PCI scope.
-* This option serves merchants who want a bespoke checkout design without the burden of high-level compliance.
+This is the fastest path to accepting payments. Your PCI scope is minimal because no sensitive card data touches your systems.
 
-### Tokenization Only SDK
-This integration focuses solely on the secure capture and storage of payment methods.
-* Customization is focused exclusively on the card capture interaction.
-* The SDK securely tokenizes card details for safe storage with minimal compliance impact.
-* This is designed for businesses that need to save customer details for recurring billing or later transactions.
+Choose this path if you want to go live quickly and don't need a fully custom checkout design.
+
+## Headless SDK
+
+You build the payment UI using your own components. The Headless SDK handles all data transmission and security in the background, so sensitive card data never passes through your servers.
+
+Your PCI scope stays minimal, while you keep full control over the customer experience.
+
+<Callout type="info">
+The Headless SDK is one of Pay.com's key differentiators. Most payment platforms require you to choose between their pre-built UI (easy, but constrained) or building your own (flexible, but full PCI burden). The Headless SDK removes that trade-off.
+</Callout>
+
+Choose this path if your brand experience matters and you have a design team ready to build a custom checkout.
+
+## Server-to-Server API
+
+Your servers handle card data directly and communicate with Pay.com's API. You have maximum control over every aspect of the payment flow and checkout experience.
+
+This path requires full PCI compliance because card details pass through your infrastructure.
+
+Choose this path if you're PCI-certified, have complex backend payment logic, or are building for an enterprise environment with specific security requirements.
+
+## Tokenization Only SDK
+
+The SDK captures and tokenizes card details on the client side. Your backend then transacts using those tokens without ever handling raw card data.
+
+This is useful for public or anonymous checkouts where you want to store a payment method for use later, without requiring the customer to be logged in.
+
+Choose this path if you need to save payment methods for future charges, subscriptions, or deferred billing flows.
+
+## Not sure which to choose?
+
+If you're starting fresh and don't have strong requirements in either direction, start with the Universal SDK. You can always move to the Headless SDK or API path later as your product matures, without rebuilding your Pay.com integration.
+
+Your Pay.com implementation team can advise on the right path for your setup during onboarding. See [get started](/documentation/introduction/get-started) for how to reach them.
+
+Once you've chosen a path, the [payment guides](/documentation/payments/guides/create-a-charge) and [SDK documentation](/documentation/payments/sdk/pay-com-sdks-overview) walk through the technical implementation.

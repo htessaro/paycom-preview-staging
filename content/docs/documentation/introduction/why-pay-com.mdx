@@ -1,0 +1,58 @@
+---
+title: Why Pay.com
+description: What sets Pay.com apart from traditional payment gateways and why merchants choose it to consolidate their payment infrastructure.
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Plug, Network, Layers, ShieldCheck, Zap, Receipt } from 'lucide-react'
+
+Most payment providers solve one part of the problem. A gateway handles the transaction, a processor routes it, and separate integrations cover each payment method and acquiring bank. As a result, merchants end up managing multiple vendor relationships, reconciling data across systems, and maintaining bespoke integrations that break whenever a provider changes something.
+
+Pay.com replaces that fragmented setup with a single connection. One integration gives you access to every payment method, every acquirer relationship, and all the routing and compliance logic that keeps authorization rates high and chargebacks low.
+
+## What makes Pay.com different
+
+<Cards>
+  <Card
+    icon={<Plug />}
+    title="Single integration"
+    description="Connect once and access every supported payment method and acquirer. Adding a new method or switching acquirers requires no re-integration."
+  />
+  <Card
+    icon={<Network />}
+    title="Multi-acquirer routing"
+    description="Pay.com routes each transaction to the acquirer most likely to approve it and fails over automatically if one is unavailable."
+  />
+  <Card
+    icon={<Layers />}
+    title="Headless SDK"
+    description="Build any checkout UI you want while Pay.com handles security and compliance in the background. Full design control, minimal PCI scope."
+  />
+  <Card
+    icon={<ShieldCheck />}
+    title="Platform-level 3DS"
+    description="3D Secure applies consistently across all your acquirers from one place. SDK users need no 3DS configuration at all."
+  />
+  <Card
+    icon={<Zap />}
+    title="Fewer required fields"
+    description="Pay.com's API requires only a handful of mandatory fields and recovers missing information rather than returning validation errors."
+  />
+  <Card
+    icon={<Receipt />}
+    title="Transparent pricing"
+    description="The dashboard shows a full fee breakdown per payment method and per acquirer, including interchange-plus charges. No hidden costs."
+  />
+</Cards>
+
+<Callout type="info">
+**The Headless SDK is a unique capability.** Most platforms make you choose between their pre-built UI (easy, constrained) or building your own (flexible, full PCI burden). Pay.com's Headless SDK removes that trade-off: you build any checkout you want and Pay.com handles all data transmission and compliance behind the scenes.
+</Callout>
+
+
+## Ready to go deeper?
+
+- [How payments work](/documentation/introduction/how-payments-work): smart routing, orchestration, and how transactions flow through the platform.
+- [Choose your integration](/documentation/introduction/choose-your-integration): compare the four integration paths and choose the right fit for your business.
+- [Risk and compliance](/documentation/introduction/risk-and-compliance): how Pay.com handles fraud, disputes, and regulatory requirements.

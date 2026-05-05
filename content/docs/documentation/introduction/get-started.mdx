@@ -1,0 +1,67 @@
+---
+title: Get started
+description: How to go from initial contact to your first live transaction with Pay.com, including underwriting, staging, and go-live.
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+
+Pay.com onboards merchants through a guided process. There is no instant self-service signup: every merchant works with the Pay.com team to ensure the right integration path, payment methods, and acquiring setup are in place before going live.
+
+The process typically takes a few days from initial contact to a working staging environment, and a few more to reach go-live once underwriting is complete.
+
+<Steps>
+<Step>
+## Contact the Pay.com team
+
+Visit [pay.com](https://pay.com) and reach out via the Contact Sales page to start the conversation. Pay.com's team will ask about your existing payment setup, the payment methods you need, and the markets you operate in. This informs which integration path and acquiring configuration they'll recommend.
+
+There's no application form to fill out at this stage. The intake conversation is the first step.
+</Step>
+<Step>
+## Underwriting and commercial agreement
+
+Before production credentials are issued, Pay.com's underwriting team reviews your business. This covers company information, Ultimate Beneficial Owner (UBO) details, and director information. Your commercial agreement is finalized in parallel.
+
+Production credentials are issued once underwriting is complete and the commercial terms are agreed.
+</Step>
+<Step>
+## Staging environment and integration
+
+While underwriting is in progress, Pay.com creates a staging account for your technical team. The staging environment gives you immediate access to:
+
+- API keys for the staging environment
+- The Pay.com dashboard, pre-configured with your selected payment methods and currencies
+- Webhook configuration
+- Transaction logs
+
+Your team can begin integrating using your chosen path — SDK, Headless SDK, or direct API — from the moment the staging account is ready. The Pay.com implementation team is available to support your integration throughout this phase.
+
+See [choose your integration](/documentation/introduction/choose-your-integration) if you haven't decided on an integration path yet.
+</Step>
+<Step>
+## Testing and validation
+
+Test your integration in the staging environment using Pay.com's test card numbers and simulated payment flows. Pay.com provides test credentials for a range of scenarios: successful charges, declines, 3DS challenges, and others.
+
+The [payment guides](/documentation/payments/guides/create-a-charge) walk through each flow with request and response examples you can test against.
+</Step>
+<Step>
+## Go live
+
+Once underwriting is complete and your commercial agreement is signed, Pay.com issues your production API keys. Switch your integration from staging to production credentials and you're live.
+
+The Pay.com dashboard shows real-time transaction data from your first charge.
+</Step>
+<Step>
+## Ongoing operations
+
+Pay.com releases platform updates weekly. Your account manager is available for ongoing support, and the dashboard provides continuous visibility into authorization rates, transaction volumes, and settlement data.
+
+See [reporting and reconciliation](/documentation/reporting-reconciliation) for a guide to the analytics and reporting tools available to you.
+</Step>
+</Steps>
+
+<Callout type="info">
+To start the onboarding process, visit [pay.com/contact-sales](https://pay.com/contact-sales). If you're a developer who already has staging credentials and is ready to integrate, go straight to the [API reference](/api-reference/get-started) or the [payment guides](/documentation/payments/guides/create-a-charge).
+</Callout>

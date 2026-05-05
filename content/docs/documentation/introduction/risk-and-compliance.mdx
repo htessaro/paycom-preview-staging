@@ -1,0 +1,82 @@
+---
+title: Risk and compliance
+description: How Pay.com handles fraud prevention, 3DS authentication, dispute management, and PCI DSS compliance for your business.
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+
+Pay.com includes a full suite of risk and compliance tools. These aren't separate add-ons: they're built into the platform and apply to every transaction, regardless of which payment method or acquiring partner processes it.
+
+## 3D Secure authentication
+
+3D Secure (3DS) is the authentication protocol used by Visa, Mastercard, and American Express to verify a cardholder's identity before a charge completes. Pay.com manages 3DS at the platform level, which means it applies consistently across all your acquiring relationships from one place.
+
+For most transactions, 3DS runs silently in the background without any customer-facing challenge. Higher-risk transactions trigger a verification step, like a one-time code or biometric confirmation, directly from the cardholder's bank.
+
+**Liability shift.** When a transaction is authenticated via 3DS, liability for fraud-related chargebacks shifts from you to the issuing bank. This is a significant financial protection for merchants operating in high-fraud categories or high-volume environments.
+
+**SCA compliance.** If you operate in the UK or European markets, 3DS2 is required under Strong Customer Authentication (SCA) rules. Pay.com's 3DS implementation is compliant with PSD2 and SCA requirements.
+
+**For SDK users.** If you use the Pay.com SDK, 3DS is handled entirely by the platform with no configuration on your end.
+
+## Risk scoring and rules
+
+Every transaction passing through Pay.com is assessed against a configurable set of rules before it reaches the acquirer. Rules can evaluate:
+
+- Transaction velocity (for example, multiple charges from the same card in a short window)
+- Address verification (AVS) and CVC checks
+- Account name verification (ANI)
+- Geolocation consistency between the cardholder's billing address and the IP of the transaction
+- Custom allowlists and blocklists you define
+
+When a rule fires, you can configure the outcome: block the transaction, require 3DS authentication, or flag it for manual review. A simulation mode lets you test rule changes before they apply to live transactions.
+
+## Dispute management
+
+When a customer disputes a charge with their card issuer, Pay.com receives the chargeback notification via the acquiring bank and alerts you through your dashboard and webhooks. From there, you can accept the dispute or submit evidence to challenge it.
+
+Disputes move through a defined lifecycle:
+
+1. **Chargeback filed**: the issuing bank reverses the transaction and notifies Pay.com
+2. **Representment**: you submit evidence; Pay.com sends it to the card scheme
+3. **Pre-arbitration**: if the issuer rejects your evidence, you can escalate
+4. **Arbitration**: the card scheme makes a binding decision
+
+All stages are tracked in the Pay.com dashboard with visible deadlines for each action.
+
+To explore the dispute API, see the [disputes reference](/documentation/risk-disputes-fraud/disputes).
+
+## Pre-dispute alerts
+
+Pay.com supports three chargeback alert programs that give you the opportunity to refund a transaction before a formal chargeback is filed:
+
+- **Mastercard Collaboration**: early warning alerts from Mastercard issuers
+- **Visa RDR (Rapid Dispute Resolution)**: automated dispute resolution for eligible Visa transactions
+- **Ethoca**: card-scheme-agnostic alerts that work across Visa and Mastercard
+
+When an alert arrives, you can issue a refund to prevent the chargeback from being filed. Avoiding the chargeback also prevents the associated fees and protects your standing with card scheme monitoring programs, which can limit your ability to process payments if your chargeback rate exceeds thresholds.
+
+Enrollment in these programs is handled by Pay.com. Contact your account team to get started.
+
+## Fraud warnings
+
+Card schemes send fraud reports (TC40 from Visa, SAFE from Mastercard) when a cardholder reports a transaction as unauthorized. These are informational notifications: no funds are withdrawn automatically, but receiving one is a signal that a chargeback is likely. You can choose to refund the transaction proactively to reduce that risk.
+
+See [fraud warnings](/documentation/risk-disputes-fraud/fraud-warnings) for more detail.
+
+## PCI DSS compliance
+
+Pay.com holds PCI DSS Level 1 certification, the highest level of compliance in the payment card industry. What this means for your business depends on your integration path:
+
+| Integration | Your PCI obligations |
+| :--- | :--- |
+| Universal SDK | Minimal — Pay.com handles all card data collection |
+| Headless SDK | Minimal — sensitive data never touches your servers |
+| Server-to-Server API | Full PCI compliance required on your side |
+| Tokenization Only | Minimal for card capture; varies for backend processing |
+
+If you're evaluating Pay.com for a regulated environment or need to share compliance documentation with your security team, contact your Pay.com account manager for certifications and supporting materials.
+
+<Callout type="info">
+For a complete reference of Pay.com's risk tools, including rule configuration, risk assessments, and the full dispute lifecycle, see the [risk, disputes, and fraud](/documentation/risk-disputes-fraud) section.
+</Callout>
