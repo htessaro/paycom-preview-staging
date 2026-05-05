@@ -195,6 +195,10 @@ Send a `POST /v1/charges` request with `source_data.type` set to `"applepay"` an
 This flow requires a real user payment session on an Apple device. It cannot be tested server-side in isolation, you must trigger an Apple Pay payment from Safari on a real device (or a registered test device in sandbox).
 </Callout>
 
+<Callout type="warn">
+Apple Pay payloads expire 5 minutes after creation. Submit the encrypted payload to [`POST /v1/charges`](/api-reference/charges/create-charge) within this window or the charge will fail.
+</Callout>
+
 {/* ```json
 {
   "amount": 10000,
