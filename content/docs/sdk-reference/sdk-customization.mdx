@@ -7,6 +7,7 @@ import { Callout } from 'fumadocs-ui/components/callout'
 import { Step, Steps } from 'fumadocs-ui/components/steps'
 import { ImageZoom } from 'fumadocs-ui/components/image-zoom'
 import sdkCustomization from './sdk-customization.png'
+import sdkform from './form.png'
 
 The Universal Component renders a fully hosted checkout form inside your page. By default, it uses Pay.com's visual design. The `style` object lets you override that design to match your brand, without switching to the Headless SDK.
 
@@ -29,7 +30,7 @@ The diagram below shows which `style` key maps to each region of the checkout fo
     alt="Universal Component rendered in the browser"
     width={800}
     height={600}
-    />
+/>
 
 
 Pass a `style` object as a parameter to `checkout.universal()`:
@@ -122,6 +123,78 @@ style: {
   }
 }
 ```
+
+<Callout type="info">
+  The `color` property in `cardForm.number`, `cardForm.expiry`, `cardForm.cvv`, and `cardForm.name` targets the **input text** only. To style the label above a field, use `cardForm.formConfig` instead (see below).
+</Callout>
+
+### Field labels, placeholders, and error messages
+Use `cardForm.formConfig` to control the label text, label styles, placeholder text, error message styles, and input size for each card field. This is separate from the `style` object, pass it directly inside `cardForm`, alongside `style`:
+
+<ImageZoom
+  src={sdkform}
+  alt="Diagram showing which formConfig keys map to each part of the card form"
+  width={875}
+  height={460}
+/>
+
+The diagram above shows how each `formConfig` key maps to a visible part of the card form. Labels sit above each field, placeholders appear inside the input when it is empty, and error messages appear below the field when validation fails.
+
+```js
+checkout.universal({
+  container: '#payment_container',
+  cardForm: {
+    formConfig: {
+      number: {
+        label: 'Card number',
+        labelStyle: {
+          color: '#ffffff',
+          fontSize: '13px',
+          fontWeight: '500',
+        },
+        placeholder: '1234 5678 9012 3456',
+        errorMessageStyle: {
+          color: '#f87171',
+          fontSize: '12px',
+        },
+        inputSize: 'medium',
+      },
+      expiry: {
+        label: 'Expiry date',
+        labelStyle: { color: '#ffffff' },
+      },
+      cvv: {
+        label: 'CVV',
+        labelStyle: { color: '#ffffff' },
+      },
+      name: {
+        label: 'Cardholder name',
+        labelStyle: { color: '#ffffff' },
+      },
+    }
+  }
+})
+```
+
+The `base` key inside `formConfig` sets form-level options shared across all fields:
+
+```js
+cardForm: {
+  formConfig: {
+    base: {
+      formTitle: 'Pay with card',
+      titleStyles: {
+        color: '#ffffff',
+        fontSize: '16px',
+        fontWeight: '600',
+      },
+      inputSpacing: '16px',
+    }
+  }
+}
+```
+
+For the full list of accepted properties for each field key and `base`, see the [`cardForm.formConfig` keys](/docs/sdk-reference/sdk-style-reference#cardformformconfig-keys) reference.
 
 ### Card form submit button
 
@@ -435,6 +508,33 @@ checkout.universal({
       fontWeight: '700',
       padding: '14px',
     },
+  },
+  cardForm: {
+    formConfig: {
+      base: {
+        formTitle: 'Pay with card',
+        titleStyles: { color: '#111827', fontSize: '16px', fontWeight: '600' },
+        inputSpacing: '16px',
+      },
+      number: {
+        label: 'Card number',
+        labelStyle: { color: '#6b7280', fontSize: '13px' },
+        errorMessageStyle: { color: '#ef4444', fontSize: '12px' },
+        inputSize: 'medium',
+      },
+      expiry: {
+        label: 'Expiry date',
+        labelStyle: { color: '#6b7280', fontSize: '13px' },
+      },
+      cvv: {
+        label: 'CVV',
+        labelStyle: { color: '#6b7280', fontSize: '13px' },
+      },
+      name: {
+        label: 'Cardholder name',
+        labelStyle: { color: '#6b7280', fontSize: '13px' },
+      },
+    }
   }
 })
 ```

@@ -1,4 +1,469 @@
 ---
 title: Google Pay
-description: Accept contactless payments from customers during checkout, using Google Pay on Android, iOS, and the web.
+description: Accept payments from customers at checkout using cards saved
+  to their Google account, on Android, iOS, and the web.
 ---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs'
+import { Step, Steps } from 'fumadocs-ui/components/steps'
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom'
+import googlePayDashboardConfig from './google-pay-dashboard-config.png'
+
+Google Pay is a digital wallet payment method that lets customers pay at
+checkout using a card saved to their Google account. It is available on
+Android devices, iOS devices with the Google Pay app, and in supported
+desktop and mobile browsers.
+
+Google Pay provides an express checkout option alongside traditional card entry. Customers who have Google Pay set up can authenticate with their fingerprint, face scan, PIN, or screen lock and complete payment in one step, without manually entering card details.
+
+<Callout type="info">
+  Google Pay is available to cardholders whose banks support it.
+  Availability varies by country and device.
+</Callout>
+
+## Payment method properties
+
+This table outlines the key properties and limitations of using Google Pay,
+including where it is supported, how it is processed, and transaction
+constraints.
+
+| Property | Value |
+|---|---|
+| **Payment type** | In-page (no full-page redirect; a native payment sheet overlays the merchant's checkout page) |
+| **Merchant countries** | Australia, Austria, Belgium, Brazil, Bulgaria, Canada, Croatia, Cyprus, Czech Republic, Denmark, Estonia, Finland, France, Germany, Greece, Hong Kong, Hungary, Ireland, Italy, Japan, Latvia, Lithuania |
+| **Customer countries** | Global. Customer must have a Google account with a card saved to Google Pay. |
+| **Currencies** | AUD, BRL, CAD, CHF, CNY, CZK, DKK, EUR, GBP, HKD, HUF, INR, JPY, MXN, MYR, NOK, NZD, PHP, PLN, RON, SEK, SGD, THB, TWD, USD |
+| **Transaction minimum** | $0.01 |
+| **Transaction maximum** | No limit |
+| **Payment confirmation** | Immediate. The charge is authorized and captured at the moment the customer authenticates. |
+| **Settlement timing** | Next business day |
+| **Refunds** | Fully and partially supported |
+| **Disputes** | Fully supported. See [Disputes](#disputes) |
+| **Recurring payments** | Fully supported. See [Recurring payments](#recurring-payments) |
+| **Vaulting / saved credentials** | Not supported. Google Pay generates a payment token per transaction. |
+| **3DS / SCA** | Handled automatically. Cryptographic authentication is performed by Google at the time of payment. |
+| **Redirect required** | No. The Google Pay sheet appears as a native overlay on the customer's device or browser. |
+
+## Customer payment flow
+
+Here's how Google Pay authorizes a payment from your checkout page:
+
+<Steps>
+<Step>
+### Checkout page rendering
+When the customer reaches the checkout page, Pay.com detects Google Pay
+availability in their browser and renders the Google Pay button.
+</Step>
+
+<Step>
+### Payment initiation
+The customer taps or clicks the Google Pay button.
+</Step>
+
+<Step>
+### Sheet presentation
+A Google Pay payment sheet appears, displaying the merchant name, order amount, the customer's default saved card, and billing information.
+</Step>
+
+<Step>
+### Card selection
+The customer can confirm their default card or tap to select a different card from their Google Wallet.
+</Step>
+
+<Step>
+### Authentication
+If required, the customer authenticates using their device unlock method (fingerprint, face scan, PIN, pattern, or password).
+</Step>
+
+<Step>
+### Payment confirmation
+The Google Pay sheet closes, Pay.com processes the tokenized payment data, and the customer sees a payment confirmation on the merchant's page.
+</Step>
+</Steps>
+
+<Callout type="info">
+If authentication fails or the customer cancels, the Google Pay sheet
+dismisses without creating a charge. The customer remains on your checkout
+page.
+</Callout>
+
+## Google Pay setup and integration
+
+### Before you begin
+
+Make sure the following are in place before integrating Google Pay:
+
+- You must have an active Pay.com merchant account with Google Pay enabled.
+  Contact your account manager or enable Google Pay in the **Payment
+  methods** section of your Pay.com dashboard.
+- Google Pay is supported in Chrome on Android and desktop, in Safari on
+  iOS (via the Google Pay app), and in other browsers where the customer
+  has Google Pay set up.
+
+<Callout type="note">
+You do not need a separate Google Pay API key or Google Merchant account.
+Pay.com handles Google merchant registration and token processing on your
+behalf.
+</Callout>
+
+### Dashboard configuration
+
+Google Pay is configured in your Pay.com dashboard. In some cases it may
+already be enabled by default. If not, follow the steps below.
+
+<Steps>
+<Step>
+#### Open account settings
+Click your profile name in the top-right corner of your
+[Pay.com dashboard](https://dashboard.pay.com) and select **Settings**.
+</Step>
+
+<Step>
+#### Enable Google Pay
+Navigate to **Payment methods** and turn on Google Pay.
+</Step>
+
+<ImageZoom src={googlePayDashboardConfig} alt="google pay dashboard configuration" />
+</Steps>
+
+<Callout type="info">
+If Google Pay is not visible in your payment methods list, contact your
+account manager to have it enabled on your account.
+</Callout>
+
+## Integration paths
+
+Pay.com supports three integration paths for Google Pay. Choose based on
+how much control you need over the checkout experience.
+
+<Tabs items={['SDK', 'API']}>
+<Tab value="SDK">
+
+### Universal SDK
+
+Google Pay renders automatically within the universal web checkout. No
+additional code is needed beyond the standard SDK initialization. See the
+[Get started with the Pay.com SDK](/docs/payments/sdks/integrate-the-pay-com-sdk)
+guide for setup instructions. Use the universal SDK when you want Pay.com
+to handle the entire payment flow including the UI.
+
+### Headless SDK
+
+Use the Headless SDK when you want to control the user interface and let
+the payment logic be handled automatically by Pay.com. You render your own
+Google Pay button and control when the payment sheet appears.
+
+Google Pay is not available in all browsers. Call `canMakePayments()` after
+initializing the checkout instance and only show the button if the result
+includes `googlepay: true`.
+
+```javascript
+const canMakePaymentsResult = await checkout.canMakePayments()
+// Example result: { applepay: false, googlepay: true }
+
+if (canMakePaymentsResult.googlepay) {
+  // Show your Google Pay button
+}
+```
+
+**Trigger the payment when the customer taps the button.**
+
+```javascript
+async function handleGooglePay() {
+  await checkout.headless('googlepay')
+}
+```
+
+<Callout type="info">
+Google's brand guidelines require that you use the official Google Pay
+button. Follow the
+[Google Pay brand guidelines](https://developers.google.com/pay/api/web/guides/brand-guidelines)
+when rendering the button. Do not substitute a generic button styled to
+look like Google Pay.
+</Callout>
+
+</Tab>
+<Tab value="API">
+
+Use the native Google Pay API on your frontend to prompt the customer for
+payment. Once the customer authorizes, Google returns a payment token to
+your client-side code. Pass the token data to your backend, then make your
+request to the `POST /v1/charges` endpoint.
+
+Pay.com provides two ways to send the wallet data to your backend:
+
+### Pay.com decrypts the payload
+
+Pass the raw encrypted payment token returned by the
+[Google Pay API](https://developers.google.com/pay/api/web/reference/response-objects#PaymentData)
+directly to Pay.com.
+
+Send a `POST /v1/charges` request with `source_data.type` set to
+`"googlepay"` and pass the full encrypted token object from Google. Pay.com
+handles decryption and processing of the payment.
+
+<Callout type="info">
+This flow needs a real user payment session in a supported browser. It
+cannot be tested server-side in isolation. You must trigger a Google Pay
+payment from a supported browser or device in the Pay.com sandbox
+environment.
+</Callout>
+
+### You decrypt the payload
+
+Send a `POST /v1/charges` request with `source_data.type` set to
+`"network_token"` and provide the decrypted token details inside
+`source_data.network_token`. Amounts are in the smallest currency unit,
+so `10000` equals $100.00 USD.
+
+Always pass billing details from the Google Pay response into
+`source_data.billing_details`. This improves authorization rates by giving
+the issuer address verification data.
+
+The `token`, `expiry_month`, `expiry_year`, `eci`, and `cryptogram` values
+come from the decrypted `paymentMethodData` object returned by the Google
+Pay authorization response. Map the billing address from the Google Pay
+response to Pay.com fields as follows:
+
+| Google Pay field | Pay.com parameters |
+|:---|:---|
+| `paymentMethodData.info.billingAddress.address1` | `address.line1` |
+| `paymentMethodData.info.billingAddress.locality` | `address.city` |
+| `paymentMethodData.info.billingAddress.postalCode` | `address.postal_code` |
+| `paymentMethodData.info.billingAddress.administrativeArea` | `address.state` |
+| `paymentMethodData.info.billingAddress.countryCode` | `address.country` |
+
+<Tabs items={['Request', 'Response']}>
+  <Tab value="Request">
+    ```json
+    {
+      "amount": 10000,
+      "currency": "usd",
+      "source_data": {
+        "type": "network_token",
+        "network_token": {
+          "token": "4242424242424242",
+          "token_type": "googlepay",
+          "expiry_month": "10",
+          "expiry_year": "2028",
+          "three_ds": {
+            "eci": "05",
+            "cryptogram": "AgAAAAAAAIR8CQrXcIhbQAAAAAA="
+          }
+        },
+        "billing_details": {
+          "name": "Jane Smith",
+          "email": "jane.smith@example.com",
+          "address": {
+            "line1": "123 Main Street",
+            "city": "San Francisco",
+            "state": "CA",
+            "postal_code": "94102",
+            "country": "US"
+          }
+        }
+      },
+      "customer_reference_id": "cust-jane-smith-001",
+      "description": "Google Pay payment for Order #99001",
+      "reference": "order-99001"
+    }
+    ```
+  </Tab>
+  <Tab value="Response">
+    ```json
+    {
+      "id": "chrg_687257433738839041",
+      "resource": "charge",
+      "amount": 10000,
+      "amount_human_readable": "100.00",
+      "currency": "usd",
+      "status": "succeeded",
+      "paid": false,
+      "payment_method_details": {
+        "type": "card",
+        "card": {
+          "brand": "visa",
+          "last4": "4242",
+          "exp_month": "10",
+          "exp_year": "2028",
+          "wallet": {
+            "type": "googlepay"
+          }
+        }
+      },
+      "created": "2026-05-11T11:15:43.025Z",
+      "test_mode": true
+    }
+    ```
+  </Tab>
+</Tabs>
+
+The `payment_method_details.card.wallet.type: "googlepay"` field in the
+response confirms Pay.com recognized and processed the payment as a Google
+Pay transaction.
+
+</Tab>
+</Tabs>
+
+## Testing
+
+To test Google Pay through Pay.com checkout, use a supported browser with
+a Google account that has a card saved to Google Pay, and your Pay.com test
+API keys. This lets you simulate successful payments without charging the
+card.
+
+| Scenario | Test action | Expected result |
+|---|---|---|
+| Successful payment | Authenticate through the Google Pay sheet | `status: succeeded`, `wallet.type: "googlepay"` in response |
+| Customer cancels | Dismiss the Google Pay sheet | Sheet closes, no charge created |
+| Unavailable in browser | Open checkout in a browser without Google Pay configured | Google Pay button does not render |
+
+## Handling payment events
+
+Subscribe to the following webhook events to track Google Pay charge
+outcomes.
+
+| Webhook event | Trigger condition | Recommended action |
+|---|---|---|
+| `charge.succeeded` | The charge was authorized and captured successfully | Fulfill the order, send a confirmation email |
+| `charge.failed` | The charge was declined by the issuer or by Google Pay | Notify the customer and prompt them to use a different card or payment method |
+
+Because Google Pay confirmation is immediate (synchronous), you will not
+encounter a `charge.pending` state for standard Google Pay transactions.
+The `charge.succeeded` event is the only event you need to fulfill an order.
+
+<Callout type="warn">
+Always verify webhook signatures using the `Pay-Signature` header and your
+endpoint's secret key (HMAC SHA-256) before acting on any event. See the
+[Webhooks overview](/payments/webhooks) for verification instructions.
+</Callout>
+
+## Refunds
+
+Google Pay charges can be refunded in full or partially. Refunds are
+processed against the underlying card, not the Google Pay wallet. The
+customer sees the refund credited to the card that was used for checkout.
+
+See the [refund a charge](/documentation/payments/guides/refund-a-charge)
+guide for the full request format, partial refund instructions, and webhook
+events.
+
+## Disputes
+
+Google Pay transactions are backed by the customer's underlying card and
+follow that card network's dispute and chargeback rules. When a cardholder
+contacts their bank to challenge a transaction, Pay.com notifies you
+immediately and updates your dashboard.
+
+### Dispute notifications
+
+When a dispute is opened, Pay.com:
+
+- Delivers a `dispute.open` webhook event to your endpoint
+- Updates the **Disputes** page in your dashboard
+- Shows a response deadline in the `expires_at` field
+
+You must respond before the `expires_at` deadline. If you do not, the
+dispute is automatically resolved in favor of the cardholder.
+
+### Responding to disputes
+
+You have two options when a dispute is opened:
+
+| Action | When to use it |
+| :--- | :--- |
+| **Accept** | The transaction was erroneous, the customer is entitled to a refund, or you lack sufficient evidence to defend. |
+| **Defend** | You have proof of delivery, service usage, customer communication, or the customer's agreement to your terms. |
+
+Because Google Pay uses a payment token rather than the customer's real
+card number, dispute records in Pay.com and on your card network statement
+will reference the underlying card, not the Google Pay wallet.
+
+For the full dispute lifecycle, evidence requirements, and webhook events,
+see the [disputes guide](/documentation/risk-disputes-fraud/disputes).
+
+## Recurring payments
+
+When Pay.com processes a Google Pay transaction, it decrypts the payment
+token and stores the underlying card as a standard payment method
+(`pm_card_...`). This stored card behaves identically to any other saved
+card on Pay.com and can be used for both merchant-initiated charges and
+subscription billing.
+
+<Callout type="info">
+The `pm_card_...` ID is available in the charge response regardless of
+which Google Pay integration path you used: Universal SDK, Headless SDK,
+or directly via the API using either the encrypted Google Pay token or a
+decrypted network token.
+</Callout>
+
+### Retrieve the stored payment method ID
+
+How you retrieve the `pm_card_...` ID depends on the integration path used
+for the initial Google Pay payment.
+
+<Tabs items={['SDK', 'API']}>
+  <Tab value="SDK">
+    Retrieve the `pm_card_...` ID from the `onSuccess` callback after the
+    customer completes the initial Google Pay payment:
+
+    ```javascript
+    const checkout = pay.checkout({
+      clientSecret: '{client_secret}',
+      onSuccess: (payment) => {
+        const paymentMethodId = payment.payment_method
+        // Store paymentMethodId against the customer in your database
+      },
+      onFailure: (error) => {
+        console.error(error.message)
+      },
+    })
+    ```
+  </Tab>
+  <Tab value="API">
+    On the initial Google Pay charge request, include
+    `"setup_future_usage": "off_session"` inside your `source_data` object.
+    This tells the issuing bank that the card will be used for future
+    merchant-initiated transactions.
+
+    The charge response returns the values you need for all future recurring
+    charges:
+
+    ```json
+    {
+      "id": "chrg_687257433738839041",
+      "payment_method": "pm_card_687257443142470657",
+      "underlying_network_id": "2858e1b8-c453-4ef9-8940-18c2e159725c",
+      "status": "succeeded"
+    }
+    ```
+
+    Store both the `payment_method` ID and the `underlying_network_id`
+    against the customer record in your database. You will need these for
+    future recurring charges.
+  </Tab>
+</Tabs>
+
+### Create recurring charges or subscriptions
+
+Once you have the `pm_card_...` ID, you can use it to charge the customer
+without them being present. There are two paths depending on your billing
+model:
+
+- **Recurring charges**: trigger each charge manually using the stored
+  `pm_card_...` ID with `"off_session": true`. See the
+  [recurring charges guide](/documentation/payments/guides/create-recurring-charges)
+  for the full request format, all targeting methods, response handling, and
+  webhook events.
+
+- **Subscriptions**: attach the stored `pm_card_...` ID to a subscription
+  package and let Pay.com manage the billing schedule automatically. See the
+  [subscriptions guide](/documentation/payments/sdk/manage-subscription-lifecycle)
+  for the full setup instructions.
+
+<Callout type="warn">
+Google Pay generates a new payment token on every transaction. Recurring
+charges are made against the underlying card that Pay.com extracts during
+the initial payment, not against the Google Pay wallet itself.
+</Callout>

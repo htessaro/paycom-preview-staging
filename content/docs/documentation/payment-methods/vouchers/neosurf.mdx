@@ -9,7 +9,7 @@ import { Step, Steps } from 'fumadocs-ui/components/steps'
 import { ImageZoom } from 'fumadocs-ui/components/image-zoom'
 import paymentMethodConfig from './payment-method-config.png'
 
-Neosurf is a prepaid voucher and e-money wallet payment method that lets customers pay online without a credit card or bank account. Customers buy a Neosurf voucher at a retail outlet or online, then enter the 10-character PIN at checkout to pay instantly. It is widely used in France, Europe, Australia, and Canada, and is especially popular in online gaming, gambling, and digital content verticals.
+Neosurf is a prepaid voucher and e-money wallet payment method that lets customers pay online without a credit card or bank account. Customers buy a Neosurf voucher at a retail outlet or online, then enter the 10-character PIN at checkout to pay instantly. It is widely used in France, Europe, Australia, and Canada, and is especially popular in online gaming, licensed gambling, crypto, and digital content verticals.
 
 Enabling Neosurf opens your checkout to unbanked, underbanked, and privacy-conscious customers who prefer cash-backed payments and do not want to share card or banking information with merchants.
 
@@ -22,17 +22,18 @@ Every Neosurf transaction is prepaid and guaranteed. There are no chargebacks.
 | Property | Value |
 |---|---|
 | **Payment type** | Redirect (Neosurf-hosted payment page for PIN entry) |
-| **Merchant countries** | Australia, Austria, Belgium, Benin, Brazil, Bulgaria, Burkina Faso, Canada, China, Croatia, Cyprus, Czech Republic, Denmark, Estonia, Finland, France, Germany, Greece, Guinea-Bissau, Hong Kong, Hungary, India, Indonesia, Ireland, Israel, Italy, Ivory Coast, Japan, Latvia, Lithuania, Luxembourg, Malaysia, Mali, Malta, Mexico, Netherlands, New Zealand, Niger, Norway, Philippines, Poland, Portugal, Romania, Russia, Senegal, Singapore, Slovakia, Slovenia, South Africa, South Korea, Spain, Sweden, Switzerland, Thailand, Togo, Turkey, United Kingdom, United States |
-| **Customer countries** | Australia, Austria, Belgium, Benin, Brazil, Bulgaria, Burkina Faso, Canada, China, Croatia, Cyprus, Czech Republic, Denmark, Estonia, Finland, France, Germany, Greece, Guinea-Bissau, Hong Kong, Hungary, India, Indonesia, Ireland, Israel, Italy, Ivory Coast, Japan, Latvia, Lithuania, Luxembourg, Malaysia, Mali, Malta, Mexico, Netherlands, New Zealand, Niger, Norway, Philippines, Poland, Portugal, Romania, Russia, Senegal, Singapore, Slovakia, Slovenia, South Africa, South Korea, Spain, Sweden, Switzerland, Thailand, Togo, Turkey, United Kingdom, United States |
-| **Currencies** | AUD, BGN, BRL, CAD, CHF, CNY, CZK, DKK, EUR, GBP, HKD, HRK, HUF, IDR, ILS, INR, JPY, KRW, MXN, MYR, NOK, NZD, PHP, PLN, RON, RUB, SEK, SGD, THB, TRY, USD, XOF, ZAR |
-| **Transaction minimum** | €10 (lowest available voucher denomination) |
-| **Transaction maximum** | €150 per single voucher. Higher amounts are supported via the [myNeosurf Account](https://www.neosurf.com/myneosurf-account/). |
+| **Merchant countries** | Available globally, excluding [sanctioned countries](https://ofac.treasury.gov/sanctions-programs-and-country-information). Availability in some countries also depends on your license type. See [Licensing requirements](#licensing-requirements). |
+| **Customer countries** | Andorra, Australia, Austria, Belgium, Canada, Croatia, Cyprus, Czech Republic, Denmark, Finland, France, Iceland, Ireland, Italy, Liechtenstein, Luxembourg, Malta, Mexico, Moldova, Netherlands, New Zealand, Poland, Portugal, Slovakia, Slovenia, Spain, Sweden, Switzerland, United Kingdom, United States |
+| **Processing currencies** | AUD, BGN, BRL, CAD, CHF, CNY, CZK, DKK, EUR, GBP, HKD, HRK, HUF, IDR, ILS, INR, JPY, KRW, MXN, MYR, NOK, NZD, PHP, PLN, RON, RUB, SEK, SGD, THB, TRY, USD, XOF, ZAR |
+| **Settlement currencies** | AUD, BGN, BRL, CAD, CHF, CNY, CZK, DKK, EUR, GBP, HKD, HRK, HUF, IDR, ILS, INR, JPY, KRW, MXN, MYR, NOK, NZD, PHP, PLN, RON, RUB, SEK, SGD, THB, TRY, USD, XOF, ZAR |
+| **Transaction minimum** | 1 (smallest currency unit). The lowest available voucher denomination is €10. |
+| **Transaction maximum** | 100,000,000 (smallest currency unit, e.g. $1,000,000). Single vouchers are capped at €150; higher amounts are supported via the [myNeosurf Account](https://www.neosurf.com/myneosurf-account/). |
 | **Payment confirmation** | Immediate |
-| **Settlement timing** | [[PLACEHOLDER — confirm with Pay.com]] |
-| **Refunds** | Not supported |
+| **Settlement timing** | Monthly. Settlement reports are issued on the 1st of the following month; payouts are issued 30 days later (e.g. June 1st: Settlement Report for May; July 1st: Payout for May). |
+| **Refunds** | Full and partially supported  |
 | **Disputes** | Not supported |
 | **Recurring payments** | Not supported |
-| **Vaulting / saved credentials** | [[PLACEHOLDER — confirm with Pay.com]] |
+| **Vaulting / saved credentials** | [[PLACEHOLDER, confirm with Pay.com]] |
 | **3DS / SCA** | Not supported. No card is involved; the PIN is the authenticator |
 | **Redirect required** | Yes. The customer is redirected to a Neosurf-hosted payment page for PIN entry |
 
@@ -58,8 +59,8 @@ The Neosurf-hosted page presents the customer with two options:
 
 ![Neosurf-hosted payment page](./neosurf-checkout.png)
 
-- **Use my Neosurf account** — the customer clicks **Log in** to authenticate with their myNeosurf account and pay from their account balance. This option supports higher spending limits than a single voucher.
-- **I have a Neosurf Ticket** — the customer enters their voucher PIN into the split code field (three segments) and clicks **Pay**.
+- **Use my Neosurf account**: the customer clicks **Log in** to authenticate with their myNeosurf account and pay from their account balance. This option supports higher spending limits than a single voucher.
+- **I have a Neosurf Ticket**: the customer enters their voucher PIN into the split code field (three segments) and clicks **Pay**.
 
 The page also shows a **Find my local store** banner for customers who don't have a voucher yet and want to purchase one at a nearby retail outlet before completing the transaction.
 </Step>
@@ -90,6 +91,24 @@ If the customer closes the Neosurf-hosted page without completing payment, the c
 
 - You must have an active Pay.com merchant account with Neosurf enabled. Contact your account manager to enable Neosurf for your account.
 - You do not need a separate Neosurf merchant account. Pay.com manages the Neosurf integration on your behalf.
+
+### Licensing requirements
+
+As a regulated Electronic Money Institution (EMI), Pay.com requires merchants to hold local licenses in countries where this is a regulatory requirement. Licensing requirements vary by your license type:
+
+| License | Countries requiring a local license |
+|---|---|
+| Anjouan | New Zealand, Canada (excluding Ontario) |
+| Tobique | Australia, New Zealand, Canada (excluding Ontario) |
+| Curacao | Australia, New Zealand, Canada (excluding Ontario) |
+| Kahnawake | Australia, New Zealand, Canada (excluding Ontario) |
+| MGA License / Isle of Man / Gibraltar | Various countries (confirm with your account manager) |
+
+Local licenses are also required in Spain, Italy, Belgium, Netherlands, Ontario, Switzerland, USA, and Mexico regardless of gaming license type.
+
+<Callout type="info">
+Regulatory requirements are subject to change. Confirm your licensing status with your account manager before going live.
+</Callout>
 
 **Technical prerequisites:**
 
@@ -202,7 +221,7 @@ Initiating a Neosurf payment via the API takes two steps: create the charge,
 then create a linked authentication session to get the URL for the
 Neosurf-hosted payment page.
 
-**Step 1 — Create the charge**
+**Step 1: Create the charge**
 
 <Callout type="info">
 Amounts are in the smallest currency unit. `5000` equals €50.00 EUR.
@@ -260,7 +279,7 @@ is required to route the transaction correctly.
 The charge is created with `status: "requires_authentication"`. Use the
 returned charge `id` in the next step.
 
-**Step 2 — Create a linked authentication session**
+**Step 2: Create a linked authentication session**
 
 Send a [`POST /v1/sessions/authentication/linked`](/docs/api-reference/endpoints/authenticationsessions/create-linked-authentication-session) request with the charge ID,
 `confirm: true`, and the `return_url` the customer is redirected to after
@@ -336,6 +355,6 @@ Because Neosurf confirmation is immediate once the PIN is accepted, `charge.pend
 
 ## Next steps
 
-- [Webhooks overview](/docs/payments/webhooks) — verify webhook signatures and handle delivery retries
-- [Create a charge](/docs/api-reference/endpoints/charges/create-charge) — full API reference for `POST /v1/charges`
-- [Create a linked authentication session](/docs/api-reference/endpoints/authenticationsessions/create-linked-authentication-session) — full API reference for `POST /v1/sessions/authentication/linked`
+- [Webhooks overview](/docs/payments/webhooks): verify webhook signatures and handle delivery retries
+- [Create a charge](/docs/api-reference/endpoints/charges/create-charge): full API reference for `POST /v1/charges`
+- [Create a linked authentication session](/docs/api-reference/endpoints/authenticationsessions/create-linked-authentication-session): full API reference for `POST /v1/sessions/authentication/linked`

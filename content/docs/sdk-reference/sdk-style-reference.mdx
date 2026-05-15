@@ -31,20 +31,59 @@ For examples of how to apply these styles, see
 
 ## `cardForm` keys
 
-The `cardForm` key accepts an object with the following properties. Styles
+The `cardForm` key inside `style` accepts the following properties. Styles
 applied to `base` affect all four card fields as a group. Use the individual
 field keys to target each field separately.
+
+<Callout type="info">
+  The `color` property on `number`, `cvv`, `expiry`, and `name` targets **input text** only. To style field labels, use `cardForm.formConfig` — a separate top-level parameter on `checkout.universal()`, not part of `style`. See [`cardForm.formConfig` keys](#cardformformconfig-keys) below.
+</Callout>
 
 | Key | Type | Description |
 |-----|------|-------------|
 | `base` | CSS properties | Shared container around all four card fields. |
-| `number` | CSS properties | Card number input field. |
-| `cvv` | CSS properties | CVV input field. |
-| `expiry` | CSS properties | Expiry date input field. |
-| `name` | CSS properties | Cardholder name input field. |
+| `number` | CSS properties | Card number input field (input text and background only). |
+| `cvv` | CSS properties | CVV input field (input text and background only). |
+| `expiry` | CSS properties | Expiry date input field (input text and background only). |
+| `name` | CSS properties | Cardholder name input field (input text and background only). |
 | `submit` | CSS properties | Submit button inside the card form. Separate from the top-level `submit` key. |
 | `checkboxes.buttonBackground` | `string` | Background color of checkbox buttons (for example, "Save card for future use"). |
 | `checkboxes.labelColor` | `string` | Text color of checkbox labels. |
+
+## `cardForm.formConfig` keys
+
+`formConfig` is passed directly inside `cardForm` on `checkout.universal()` — it is **not** part of the `style` object. Use it to control labels, placeholders, error message styles, and input sizes for each card field.
+
+```js
+checkout.universal({
+  container: '#payment_container',
+  cardForm: {
+    formConfig: { ... }
+  }
+})
+```
+
+### `formConfig.base`
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `formTitle` | `string` | Title displayed at the top of the card form section. |
+| `titleStyles` | CSS properties | Style for the form title text. |
+| `inputSpacing` | `string` | Vertical spacing between fields (e.g. `'16px'`). |
+| `style` | CSS properties | Additional styles applied to the form wrapper element. |
+
+### `formConfig.number`, `formConfig.expiry`, `formConfig.cvv`, `formConfig.name`
+
+Each field key accepts the same properties:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `label` | `string` | Label text shown above the input. |
+| `labelStyle` | CSS properties | Color, font size, weight, and other styles for the label. |
+| `placeholder` | `string` | Placeholder text shown inside the input when empty. |
+| `errorMessageStyle` | CSS properties | Style for the inline validation error message. |
+| `inputSize` | `'small'` \| `'medium'` \| `'large'` | Controls the height of the input field. |
+| `style` | CSS properties | Additional styles applied to the input element itself. |
 
 ## `apms` keys
 
